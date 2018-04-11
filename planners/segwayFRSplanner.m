@@ -354,7 +354,7 @@ classdef segwayFRSplanner < planner2D
             end
             
             try
-                [kopt_new,~,exitflag] = findParamsTimeScaling(P.traj_opt_prob_params) ;
+                [kopt_new,~,exitflag] = findParams_timeScaling(P.traj_opt_prob_params) ;
 %                 [kopt_new,~,exitflag] = findParamsTOMLAB(P.traj_opt_prob_params) ;
                 if abs(kopt_new(2) + 1) < 0.075
                     P.n_stopped = P.n_stopped + 1 ;
