@@ -11,7 +11,7 @@ This is a set of tools for simulating a planar vehicle's dynamics in MATLAB. The
 ## Getting Started
 
 Make sure simulator2D and all subfolders are on your path, and you're ready to go!
-Currently, there is no example simulation in this repository, but you can find examples here;
+Currently, there is no example simulation in this repository, but you can find examples here:
 
 https://github.com/skousik/FRS_trajectory_planning/tree/master/examples
 
@@ -26,6 +26,7 @@ We've created this repository as a way to quickly test our trajectory planner, a
 ## Authors
 
 Shreyas Kousik (https://github.com/skousik)
+
 Sean Vaskov (https://github.com/skvaskov)
 
 ## License
