@@ -53,7 +53,7 @@ classdef segwayGPOPSplanner < planner2D
     %% setup
     function setup(P,A,W)
         % determine world buffer and bounds
-        P.default_buffer = A.footprint + 0.01 ;
+        P.default_buffer = A.footprint + 0.02 ;
         b = P.default_buffer ;
         P.bounds = W.bounds + [b -b b -b] ;
         

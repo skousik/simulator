@@ -5,7 +5,9 @@ classdef segwayRRTplanner < planner2D
         T % RRT edge time horizon
         iter_max % RRT iteration max
         wpf % A* planner
-        lookahead_distance % used by wpf to make waypoints
+        lookahead_distance % used by wpf to make waypoints; can be a scalar
+                           % or can be set to the string 'dynamic' in which
+                           % the lookahead is based on current + max speed
         goal_radius
         spinflag % spin to face the first waypoint in the first iteration
     end
@@ -36,7 +38,7 @@ classdef segwayRRTplanner < planner2D
     %% setup
     function setup(P,A,W)
         % get world bounds
-        P.default_buffer = A.footprint + 0.01 ;
+        P.default_buffer = A.footprint + 0.02 ;
         b = P.default_buffer ;
         P.bounds = W.bounds + [b -b b -b] ;
         P.goal_radius = W.goal_radius ;
@@ -82,7 +84,17 @@ classdef segwayRRTplanner < planner2D
         P.wpf.updateGraphWeights(O) ;
         P.wpf.getWaypoints(true) ;
         wps = P.wpf.w ;
-        wp = P.wpf.makeWaypoint(P.lookahead_distance) ;
+        
+        
+        if ischar(P.lookahead_distance) && strcmp(P.lookahead_distance,'dynamic')
+            lkhd = z0(end) + A.vmax ;
+            wp = P.wpf.makeWaypoint(lkhd) ;
+        elseif isnumeric(P.lookahead_distance)
+            wp = P.wpf.makeWaypoint(P.lookahead_distance) ;
+        else
+            error('Lookahead distance setting is invalid!')
+        end
+        
         P.current_waypoint = wp ;
         
         % run planner
@@ -114,7 +126,8 @@ classdef segwayRRTplanner < planner2D
             t_start = tic ;
             t_timeout = toc(t_start) ;
             icur = 1 ;
-            while icur < P.iter_max && t_timeout <= t_max && d > A.footprint
+            
+            while icur < P.iter_max && t_timeout <= t_max && d > A.footprint/2
                 % choose random vertex
     %             v_near_idx = randi(NV) ;
                 v_near_idx = round(randRange(1,NV,3*NV/4,1*NV/4)) ;
@@ -230,6 +243,10 @@ classdef segwayRRTplanner < planner2D
         w = P.wpf ;
         plot(w.w(1,:),w.w(2,:),'--')
         plot(P.current_waypoint(1),P.current_waypoint(2),'ro')
+        
+        % obstacles
+        O = P.current_obstacles ;
+        plot(O(1,:),O(2,:),'-','Color',[1 0.5 0.5]) ;
     end
     end
 end
