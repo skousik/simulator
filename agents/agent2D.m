@@ -245,7 +245,7 @@ classdef agent2D < handle
             
             if T_input(end) < T_total
                 warning(['Provided input time vector is shorter than the ',...
-                        'desired motion time! The robot will only be ',...
+                        'desired motion time! The agent will only be ',...
                         'moved until the largest available time in the ',...
                         'input time vector.'])
                 T_total = T_input(end) ;
@@ -254,19 +254,29 @@ classdef agent2D < handle
             
             T_input = T_input(:)' ;
             
+            % if the inputs T, U, and Z correspond to a longer time horizon
+            % than just T_total, truncate them
+            tlog = T_input <= T_total ;
+            T_used = T_input(tlog) ;
+            if T_used(end) < T_total
+                T_used = [T_used, T_total] ;
+            end
+            
             zcur = A.state(:,end) ;
             
-            if nargin < 5
-                [tout,zout] = A.odesolver(@(t,z) A.dynamics(t,z,T_input,U_input,[]),...
+            if nargin < 5 || isempty(Z_desired)
+                U_used = matchTrajectories(T_used,T_input,U_input) ;
+                [tout,zout] = A.odesolver(@(t,z) A.dynamics(t,z,T_used,U_used,[]),...
                                           [0 T_total], zcur) ;
             else
-                [tout,zout] = A.odesolver(@(t,z) A.dynamics(t,z,T_input,U_input,Z_desired),...
+                [U_used,Z_used] = matchTrajectories(T_used,T_input,U_input,T_input,Z_desired) ;
+                [tout,zout] = A.odesolver(@(t,z) A.dynamics(t,z,T_used,U_used,Z_used),...
                                       [0 T_total], zcur) ;
             end
             A.state = [A.state, zout(2:end,:)'] ;
             A.time = [A.time, A.time(end) + tout(2:end)'] ;
-            A.input_time = [A.input_time, A.input_time(end) + T_input(2:end)] ;
-            A.input = [A.input(:,1:end-1), U_input] ;
+            A.input_time = [A.input_time, A.input_time(end) + T_used(2:end)] ;
+            A.input = [A.input(:,1:end-1), U_used] ;
         end
 
         function prediction = predict(A,T_total,T_input,U_input,Z_desired,...

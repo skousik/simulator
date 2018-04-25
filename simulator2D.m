@@ -267,9 +267,8 @@ classdef simulator2D < handle
                         A.stop() ;
                         stopCheck = true;
                         
-                        % this used to break the loop... instead, give all
-                        % algorithms a chance to recover from an emergency
-                        % stop
+                        % this originally broke the loop; instead, now all
+                        % algorithms get a chance to recover from a stop
                         S.stop_count = S.stop_count + 1 ;
                         if S.stop_count > S.stop_threshold
                             break

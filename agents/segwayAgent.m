@@ -55,6 +55,10 @@ classdef segwayAgent < agent2D
             A.velocity_state_index = 5 ;
         end
         
+        
+        
+        
+        
         function reset(A,position)
             % starting pose is [x y h w v]^T
             switch size(position,1)
@@ -71,6 +75,10 @@ classdef segwayAgent < agent2D
             A.input = zeros(A.n_inputs,1) ;
             A.input_time = 0 ;
         end
+        
+        
+        
+        
         
         function zd = dynamics(A,t,z,T,U,Z)
             if nargin < 6
@@ -120,6 +128,10 @@ classdef segwayAgent < agent2D
             zd = [xd ; yd ; hd ; wd ; vd] ;
         end
         
+        
+        
+        
+        
         function stop(A,tmax)
             if nargin < 2
                 tmax = A.vmax/2 ;
@@ -128,6 +140,35 @@ classdef segwayAgent < agent2D
             U_input = zeros(2,size(T_input,2)) ;
             A.move(T_input(end),T_input,U_input) ;
         end
+        
+        
+        
+        
+        
+        function [Tout,Uout,Zout] = makeBrakingTrajectory(A,T,U,Z)
+            % Given a trajectory with time T, input U, and expected path Z,
+            % generate a braking trajectory that linearly drives yaw rate
+            % and velocity commands to zero in 0.5 s, then holds them at 0
+            % for the remainder of the length of T
+            tlog = T <= A.vmax/2 ;
+            Nta = length(T(tlog)) ;
+            Ntb = length(T(~tlog)) ;
+            wstop = [linspace(U(1,1),0,Nta), zeros(1,Ntb)] ;
+%             vstop = [linspace(U(2,1),0,Nta), zeros(1,Ntb)] ;
+            vstop = zeros(size(wstop)) ;
+            
+            Tout = T(:)' ;
+            Uout = [wstop;vstop] ;
+            
+            [Tout,Zout] = ode45(@(t,z) A.dynamics(t,z,Tout,Uout), Tout, Z(:,1)) ;
+            Tout = Tout(:)' ;
+            Uout = matchTrajectories(Tout,T,U) ;
+            Zout = Zout' ;
+        end
+        
+        
+        
+        
         
         function plotInLoop(A,n,c)
             plotInLoop@agent2D(A,n,c) ;

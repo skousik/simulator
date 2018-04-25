@@ -56,19 +56,18 @@ methods
         obs_rotation_bounds = W.obstacle_rotation_bounds ;
 
         % generate start position on left side of room with initial
-        % heading of 0, and make sure that it is at least twice the
-        % default buffer in distance from the walls of the room
+        % heading of 0, and make sure it's not too close too the walls
         b = W.default_buffer ;
-        xlo = xlo + 2*b ; xhi = xhi - 2*b ;
-        ylo = ylo + 3*b ; yhi = yhi - 3*b ;
+        xlo = xlo + b ; xhi = xhi - b ;
+        ylo = ylo + b ; yhi = yhi - b ;
         s = [0.1*(xhi - xlo).*rand(1) + xlo + 0.1*(xhi - xlo) ;
              (yhi - ylo).*rand(1) + ylo ;
              0 ] ;
         W.start = s ;
 
         % generate goal position on right side of room
-        g = [0.1*(xhi - xlo).*rand(1) + xlo + 0.8*(xhi - xlo) ;
-             0.8*(yhi - ylo).*rand(1) + ylo + 0.1*(yhi - ylo) ] ;
+        g = [0.1*(xhi - xlo).*rand(1) + xlo + 0.9*(xhi - xlo) ;
+             0.9*(yhi - ylo).*rand(1) + ylo + 0.1*(yhi - ylo) ] ;
         W.goal = g ;
 
         % generate obstacles around room

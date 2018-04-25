@@ -213,34 +213,57 @@ classdef segwayGPOPSplanner < planner2D
                 % previously-determined trajectory
                 P.vdisp('Stopping along previous trajectory!',2) ;
                 
-                % make sure that T is at least 1s long and has unique
-                % values so the ode45 call doesn't error
+                 % make sure that T is at least 1s long
                 if T(end) < P.t_max
                     T = [T(1:end-1), linspace(T(end),P.t_max,10)] ;
                     U = [U, zeros(2,9)] ;
                     Z = [Z, repmat(Z(:,end),1,9)] ;
-                    
-                    [T,Tidx,~] = unique(T) ;
-                    U = U(:,Tidx) ;
-                    Z = Z(:,Tidx) ;
                 end                
+                
+                [T,Tidx,~] = unique(T) ;
+                if length(Tprime) ~= length(T)
+                    dbstop in segwayGPOPSplanner at 230
+                end
+                
                 
                 % create braking trajectory
                 [Tout,Uout,Zout] = A.makeBrakingTrajectory(T,U,Z) ;
                 
+                
                 % set spinflag
                 P.spinflag = true ;
+                
+%                 if length(T) > 1
+%                     P.vdisp('Generating braking trajectory',4) ;
+%                     
+%                     
+%                     
+% %                     U(2,:) = 0 ;
+% %                     [Tout,Zout] = ode45(@(t,z) A.dynamics(t,z,T,U),T,z0) ;
+% %                     Tout = Tout' ;
+% %                     Uout = interp1(T(:),U',Tout(:))' ;
+% %                     Zout = Zout' ;
+%                 else
+%                     P.vdisp('Braking in straight line and setting spinflag',4)
+%                     T = [0,1] ;
+%                     U = zeros(2) ;
+%                     [Tout,Zout] = ode45(@(t,z) A.dynamics(t,z,T,U),T,z0) ;
+%                     Tout = Tout' ;
+%                     Uout = zeros(2,size(Tout,2)) ;
+%                     Zout = Zout' ;
+%                     P.spinflag = true ;
+%                 end
             end
         end
         
-%         a = size(Tout)
-%         b = size(Uout)
-%         c = size(Zout)
-%         if a(2) ~= c(2)
-%             dbstop in segwayGPOPSplanner at 263
-%         else
-%             dbclear all
-%         end
+        a = size(Tout)
+        b = size(Uout)
+        c = size(Zout)
+        if a(2) ~= c(2)
+            dbstop in segwayGPOPSplanner at 263
+        else
+            dbclear all
+        end
         
         P.T_old = Tout ;
         P.U_old = Uout ;

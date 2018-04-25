@@ -7,7 +7,8 @@ classdef planner2D < handle
         current_waypoint
         current_obstacles
         verbose
-        timeout
+        timeout % time allowed for "replan" function to execute
+        t_plan % same as timeout; just for notational purposes
         t_move % amount of time the planner expects the agent to move
         xy_plan % current anticipated trajectory
         info % information about trajectory planning
@@ -17,8 +18,10 @@ classdef planner2D < handle
         function P = planner2D(timeout,verbose_level)
             if nargin > 0
                 P.timeout = timeout ;
+                P.t_plan = timeout ;
             else
                 P.timeout = 1 ;
+                P.t_plan = 1 ;
             end
             
             if nargin > 1

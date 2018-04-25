@@ -87,7 +87,9 @@ classdef segwayFRSplanner < planner2D
         inner_buffer_maximum = min(user_buffer, FRS_buffer) ;
         inner_buffer = max(inner_buffer_maximum,0.001) ;
         a = acos((FRS_buffer-inner_buffer)/FRS_buffer) ;
-        P.point_spacing = 1.5*sin(a).*FRS_buffer ;
+        a = 1.5*sin(a) ;
+        r = a.*FRS_buffer ;
+        P.point_spacing = r ;
         
         % the outer buffer is how much to actually buffer obstacles by, in
         % order to compensate for the segway's actual size, since its FRS
