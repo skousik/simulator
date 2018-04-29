@@ -200,9 +200,9 @@ classdef segwayRRTplanner < planner2D
 
                             if (~isempty(in1) || any(in2)) 
 %                                 [in3,~] = inpolygon(xy(1),xy(2),O(1,:)',O(2,:)') ;
-                                if (v_near_idx > 1) %&& ~in3
+%                                 if (v_near_idx > 1) %&& ~in3
                                     traj_feasible = false ;
-                                end
+%                                 end
                             end
                         end
 

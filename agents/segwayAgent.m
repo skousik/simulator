@@ -150,11 +150,12 @@ classdef segwayAgent < agent2D
             % generate a braking trajectory that linearly drives yaw rate
             % and velocity commands to zero in 0.5 s, then holds them at 0
             % for the remainder of the length of T
-            tlog = T <= A.vmax/2 ;
-            Nta = length(T(tlog)) ;
-            Ntb = length(T(~tlog)) ;
-            wstop = [linspace(U(1,1),0,Nta), zeros(1,Ntb)] ;
+%             tlog = T <= A.vmax/2 ;
+%             Nta = length(T(tlog)) ;
+%             Ntb = length(T(~tlog)) ;
+%             wstop = [linspace(U(1,1),0,Nta), zeros(1,Ntb)] ;
 %             vstop = [linspace(U(2,1),0,Nta), zeros(1,Ntb)] ;
+            wstop = zeros(1,length(T)) ;
             vstop = zeros(size(wstop)) ;
             
             Tout = T(:)' ;
