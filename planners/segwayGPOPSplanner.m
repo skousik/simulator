@@ -142,7 +142,7 @@ classdef segwayGPOPSplanner < planner2D
         P.gpops_problem.auxdata.timer_start = tic ;
         
         % initial guess
-        if P.use_coarse_initial_guess
+        if P.use_coarse_initial_guess || isempty(P.Z_old)
             P.vdisp('Using coarse initial guess!',3) ;
             x_guess = [z0(1); z0(1) + z0(5)] ;
             y_guess = [z0(2); z0(2)] ;
@@ -209,24 +209,29 @@ classdef segwayGPOPSplanner < planner2D
                 Uout = solution.phase.control' ;
                 Zout = solution.phase.state' ;
             else
-                % if no plan was found, try to brake along the
-                % previously-determined trajectory
-                P.vdisp('Stopping along previous trajectory!',2) ;
+%                 % if no plan was found, try to brake along the
+%                 % previously-determined trajectory
+%                 P.vdisp('Stopping along previous trajectory!',2) ;
+%                 
+%                 % make sure that T is at least 1s long and has unique
+%                 % values so the ode45 call doesn't error
+%                 if T(end) < P.t_max
+%                     T = [T(1:end-1), linspace(T(end),P.t_max,10)] ;
+%                     U = [U, zeros(2,9)] ;
+%                     Z = [Z, repmat(Z(:,end),1,9)] ;
+%                     
+%                     [T,Tidx,~] = unique(T) ;
+%                     U = U(:,Tidx) ;
+%                     Z = Z(:,Tidx) ;
+%                 end                
+%                 
+%                 % create braking trajectory
+%                 [Tout,Uout,Zout] = A.makeBrakingTrajectory(T,U,Z) ;
+                P.vdisp('Slamming on the brakes!',4)
                 
-                % make sure that T is at least 1s long and has unique
-                % values so the ode45 call doesn't error
-                if T(end) < P.t_max
-                    T = [T(1:end-1), linspace(T(end),P.t_max,10)] ;
-                    U = [U, zeros(2,9)] ;
-                    Z = [Z, repmat(Z(:,end),1,9)] ;
-                    
-                    [T,Tidx,~] = unique(T) ;
-                    U = U(:,Tidx) ;
-                    Z = Z(:,Tidx) ;
-                end                
-                
-                % create braking trajectory
-                [Tout,Uout,Zout] = A.makeBrakingTrajectory(T,U,Z) ;
+                Tout = [] ; 
+                Uout = [] ;
+                Zout = [] ;
                 
                 % set spinflag
                 P.spinflag = true ;

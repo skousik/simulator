@@ -253,42 +253,45 @@ classdef segwayRRTplanner < planner2D
 
                 % create anticipated path
                 Zout = V(1:5,path) ;
-                
-                P.T_old = Tout ;
-                P.U_old = Uout ;
-                P.Z_old = Zout ;
             else
-                P.vdisp('Braking along previous trajectory!', 4)
-                
-                T = P.T_old ;
-                U = P.U_old ;
-                Z = P.Z_old ;
-                
-                % find closeset point in Zold to current state
-                xy_old = Z(1:2,:) ;
-                [~,idx] = min(distPointToPoints(xy,xy_old)) ;
-                
-                % get the xy difference and shift Z by that much
-                dxy = xy - xy_old(:,1) ;
-                Z(1:2,:) = Z(1:2,:) + repmat(dxy,1,size(Z,2)) ;
-
-                T = T(idx:end) - T(idx) ;
-                U = U(:,idx:end) ;
-                Z = Z(:,idx:end) ;
-                
-                % make sure that T is long enough
-                if T(end) < P.t_max
-                    T = [T(1:end-1), linspace(T(end),P.t_max,10)] ;
-                    U = [U, zeros(2,9)] ;
-                    Z = [Z, repmat(Z(:,end),1,9)] ;
-                end
-                
-                % create braking trajectory
-                [Tout,Uout,Zout] = A.makeBrakingTrajectory(T,U,Z) ;
+%                 P.vdisp('Braking along previous trajectory!', 4)
+%                 
+%                 T = P.T_old ;
+%                 U = P.U_old ;
+%                 Z = P.Z_old ;
+%                 
+%                 % find closeset point in Zold to current state
+%                 xy_old = Z(1:2,:) ;
+%                 [~,idx] = min(distPointToPoints(xy,xy_old)) ;
+%                 
+%                 % get the xy difference and shift Z by that much
+%                 dxy = xy - xy_old(:,1) ;
+%                 Z(1:2,:) = Z(1:2,:) + repmat(dxy,1,size(Z,2)) ;
+% 
+%                 T = T(idx:end) - T(idx) ;
+%                 U = U(:,idx:end) ;
+%                 Z = Z(:,idx:end) ;
+%                 
+%                 % make sure that T is long enough
+%                 if T(end) < P.t_max
+%                     T = [T(1:end-1), linspace(T(end),P.t_max,10)] ;
+%                     U = [U, zeros(2,9)] ;
+%                     Z = [Z, repmat(Z(:,end),1,9)] ;
+%                 end
+%                 
+%                 % create braking trajectory
+%                 [Tout,Uout,Zout] = A.makeBrakingTrajectory(T,U,Z) ;
                 
                 % set spinflag for next iteration
                 P.spinflag = true ;
+                Tout = [] ;
+                Uout = [] ;
+                Zout = [] ;
             end
+            
+            P.T_old = Tout ;
+            P.U_old = Uout ;
+            P.Z_old = Zout ;
             
             if ~isempty(Zout)
                 P.xy_plan = Zout(A.xy_state_indices,:) ;
