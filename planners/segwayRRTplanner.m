@@ -149,7 +149,7 @@ classdef segwayRRTplanner < planner2D
             t_timeout = toc(t_start) ;
             icur = 1 ;
             
-            while icur < P.iter_max && t_timeout <= timeout && d > (A.footprint/2)
+            while icur < P.iter_max && t_timeout <= timeout && (d > A.footprint/2)
                 % choose random vertex
     %             v_near_idx = randi(NV) ;
                 v_near_idx = round(randRange(1,NV,3*NV/4,1*NV/4)) ;
@@ -163,10 +163,10 @@ classdef segwayRRTplanner < planner2D
                 % new node
                 if t_near < P.t_max
                     % generate random desired control input that prefers to turn
-                    % towards the goal
+                    % towards the waypoint
                     bias = atan2(wp(2)-y_near, wp(1)-x_near) ;
                     wdes = max(min((A.wmax/2)*randn + sin(bias-h_near),A.wmax),-A.wmax) ;
-                    vdes = max(min(((A.vmax/4)*randn + 3*A.vmax/4), A.vmax), 0) ;
+                    vdes = max(min(((A.vmax/4)*randn + A.vmax/2), A.vmax), 0) ;
 
                     % create new vertex
                     Tin = 0:P.dt_edge:P.T_edge ;
@@ -198,11 +198,8 @@ classdef segwayRRTplanner < planner2D
                             [in1,~] = polyxpoly(xcheck',ycheck',O(1,:)',O(2,:)') ;
                             [in2,~] = inpolygon(xcheck',ycheck',O(1,:)',O(2,:)') ;
 
-                            if (~isempty(in1) || any(in2)) 
-%                                 [in3,~] = inpolygon(xy(1),xy(2),O(1,:)',O(2,:)') ;
-%                                 if (v_near_idx > 1) %&& ~in3
+                            if (~isempty(in1) || any(in2))
                                     traj_feasible = false ;
-%                                 end
                             end
                         end
 
@@ -221,11 +218,11 @@ classdef segwayRRTplanner < planner2D
                         % check if reached waypoint
                         d = min(distPointToPoints(wp,V(1:2,:))) ;
 
-                        % if trying to reach the global goal, use the world's goal
-                        % radius instead of the robot's footprint
-                        if norm(wp - P.wpf.g) < A.footprint
-                            d = d - P.goal_radius ;
-                        end
+%                         % if trying to reach the global goal, use the world's goal
+%                         % radius instead of the robot's footprint
+%                         if norm(wp - P.wpf.g) < A.footprint
+%                             d = d - P.goal_radius ;
+%                         end
                     end % from checking if vertex is in world bounds
 
                     icur = icur + 1 ;
