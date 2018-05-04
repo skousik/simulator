@@ -123,7 +123,13 @@ classdef segwayRRTplanner < planner2D
             % iteration
             P.vdisp('Spinning in place!', 4)
             P.spinflag = false ;
-            h2wp = atan2(wp(2)-xy(2),wp(1)-xy(1)) - z0(3) ;
+            
+            % this is the heading from the current position to the
+            % waypoint, and no longer rotated by the segway's current
+            % heading - this will cause the robot to spin a lot more, which
+            % makes it less conservative
+            h2wp = atan2(wp(2)-xy(2),wp(1)-xy(1)) ; % - z0(3)
+            
             wdes = max(min(sign(h2wp),A.wmax),-A.wmax) ;
             Tout = [0 1] ;
             Uout = [wdes wdes ; 0 0] ;
@@ -149,7 +155,7 @@ classdef segwayRRTplanner < planner2D
             t_timeout = toc(t_start) ;
             icur = 1 ;
             
-            while icur < P.iter_max && t_timeout <= timeout && (d > A.footprint/2)
+            while icur < P.iter_max && t_timeout <= timeout && d > A.footprint
                 % choose random vertex
     %             v_near_idx = randi(NV) ;
                 v_near_idx = round(randRange(1,NV,3*NV/4,1*NV/4)) ;
@@ -239,7 +245,7 @@ classdef segwayRRTplanner < planner2D
 %             Tout = 0:P.T_edge:P.T_edge*(length(path)-1) ;
             Tout = V(end,path) ;
             
-            % if time is not long enough, brake along previous trajectory
+            % if time is not long enough, brake
             if Tout(end) >= P.t_min || norm(wp - P.wpf.g) < A.footprint
                 P.vdisp('RRT found successful path!', 4) ;
                 % create input
