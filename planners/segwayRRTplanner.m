@@ -201,10 +201,11 @@ classdef segwayRRTplanner < planner2D
                             xcheck = Z_new(1,:) ;
                             ycheck = Z_new(2,:) ;
 
-                            [in1,~] = polyxpoly(xcheck',ycheck',O(1,:)',O(2,:)') ;
+%                             [in1,~] = polyxpoly(xcheck',ycheck',O(1,:)',O(2,:)') ;
                             [in2,~] = inpolygon(xcheck',ycheck',O(1,:)',O(2,:)') ;
 
-                            if (~isempty(in1) || any(in2))
+%                             if (~isempty(in1) || any(in2))
+                            if any(in2)
                                     traj_feasible = false ;
                             end
                         end
