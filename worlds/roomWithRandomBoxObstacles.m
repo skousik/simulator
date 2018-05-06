@@ -57,16 +57,16 @@ methods
 
         % generate start position on left side of room with initial
         % heading of 0, and make sure it's not too close too the walls
-        b = W.default_buffer ;
+        b = 1.5*W.default_buffer ;
         xlo = xlo + b ; xhi = xhi - b ;
         ylo = ylo + b ; yhi = yhi - b ;
-        s = [0.1*(xhi - xlo).*rand(1) + xlo + 0.1*(xhi - xlo) ;
+        s = [xlo ;
              (yhi - ylo).*rand(1) + ylo ;
              0 ] ;
         W.start = s ;
 
         % generate goal position on right side of room
-        g = [0.1*(xhi - xlo).*rand(1) + xlo + 0.9*(xhi - xlo) ;
+        g = [xhi ;
              0.9*(yhi - ylo).*rand(1) + ylo + 0.1*(yhi - ylo) ] ;
         W.goal = g ;
 

@@ -77,7 +77,7 @@ classdef segwayFRSplanner < planner2D
     %% setup
     function setup(P,A,W)
     % calculate required buffer
-        robot_buffer = A.footprint ;
+        robot_radius = A.footprint ;
         R = P.FRS_slow.rcar ; % FRS X_0 radius
         b = P.user_specified_buffer ;
         
@@ -85,7 +85,7 @@ classdef segwayFRSplanner < planner2D
             error(['Choose a buffer that is smaller than ',num2str(R)])
         end
         
-        % the inner buffer is used to determine the point spacing required
+        % the inner buffer b is used to determine the point spacing needed
         % by the FRS traj opt algorithm; this is dependent upon the size of
         % the segway's footprint in the FRS solution, not the segway's real
         % size
@@ -106,11 +106,11 @@ classdef segwayFRSplanner < planner2D
         
         % the outer buffer is how much to actually buffer obstacles by, in
         % order to compensate for the segway's actual size, since its FRS
-        % representation is smaller actual size; we subtract the FRS buffer
+        % footprint is smaller than real size; we subtract the FRS buffer
         % size because the FRS applies to the entire area of the segway's
         % footprint, as opposed to the center of mass (which is what most
         % methods care about)
-        outer_buffer = b + (robot_buffer - R) ;
+        outer_buffer = b + (robot_radius - R) ;
         P.default_buffer = outer_buffer ;
         
         % create bounds of room as an obstacle
@@ -316,25 +316,26 @@ classdef segwayFRSplanner < planner2D
                                 % then think it could find an artificially
                                 % safe plan!
 
-            % remove obstacle points behind the robot
+            % remove obstacle points behind the robot since they are not
+            % reachable
             Olog = Olog & (Olocal(1,:) >= x0/D) ;
             Olocal = Olocal(:,Olog) ;
             
-            % move away points in Pcur_filtered that are too close to the left and
-            % right sides of the robot, and are not very far in front of the robot
-            % (i.e. these points are never going to be reachable unless the robot
-            % translates left or right by magic or h*ckin' big disturbance)
-            if strcmp(FRS,'FRS_slow')
-                small_distance_in_front_of_robot = 0.1 ; % changed 9:28PM 6 Nov 2017
-            else
-                small_distance_in_front_of_robot = 0.05 ;
-            end
-            
-            rcar = P.(FRS).rcar ;
-            
-            scaling_factor_to_move_LR_points = 0.27/(rcar/D+0.05) ;
-            Olog = Olocal(1,:) <= (x0/D + rcar/D + small_distance_in_front_of_robot) ;
-            Olocal(2,Olog) = scaling_factor_to_move_LR_points.*Olocal(2,Olog) ;            
+%             % move away points in Pcur_filtered that are too close to the left and
+%             % right sides of the robot, and are not very far in front of the robot
+%             % (i.e. these points are never going to be reachable unless the robot
+%             % translates left or right by magic or h*ckin' big disturbance)
+%             if strcmp(FRS,'FRS_slow')
+%                 small_distance_in_front_of_robot = 0.1 ; % changed 9:28PM 6 Nov 2017
+%             else
+%                 small_distance_in_front_of_robot = 0.05 ;
+%             end
+%             
+%             rcar = P.(FRS).rcar ;
+%             
+%             scaling_factor_to_move_LR_points = 0.27/(rcar/D+0.05) ;
+%             Olog = Olocal(1,:) <= (x0/D + rcar/D + small_distance_in_front_of_robot) ;
+%             Olocal(2,Olog) = scaling_factor_to_move_LR_points.*Olocal(2,Olog) ;            
 
             % finally, filter out everything outside the [-1,1] box just in
             % case (this should be unnecessary)
@@ -354,10 +355,10 @@ classdef segwayFRSplanner < planner2D
                 kbounds = P.kbounds_fast ;
             end
             
-%             % commented this out 6 May 2018, 12:44 PM
-%             % bound the angular velocity based on current speed
-%             wcur = z0(4) ; % current angular speed
-%             kbounds(1,:) = boundValues([wcur-0.75,wcur+0.75],A.wmax) ;
+            % commented this out 6 May 2018, 12:44 PM
+            % bound the angular velocity based on current speed
+            wcur = z0(4) ; % current angular speed
+            kbounds(1,:) = boundValues([wcur-0.75,wcur+0.75],A.wmax) ;
             
             C = lw.*(sum((FT(1:2) - wplocal).^2)) + ...
                 hw.*((FT(3) - hlocal).^2) ;
