@@ -13,6 +13,7 @@ classdef segwayFRSplanner < planner2D
         
     % trajectory optimization parameters
         point_spacing
+        arc_point_spacing
         current_FRS
         FRS_slow
         FRS_fast
@@ -77,19 +78,31 @@ classdef segwayFRSplanner < planner2D
     function setup(P,A,W)
     % calculate required buffer
         robot_buffer = A.footprint ;
-        FRS_buffer = P.FRS_slow.rcar ;
-        user_buffer = P.user_specified_buffer ;
+        R = P.FRS_slow.rcar ; % FRS X_0 radius
+        b = P.user_specified_buffer ;
+        
+        if b >= R
+            error(['Choose a buffer that is smaller than ',num2str(R)])
+        end
         
         % the inner buffer is used to determine the point spacing required
         % by the FRS traj opt algorithm; this is dependent upon the size of
         % the segway's footprint in the FRS solution, not the segway's real
         % size
-        inner_buffer_maximum = min(user_buffer, FRS_buffer) ;
-        inner_buffer = max(inner_buffer_maximum,0.001) ;
-        a = acos((FRS_buffer-inner_buffer)/FRS_buffer) ;
-        a = 1.5*sin(a) ;
-        r = a.*FRS_buffer ;
+        b = max(b,0.001) ; % to prevent too-small point spacing
+        t1 = acos((R-b)/R) ;
+        t2 = acos(b/(2*R)) ;
+        r = 2*R*sin(t1) ;
+        a = 2*b*sin(t2) ;
+        
+        if r == 0
+            error('The point spacing r is equal to 0, so something went wrong!')
+        elseif a == 0
+            error('The arc point spacing a is equal to 0, so something went wrong!')
+        end
+        
         P.point_spacing = r ;
+        P.arc_point_spacing = a ;
         
         % the outer buffer is how much to actually buffer obstacles by, in
         % order to compensate for the segway's actual size, since its FRS
@@ -97,7 +110,7 @@ classdef segwayFRSplanner < planner2D
         % size because the FRS applies to the entire area of the segway's
         % footprint, as opposed to the center of mass (which is what most
         % methods care about)
-        outer_buffer = inner_buffer + (robot_buffer - FRS_buffer) ;
+        outer_buffer = b + (robot_buffer - R) ;
         P.default_buffer = outer_buffer ;
         
         % create bounds of room as an obstacle
@@ -258,7 +271,7 @@ classdef segwayFRSplanner < planner2D
         % assuming the obstacles are boxes, buffer them and increase the
         % density of points on them
         if ~isempty(O)
-            O = bufferBoxObstacles(O,P.default_buffer) ;
+            O = bufferBoxObstacles(O,P.default_buffer,'a',P.arc_point_spacing) ;
             O = increasePolylineDensity(O,P.point_spacing) ;
         end
         
@@ -298,7 +311,10 @@ classdef segwayFRSplanner < planner2D
             % simulation, something broke horrible)
             Olocal = P.globalToLocal(O,z0(A.xy_state_indices),h) ;
             Odists = distPointToPoints((1/D)*[x0;y0], Olocal) ;
-            Olog = Odists > (P.(FRS).rcar/D) & Odists < 1 ;
+%             Olog = Odists > (P.(FRS).rcar/D) & Odists < 1 ;
+            Olog = Odists < 1 ; % this was causing the segway to get stuck,
+                                % then think it could find an artificially
+                                % safe plan!
 
             % remove obstacle points behind the robot
             Olog = Olog & (Olocal(1,:) >= x0/D) ;
@@ -329,6 +345,7 @@ classdef segwayFRSplanner < planner2D
             lw = P.cost_location_weight ;
             hw = P.cost_heading_weight ;
 
+            % use correct bounds on parameter space
             if strcmp(FRS,'FRS_slow')
                 FT = P.cost_traj_end_slow ;
                 kbounds = P.kbounds_slow ;
@@ -336,7 +353,12 @@ classdef segwayFRSplanner < planner2D
                 FT = P.cost_traj_end_fast ;
                 kbounds = P.kbounds_fast ;
             end
-
+            
+%             % commented this out 6 May 2018, 12:44 PM
+%             % bound the angular velocity based on current speed
+%             wcur = z0(4) ; % current angular speed
+%             kbounds(1,:) = boundValues([wcur-0.75,wcur+0.75],A.wmax) ;
+            
             C = lw.*(sum((FT(1:2) - wplocal).^2)) + ...
                 hw.*((FT(3) - hlocal).^2) ;
 

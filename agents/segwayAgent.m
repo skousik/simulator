@@ -183,5 +183,13 @@ classdef segwayAgent < agent2D
             
             plot(zh(1,:),zh(2,:),'b-','LineWidth',1.5)            
         end
+        
+        
+        
+        
+        function [tout,zout] = odesolver_fixedTimeStep(~,fun,tspan,z0)
+             zout = ode3(@(t,z) fun(t,z),tspan,z0(:)) ;
+             tout = tspan ;
+        end
     end
 end

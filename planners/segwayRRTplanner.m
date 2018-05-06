@@ -56,7 +56,7 @@ classdef segwayRRTplanner < planner2D
         % get world bounds
 %         P.default_buffer = A.footprint + 0.02 ;
         b = P.default_buffer ;
-        P.bounds = W.bounds + [b -b b -b] ;
+        P.bounds = W.bounds + 1.2.*[b -b b -b] ;
         P.goal_radius = W.goal_radius ;
         
         P.spinflag = true ;
@@ -177,8 +177,13 @@ classdef segwayRRTplanner < planner2D
                     % create new vertex
                     Tin = 0:P.dt_edge:P.T_edge ;
                     Uin = repmat([wdes;vdes],1,size(Tin,2)) ;
-                    [T_new,Z_new] = A.odesolver(@(t,z) A.dynamics(t,z,Tin,Uin,[]),...
+                    
+%                     [T_new,Z_new] = A.odesolver(@(t,z) A.dynamics(t,z,Tin,Uin,[]),...
+%                                       Tin,z_near) ;
+
+                    [T_new,Z_new] = A.odesolver_fixedTimeStep(@(t,z) A.dynamics(t,z,Tin,Uin,[]),...
                                       Tin,z_near) ;
+                    
                     Z_new = Z_new' ;
                     z_new = Z_new(:,end) ;
 
@@ -206,7 +211,7 @@ classdef segwayRRTplanner < planner2D
 
 %                             if (~isempty(in1) || any(in2))
                             if any(in2)
-                                    traj_feasible = false ;
+                                traj_feasible = false ;
                             end
                         end
 
