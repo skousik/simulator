@@ -229,7 +229,7 @@ classdef simulator2D < handle
                 
                 % reset the stop counter
                 S.stop_count = 0 ;
-                stopCheck = false ;
+                stop_check_vec = false(1,iter_max) ;
 
                 runtime = tic ;
                 
@@ -260,12 +260,13 @@ classdef simulator2D < handle
                     end
                     t_plan_spent = toc(t_plan_spent) ;
                     planning_time_vec(icur) = t_plan_spent ;
+                    S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
                     
                     % update the agent using the current control input                    
                     if size(T,2) < 2 || size(U,2) < 2 || T(end) == 0
                         S.vdisp('Stopping!',2)
                         A.stop() ;
-                        stopCheck = true;
+                        stop_check_vec(icur) = true ;
                         
                         % this originally broke the loop; instead, now all
                         % algorithms get a chance to recover from a stop
@@ -344,16 +345,17 @@ classdef simulator2D < handle
                     planner_info{idx} = 'no info saved' ;
                 end
                 
+                % fill in the results for the current planner
                 planner_name{idx} = P.name ;
                 trajectory{idx} = Z ;
+                sim_time{idx} = T ;
                 control_input{idx} = U ;
                 control_input_time{idx} = TU ;
-                sim_time{idx} = T ;
                 total_real_time{idx} = runtime ;
                 planning_times{idx} = planning_time_vec ;
                 crash_check{idx} = C ;
                 goal_check{idx} = G ;
-                stop_check{idx} = stopCheck ;
+                stop_check{idx} = stop_check_vec ;
                 planner_timeout{idx} = P.timeout ;
                 
                 if G
@@ -363,7 +365,7 @@ classdef simulator2D < handle
                     S.vdisp('In final check, agent crashed!')
                 end    
                 
-                % iterate planner index
+                % increment planner index
                 idx = idx + 1 ;
             end
             
@@ -378,6 +380,7 @@ classdef simulator2D < handle
                              'stop_check',stop_check,...
                              'sim_time_vector',sim_time,...
                              'control_input',control_input,...
+                             'control_input_time',control_input_time,...
                              'planner_indices',planner_indices,...
                              'obstacles',W.obstacles,...
                              'N_obstacles',W.N_obstacles,...
