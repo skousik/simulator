@@ -78,6 +78,9 @@ classdef simulator2D < handle
                             planner_colors = varargin{idx+1} ;
                         case 'manual_iteration'
                             manual_iteration = varargin{idx+1} ;
+                        otherwise
+                            error(['Keyword argument number ',...
+                                   num2str((idx+1)/2),' is invalid!'])
                     end
                 end
             end
@@ -103,7 +106,7 @@ classdef simulator2D < handle
             end
             
             if ~exist('save_planner_info','var')
-                save_planner_info = false ;
+                save_planner_info = true ;
             end
             
             if ~exist('planner_colors','var')
@@ -317,11 +320,12 @@ classdef simulator2D < handle
                     end
                     
                     % iterate and increment time
+                    S.vdisp(['END ITERATION ',num2str(icur)],4,false)
                     icur = icur + 1 ;
                     tcur = toc(tstart) - user_pause ;
-                    S.vdisp(['END ITERATION ',num2str(icur)],4,false)
                 end
                 runtime = toc(runtime) ;
+                S.vdisp(['Planning time spent: ',num2str(runtime)],5)
                 
                 % plot the last portion of the agent's trajectory after the
                 % simulation ends
