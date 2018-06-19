@@ -265,7 +265,9 @@ classdef simulator2D < handle
                     planning_time_vec(icur) = t_plan_spent ;
                     S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
                     
-                    % update the agent using the current control input                    
+                    % update the agent using the current control input, so
+                    % either stop if no control was returned, or move the
+                    % agent if a valid input and time vector were returned
                     if size(T,2) < 2 || size(U,2) < 2 || T(end) == 0
                         S.vdisp('Stopping!',2)
                         A.stop() ;
@@ -289,7 +291,7 @@ classdef simulator2D < handle
                     
                     % check if the agent is near the desired goal or if it
                     % crashed
-                    S.vdisp('Checking if reached goal or crashed...',3)
+                    S.vdisp('Checking if agent reached goal or crashed...',3)
                     goalCheck = W.goalCheck(A) ;
                     crashCheck = W.crashCheck(A, false) ;
                     
@@ -312,7 +314,7 @@ classdef simulator2D < handle
                     % pause for user if needed
                     if S.manual_iteration
                         user_pause = tic ;
-                        S.vdisp('Pausing for user.',2)
+                        S.vdisp('Pausing for user. Press any key to continue.',2)
                         pause
                         user_pause = toc(user_pause) ;
                     else
