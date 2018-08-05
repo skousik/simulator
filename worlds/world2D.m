@@ -228,7 +228,7 @@ classdef world2D < handle
             end
         
         % initialize output (innocent until proven guilty)
-            out = false ;
+            out = 0 ;
             
         % extract agent info
             xyidx = agent.xy_state_indices ;
@@ -277,42 +277,47 @@ classdef world2D < handle
                 tchk = tchk(tchk <= Tidx(end)) ;
                 
                 % create the interpolated trajectory
-                Zchk = matchTrajectories(tchk,Tidx,Zidx) ;
-                
-                % create a copy of the agent footprint, rotated at each
-                % point of the trajectory
-                X = Zchk(xyidx,:) ; % xy positions of trajectory
-                N = size(X,2) ;
-                X = repmat(X(:),1,size(afc,2)) ;
-                    % rep'd for each pt of agent
-                    % footprint contour
-                
-                if ~isempty(hidx) && (length(agent.footprint) > 1)
-                    % if there is a heading, and the agent is not a circle,
-                    % then rotate each footprint contour
-                    H = Zchk(hidx,:) ;
-                    R = rotmat(H) ;
-                    F = R*repmat(afc,N,1) + X ;
-                else
-                    % otherwise, just place the footprint contour at each
-                    % point of the trajectory
-                    F = repmat(afc,N,1) + X ;
+                try
+                   Zchk = matchTrajectories(tchk,Tidx,Zidx) ;
+                   
+                   % create a copy of the agent footprint, rotated at each
+                   % point of the trajectory
+                   X = Zchk(xyidx,:) ; % xy positions of trajectory
+                   N = size(X,2) ;
+                   X = repmat(X(:),1,size(afc,2)) ;
+                       % rep'd for each pt of agent
+                       % footprint contour
+                   
+                   if ~isempty(hidx) && (length(agent.footprint) > 1)
+                       % if there is a heading, and the agent is not a circle,
+                       % then rotate each footprint contour
+                       H = Zchk(hidx,:) ;
+                       R = rotmat(H) ;
+                       F = R*repmat(afc,N,1) + X ;
+                   else
+                       % otherwise, just place the footprint contour at each
+                       % point of the trajectory
+                       F = repmat(afc,N,1) + X ;
+                   end
+                   
+                   Fx = [F(1:2:end,:)' ; nan(1,N)] ;
+                   Fy = [F(2:2:end,:)' ; nan(1,N)] ;
+                   F = [Fx(:)' ; Fy(:)'] ;
+                   
+                   % check if the resulting contour intersects the obstacles
+                   [ci,~] = polyxpoly(F(1,:),F(2,:),O(1,:),O(2,:)) ;
+                   
+                   if ~isempty(ci)
+                       out = 1 ;
+                       break
+                   end
+                   
+                   % increment the time index
+                   tidx = tidx + 5 ;
+                catch
+                   W.vdisp('Check failed, skipping to next portion!',2)
+                   out = -1 ;
                 end
-                
-                Fx = [F(1:2:end,:)' ; nan(1,N)] ;
-                Fy = [F(2:2:end,:)' ; nan(1,N)] ;
-                F = [Fx(:)' ; Fy(:)'] ;
-                
-                % check if the resulting contour intersects the obstacles
-                [ci,~] = polyxpoly(F(1,:),F(2,:),O(1,:),O(2,:)) ;
-                
-                if ~isempty(ci)
-                    out = true ;
-                    break
-                end
-                
-                % increment the time index
-                tidx = tidx + 5 ;
             end
 
             % update the world time index

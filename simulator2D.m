@@ -338,6 +338,7 @@ classdef simulator2D < handle
                 S.vdisp(['Planner ',num2str(p), ' simulation complete!'])
                 
                 % get results at end of simulation
+                S.vdisp('Running final crash and goal checks.',2)
                 Z = A.state ;
                 T = A.time ;
                 U = A.input ;
