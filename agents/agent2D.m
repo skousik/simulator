@@ -338,6 +338,12 @@ classdef agent2D < handle
         
         %% default dynamics
         function zd = dynamics(~,~,z,~,~)
+        % dzdt = dynamics(t,z,T,U,Z)
+        %
+        % If z is the state, then this function returns the time derivative
+        % of z. It takes in the current time t, state z, and time vector T
+        % with the same length as the input vector U and desired trajectory
+        % vector Z.
             zd = zeros(size(z)) ;
         end        
         

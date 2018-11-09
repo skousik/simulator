@@ -35,7 +35,7 @@ classdef world2D < handle
 %                           obstacles, this is a N_obstacles-by-1 structure
 %                           where each entry is an obstacle object
 %
-%     obstacle_type         either 'CCW_polygons' or 'CCW_polygons_dynamic'
+%     obstacle_type         either 'static' or 'dynamic'
 %
 %     default_buffer        a scalar amount that the world expects to
 %                           buffer obstacles so that a robot can avoid
@@ -100,7 +100,7 @@ classdef world2D < handle
             end
             
             if nargin < 4
-                obstacle_type = 'CCW_polygons' ;
+                obstacle_type = 'static' ;
             end
             
             if nargin < 3
@@ -187,7 +187,7 @@ classdef world2D < handle
         % more application-specific version in a specific subclass of
         % world2D.
         
-            if strcmp(W.obstacle_type,'CCW_polygons')
+            if strcmp(W.obstacle_type,'static')
                 if nargin < 4
                     time_indices = 1:size(agent.state,2) ;
                 end

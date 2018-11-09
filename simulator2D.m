@@ -221,6 +221,7 @@ classdef simulator2D < handle
             % index for keeping track of which planner was used
             idx = 1 ;
             
+        %% planner loop (simulated scenario is run once for each planner)
             for p = planner_indices
                 S.vdisp(['Planner ',num2str(p)])
                 
@@ -239,14 +240,18 @@ classdef simulator2D < handle
                 icur = 1 ;
                 tstart = tic ;
                 tcur = toc(tstart);
+                
+            %% simulation loop
                 while icur < (iter_max+1) && tcur < t_max
                     S.vdisp('--------------------------------',3,false)
                     S.vdisp(['ITERATION ',num2str(icur)],2,false)
                     
+                %% sense world
                     % given the current state of the agent, query the world
                     % to get the surrounding obstacles
                     O = W.getNearbyObstacles(A,P) ;
                     
+                %% replan
                     % given the current state and obstacles, query the
                     % current planner to get a control input
                     t_plan_spent = tic ;
@@ -265,16 +270,21 @@ classdef simulator2D < handle
                     planning_time_vec(icur) = t_plan_spent ;
                     S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
                     
+                %% move agent and world (if obstacle are dynamic)
                     % update the agent using the current control input, so
                     % either stop if no control was returned, or move the
                     % agent if a valid input and time vector were returned
                     if size(T,2) < 2 || size(U,2) < 2 || T(end) == 0
                         S.vdisp('Stopping!',2)
                         A.stop() ;
+                        
+%                         if strcmp(W.obstacle_type,'dynamic')
+%                             W.move(A) ;
+%                         end
+                        
                         stop_check_vec(icur) = true ;
                         
-                        % this originally broke the loop; instead, now all
-                        % algorithms get a chance to recover from a stop
+                        % give planner a chance to recover from a stop
                         S.stop_count = S.stop_count + 1 ;
                         if S.stop_count > S.stop_threshold
                             break
@@ -282,13 +292,32 @@ classdef simulator2D < handle
                     else
                         S.stop_count = 0 ;
                         if P.t_move > T(end)
+                            S.vdisp(['The provided time vector for the ',...
+                                'agent input is shorter than the amount of ',...
+                                'time the agent must move at each ',...
+                                'planning iteration. The agent will only ',...
+                                'be moved for the duration of the ',...
+                                'provided time vector.'],3)
                             t_move = T(end) ;
                         else
                             t_move = P.t_move ;
                         end
+                        
                         A.move(t_move,T,U,Z_plan) ;
+                        
+%                         if strcmp(W.obstacle_type,'dynamic')
+%                             W.move(A)
+%                         end
                     end
+                
+                %% to do 9 Nov 2018
+                % For now, dynamic obstacles are treated as follows:
+                %   1) getNearbyObstacles should return a prediction
+                %   2) the agent is moved according to the prediction
+                %   3) crashCheck moves the obstacles (according to the
+                %      agent's movement data if needed)
                     
+                %% crash and goal check
                     % check if the agent is near the desired goal or if it
                     % crashed
                     S.vdisp('Checking if agent reached goal or crashed...',3)
@@ -337,6 +366,7 @@ classdef simulator2D < handle
                 
                 S.vdisp(['Planner ',num2str(p), ' simulation complete!'])
                 
+            %% create summary (for the current planner)
                 % get results at end of simulation
                 S.vdisp('Running final crash and goal checks.',2)
                 Z = A.state ;
