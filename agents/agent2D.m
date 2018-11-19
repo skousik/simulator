@@ -333,7 +333,7 @@ classdef agent2D < handle
         % By default, calls the move function with zero input for one
         % second; should be overwritten in a subclass.
         
-            A.move(1,[0 1], [0 0; 0 0]) ;
+            A.move(1,[0 1], zeros(A.n_inputs,2)) ;
         end
         
         %% default dynamics
@@ -360,7 +360,11 @@ classdef agent2D < handle
                 l = 1 ;
             end
             if A.verbose >= l
-                disp(['    A: ',s])
+                if ischar(s)
+                    disp(['    A: ',s])
+                else
+                    disp('    A: String not provided!')
+                end
             end
         end
         

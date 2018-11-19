@@ -332,7 +332,11 @@ classdef world2D < handle
                 l = 1 ;
             end
             if W.verbose >= l
-                disp(['    W: ',s])
+                if ischar(s)
+                    disp(['    W: ',s])
+                else
+                    disp('    W: String not provided!')
+                end
             end
         end
         

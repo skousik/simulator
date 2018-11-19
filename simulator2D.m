@@ -42,6 +42,7 @@ classdef simulator2D < handle
         figure_number
         figure_handle
         planner_colors
+        plot_order
     end
     
 %% methods
@@ -78,6 +79,8 @@ classdef simulator2D < handle
                             planner_colors = varargin{idx+1} ;
                         case 'manual_iteration'
                             manual_iteration = varargin{idx+1} ;
+                        case 'plot_order'
+                            plot_order = varargin{idx+1} ;
                         otherwise
                             error(['Keyword argument number ',...
                                    num2str((idx+1)/2),' is invalid!'])
@@ -117,6 +120,10 @@ classdef simulator2D < handle
                 manual_iteration = false ;
             end
             
+            if ~exist('plot_order','var')
+                plot_order = 'WAP' ;
+            end
+            
             if ~iscell(planners) && length(planners) == 1
                 planners = {planners} ;
             end
@@ -142,6 +149,7 @@ classdef simulator2D < handle
             S.save_planner_info = save_planner_info ;
             S.manual_iteration = manual_iteration ;
             S.planner_colors = planner_colors ;
+            S.plot_order = plot_order ;
         end
         
         function plannerSetup(S,planner_indices)
@@ -310,7 +318,7 @@ classdef simulator2D < handle
 %                         end
                     end
                 
-                %% to do 9 Nov 2018
+                %% Note (9 Nov 2018)
                 % For now, dynamic obstacles are treated as follows:
                 %   1) getNearbyObstacles should return a prediction
                 %   2) the agent is moved according to the prediction
@@ -443,9 +451,22 @@ classdef simulator2D < handle
             
             color = S.planner_colors(planner_index,:) ;
             
-            S.world.plotInLoop(S.figure_number)
-            S.agent.plotInLoop(S.figure_number,color)  
-            S.planners{planner_index}.plotInLoop(S.figure_number,color)
+            for plot_idx = S.plot_order
+                switch plot_idx
+                    case 'W'
+                        S.world.plotInLoop(S.figure_number)
+                    case 'A'
+                        S.agent.plotInLoop(S.figure_number,color)  
+                    case 'P'
+                        S.planners{planner_index}.plotInLoop(S.figure_number,color)
+                    otherwise
+                        error(['Simulator plot order is broken! Make sure ',...
+                              'it is a string containing the characters ',...
+                              'W (for world), A (for agent), and P (for ',...
+                              'planner), in the order you want them to ',...
+                              'plot (WAP is the default)'])
+                end
+            end
         end
         
         function plotResults(S,summary)

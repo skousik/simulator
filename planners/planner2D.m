@@ -81,7 +81,11 @@ classdef planner2D < handle
                 l = 1 ;
             end
             if P.verbose >= l
-                disp(['    P: ',s])
+                if ischar(s)
+                    disp(['    P: ',s])
+                else
+                    disp('    P: String not provided!')
+                end
             end
         end
     end
