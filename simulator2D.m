@@ -23,7 +23,7 @@ classdef simulator2D < handle
 %   save_planner_info
 
 %% properties
-    properties
+    properties (Access = public)
         % basic properties
         agent
         world
@@ -42,7 +42,15 @@ classdef simulator2D < handle
         figure_number
         figure_handle
         planner_colors
+        plotting_pause_time
         plot_order
+        save_gif
+        save_gif_filename
+        save_gif_delay_time
+    end
+    
+    properties (Access = private)
+        start_gif
     end
     
 %% methods
@@ -79,8 +87,16 @@ classdef simulator2D < handle
                             planner_colors = varargin{idx+1} ;
                         case 'manual_iteration'
                             manual_iteration = varargin{idx+1} ;
+                        case 'plotting_pause_time'
+                            plotting_pause_time = varargin{idx+1} ;
                         case 'plot_order'
                             plot_order = varargin{idx+1} ;
+                        case 'save_gif'
+                            save_gif = varargin{idx+1} ;
+                        case 'save_gif_filename'
+                            save_gif_filename = varargin{idx+1} ;
+                        case 'save_gif_delay_time'
+                            save_gif_delay_time = varargin{idx+1} ;
                         otherwise
                             error(['Keyword argument number ',...
                                    num2str((idx+1)/2),' is invalid!'])
@@ -120,8 +136,24 @@ classdef simulator2D < handle
                 manual_iteration = false ;
             end
             
+            if ~exist('plotting_pause_time','var')
+                plotting_pause_time = 0.2 ;
+            end
+            
             if ~exist('plot_order','var')
                 plot_order = 'WAP' ;
+            end
+            
+            if ~exist('save_gif','var')
+                save_gif = false ;
+            end
+            
+            if ~exist('save_gif_filename','var')
+                save_gif_filename = 'simulator2D_gif_output' ;
+            end
+            
+            if ~exist('save_gif_delay_time','var')
+                save_gif_delay_time = 0.1 ;
             end
             
             if ~iscell(planners) && length(planners) == 1
@@ -149,7 +181,12 @@ classdef simulator2D < handle
             S.save_planner_info = save_planner_info ;
             S.manual_iteration = manual_iteration ;
             S.planner_colors = planner_colors ;
+            S.plotting_pause_time = plotting_pause_time ;
             S.plot_order = plot_order ;
+            S.save_gif = save_gif ;
+            S.save_gif_filename = save_gif_filename ;
+            S.save_gif_delay_time = save_gif_delay_time ;
+            S.start_gif = save_gif ;
         end
         
         function plannerSetup(S,planner_indices)
@@ -278,17 +315,13 @@ classdef simulator2D < handle
                     planning_time_vec(icur) = t_plan_spent ;
                     S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
                     
-                %% move agent and world (if obstacle are dynamic)
+                %% move agent
                     % update the agent using the current control input, so
                     % either stop if no control was returned, or move the
                     % agent if a valid input and time vector were returned
                     if size(T,2) < 2 || size(U,2) < 2 || T(end) == 0
                         S.vdisp('Stopping!',2)
                         A.stop() ;
-                        
-%                         if strcmp(W.obstacle_type,'dynamic')
-%                             W.move(A) ;
-%                         end
                         
                         stop_check_vec(icur) = true ;
                         
@@ -312,10 +345,6 @@ classdef simulator2D < handle
                         end
                         
                         A.move(t_move,T,U,Z_plan) ;
-                        
-%                         if strcmp(W.obstacle_type,'dynamic')
-%                             W.move(A)
-%                         end
                     end
                 
                 %% Note (9 Nov 2018)
@@ -342,10 +371,14 @@ classdef simulator2D < handle
                         break
                     end
                     
-                    % plot
+                    % plotting and animation
                     if plot_in_loop
                         S.plotInLoop(p)
-                        pause(0.2) ;
+                        if S.save_gif
+                            
+                        else
+                            pause(S.plotting_pause_time) ;
+                        end
                     end
                     
                     % pause for user if needed
@@ -444,7 +477,7 @@ classdef simulator2D < handle
         function plotInLoop(S,planner_index)
             S.vdisp('Plotting in loop',3)
             
-            figure(S.figure_number) ;
+            fh = figure(S.figure_number) ;
             cla ; hold on ; axis equal ;
             
             axis(S.world.bounds)
@@ -465,6 +498,21 @@ classdef simulator2D < handle
                               'W (for world), A (for agent), and P (for ',...
                               'planner), in the order you want them to ',...
                               'plot (WAP is the default)'])
+                end
+            end
+            
+            if S.save_gif
+                frame = getframe(fh) ;
+                im = frame2im(frame);
+                [imind,cm] = rgb2ind(im,256);
+                
+                filename = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
+
+                if S.start_gif
+                    imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',S.save_gif_delay_time) ; 
+                    S.start_gif = false ;
+                else 
+                    imwrite(imind,cm,filename,'gif','WriteMode','append') ; 
                 end
             end
         end
