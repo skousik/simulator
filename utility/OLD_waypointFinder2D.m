@@ -1,4 +1,4 @@
-classdef waypointFinder2D < highLevelPlanner2D
+classdef waypointFinder2D < handle
 % Class: waypointFinder2D
 %
 % This is a coarse path planner for planar autonomous robots. Given start
@@ -48,10 +48,10 @@ classdef waypointFinder2D < highLevelPlanner2D
 %                    regular A* algorithm (integer)
 %
 % Generic Usage:
-%   WP = waypointFinder2D(s,g,varargin)
-%   WP.updateGraphWeights(WP,obstacles_as_CCW_polygons)
-%   WP.getWaypoints(WP)
-%   waypoint = WP.makeWaypoint(WP,lookahead_distance)
+%   wpf = waypointFinder2D(s,g,varargin)
+%   wpf.updateGraphWeights(wpf,obstacles_as_CCW_polygons)
+%   wpf.getWaypoints(wpf)
+%   waypoint = wpf.makeWaypoint(wpf,lookahead_distance)
 %
 % Written by: Shreyas Kousik
 % Latest version: 5 Jan 2018
@@ -83,9 +83,9 @@ classdef waypointFinder2D < highLevelPlanner2D
     
     methods
     %% constructor
-        function WP = waypointFinder2D(s,g,varargin)
+        function wpf = waypointFinder2D(s,g,varargin)
         % include the user inputs into the waypoint finder
-            WP.z = s ; WP.g = g ;
+            wpf.z = s ; wpf.g = g ;
             dzg = sqrt(sum((s(1:2) - g).^2,1)) ;
             
             if nargin > 2
@@ -166,11 +166,11 @@ classdef waypointFinder2D < highLevelPlanner2D
                 end
             end
 
-            WP.d = d ;
-            WP.b = b ; WP.gridtype = gridtype ;
-            WP.cup = cup ; WP.cdn = cdn ; WP.cmax = cmax ;
-            WP.pdn = pdn ;
-            WP.N = N ;
+            wpf.d = d ;
+            wpf.b = b ; wpf.gridtype = gridtype ;
+            wpf.cup = cup ; wpf.cdn = cdn ; wpf.cmax = cmax ;
+            wpf.pdn = pdn ;
+            wpf.N = N ;
             
         % create the state space grid
             % find the angle between z and g, so that the grid can be
@@ -180,7 +180,7 @@ classdef waypointFinder2D < highLevelPlanner2D
                 hzg = atan2(g(2)-s(2),g(1)-s(1)) ;
             end
             
-            WP.hzg = hzg ;
+            wpf.hzg = hzg ;
             
         % create the grid area
             if ~exist('gridSize','var')
@@ -198,7 +198,7 @@ classdef waypointFinder2D < highLevelPlanner2D
                 ylo = -gridSize(2)/2 ; yhi = gridSize(2)/2 ;
             end
                 
-            if strcmp(WP.gridtype,'hex')
+            if strcmp(wpf.gridtype,'hex')
                 % source: https://matlabdatamining.blogspot.com/2008/04/
                 % generating-hexagonal-grids-for-fun-and.html
                 xlo = xlo/(sqrt(3)/2) ; xhi = xhi/(sqrt(3)/2) ;
@@ -215,7 +215,7 @@ classdef waypointFinder2D < highLevelPlanner2D
                     Xtemp = Xtemp(1:end-1,:) ;
                 end
                 X = X + Xtemp ;
-            elseif strcmp(WP.gridtype,'rand')
+            elseif strcmp(wpf.gridtype,'rand')
                 Nx = ceil(abs(xhi - xlo)/d) ;
                 Ny = ceil(abs(yhi - ylo)/d) ;
                 Z = rand(2,Nx*Ny) ;
@@ -253,20 +253,20 @@ classdef waypointFinder2D < highLevelPlanner2D
                 Ztemp = Ztemp(:,Zcroplog) ;
             end
                            
-            WP.Z = Ztemp ;
-            WP.l = size(WP.Z,2) ;
+            wpf.Z = Ztemp ;
+            wpf.l = size(wpf.Z,2) ;
             
         % create the adjacency matrix
-            WP.A = createAdjacencyMatrix(WP.Z,WP.N,WP.d) ;
+            wpf.A = createAdjacencyMatrix(wpf.Z,wpf.N,wpf.d) ;
         
         % create an empty obstacle, waypoints, and distance placeholders
-            WP.P = [] ;
-            WP.w = [] ;
-            WP.wdist = [] ;
+            wpf.P = [] ;
+            wpf.w = [] ;
+            wpf.wdist = [] ;
             
         % get znode and gnode
-            [~,WP.znode] = min(sqrt(sum((WP.Z-repmat(WP.z(1:2),1,WP.l)).^2,1))) ;
-            [~,WP.gnode] = min(sqrt(sum((WP.Z-repmat(WP.g,1,WP.l)).^2,1))) ;
+            [~,wpf.znode] = min(sqrt(sum((wpf.Z-repmat(wpf.z(1:2),1,wpf.l)).^2,1))) ;
+            [~,wpf.gnode] = min(sqrt(sum((wpf.Z-repmat(wpf.g,1,wpf.l)).^2,1))) ;
         end
     
         
@@ -275,13 +275,13 @@ classdef waypointFinder2D < highLevelPlanner2D
         
         
     %% update graph edge weights
-        function  updateGraphWeights(WP,P)
-            WP.P = P ;
-            Amat = WP.A ;
+        function  updateGraphWeights(wpf,P)
+            wpf.P = P ;
+            Amat = wpf.A ;
             
             % check which points are in or near obstacles
             if ~isempty(P)
-                [in,nr] = findPointsInOrNearObstacles(WP.Z, WP.P, WP.b) ;
+                [in,nr] = findPointsInOrNearObstacles(wpf.Z, wpf.P, wpf.b) ;
             else
                 in = [] ;
                 nr = [] ;
@@ -296,18 +296,18 @@ classdef waypointFinder2D < highLevelPlanner2D
                 % increase weight of all edges that are connected to
                 % vertices in or near any obstacle
                 Wmat = Amat.*In > 0 ;
-                Amat = Amat + WP.cup.*Wmat ;
+                Amat = Amat + wpf.cup.*Wmat ;
 
                 % for any vertices that are over the max possible cost, reset them
-                Amat(Amat > WP.cmax) = WP.cmax ;
+                Amat(Amat > wpf.cmax) = wpf.cmax ;
                 
                 % for any vertices that are no longer in an obstacle,
                 % reduce their cost
-                Wmat = Amat.*not(In) > 0 & Amat.*not(In) > WP.cdn ;
-                Amat = Amat - WP.cdn.*Wmat ;
+                Wmat = Amat.*not(In) > 0 & Amat.*not(In) > wpf.cdn ;
+                Amat = Amat - wpf.cdn.*Wmat ;
                 
-                % put A back into WP
-                WP.A = Amat ;
+                % put A back into wpf
+                wpf.A = Amat ;
             end
             
             if any(nr)
@@ -319,18 +319,18 @@ classdef waypointFinder2D < highLevelPlanner2D
                 % increase weight of all edges that are connected to
                 % vertices  near any obstacle
                 Wmat = Amat.*Nr > 0 ;
-                Amat = Amat + 0.5*WP.cup.*Wmat ;
+                Amat = Amat + 0.5*wpf.cup.*Wmat ;
 
                 % for any vertices that are over the max possible cost, reset them
-                Amat(Amat > WP.cmax) = WP.cmax ;
+                Amat(Amat > wpf.cmax) = wpf.cmax ;
                 
                 % for any vertices that are not near an obstacle,
                 % reduce their cost
-                Wmat = Amat.*not(Nr) > 0 & Amat.*not(Nr) > WP.cdn ;
-                Amat = Amat - 0.5*WP.cdn.*Wmat ;
+                Wmat = Amat.*not(Nr) > 0 & Amat.*not(Nr) > wpf.cdn ;
+                Amat = Amat - 0.5*wpf.cdn.*Wmat ;
                 
-                % put A back into WP
-                WP.A = Amat ;
+                % put A back into wpf
+                wpf.A = Amat ;
             end
         end
         
@@ -340,46 +340,46 @@ classdef waypointFinder2D < highLevelPlanner2D
         
         
     %% generate path of waypoints
-        function getWaypoints(WP,getCumulativeDist)
+        function getWaypoints(wpf,getCumulativeDist)
             if nargin < 2
                 getCumulativeDist = false ;
             end
             
             % find node closest to z and between z and gw, but exclude the
             % half plane that is
-%             htest = (0.5)*(WP.hzg+hcur) ;
-%             zprev = WP.z ;
-%             Zx = WP.Z(1,:) ; Zy = WP.Z(2,:) ;
+%             htest = (0.5)*(wpf.hzg+hcur) ;
+%             zprev = wpf.z ;
+%             Zx = wpf.Z(1,:) ; Zy = wpf.Z(2,:) ;
 %             Zlog = 1.*((cos(htest).*(Zx - zprev(1)) + sin(htest).*(Zy - zprev(2))) >= 0) ;
 %             Zlog(~Zlog) = NaN ;
 %             
-%             [~,WP.znode] = min(sqrt(sum((WP.Z-repmat(WP.z(1:2),1,WP.l)).^2,1)) + Zlog) ;
+%             [~,wpf.znode] = min(sqrt(sum((wpf.Z-repmat(wpf.z(1:2),1,wpf.l)).^2,1)) + Zlog) ;
             
-            [~,WP.znode] = min(sqrt(sum((WP.Z-repmat(WP.z(1:2),1,WP.l)).^2,1))) ;
+            [~,wpf.znode] = min(sqrt(sum((wpf.Z-repmat(wpf.z(1:2),1,wpf.l)).^2,1))) ;
             
             % find node closest to g
-            [~,WP.gnode] = min(sqrt(sum((WP.Z-repmat(WP.g,1,WP.l)).^2,1))) ;
+            [~,wpf.gnode] = min(sqrt(sum((wpf.Z-repmat(wpf.g,1,wpf.l)).^2,1))) ;
             
             % run shortest path algorithm
-            [~,path,~] = graphshortestpath(WP.A,WP.znode,WP.gnode) ;
+            [~,path,~] = graphshortestpath(wpf.A,wpf.znode,wpf.gnode) ;
                        
             % return waypoints along path
-            wtemp = WP.Z(:,path) ;
-            WP.w = wtemp ;
+            wtemp = wpf.Z(:,path) ;
+            wpf.w = wtemp ;
             
             if getCumulativeDist
                 wcumdist = cumulativeDist(wtemp') ;
-                WP.wdist = wcumdist' ;
+                wpf.wdist = wcumdist' ;
             end
             
             % decrease edge weights along existing path
             pbeg = path(1:end-1) ; pfin = path(2:end) ;
-            Amat = WP.A ;
+            Amat = wpf.A ;
             [r,c] = size(Amat) ;
             Bmat = sparse(r,c) ;
             Bmat(pbeg,pfin) = 1 ;
-            Alog = Amat.*Bmat > WP.pdn ;
-            Amat = Amat - Alog.*WP.pdn ;
+            Alog = Amat.*Bmat > wpf.pdn ;
+            Amat = Amat - Alog.*wpf.pdn ;
 
             %% this was left unfinished!
 %             % increase weight of edges that have large heading changes
@@ -390,15 +390,15 @@ classdef waypointFinder2D < highLevelPlanner2D
 %             dh = [abs(diff(h)),0] ;
 %             disp(h)
 %             disp(dh)
-%             Bmat([ind1,ind2]) = (2/norm(dh)).*WP.cup.*[dh,dh] ;
+%             Bmat([ind1,ind2]) = (2/norm(dh)).*wpf.cup.*[dh,dh] ;
 %             Amat = Amat + Bmat ;
             
 %             % increase weight of edges that intersect obstacles
-%             [~,~,in] = polyxpoly(WP.w(1,:)',WP.w(2,:)',...
-%                                  WP.P(1,:)',WP.P(2,:)') ;
+%             [~,~,in] = polyxpoly(wpf.w(1,:)',wpf.w(2,:)',...
+%                                  wpf.P(1,:)',wpf.P(2,:)') ;
 %             if ~isempty(in)
 %                 % the first column of 'in' is the indices of the /edges/ in
-%                 % WP.w that intersect with obstacles, which are given by
+%                 % wpf.w that intersect with obstacles, which are given by
 %                 % the starting vertex; these need to be translated from
 %                 % indices of the waypoints to indices of the graph vertices
 %                 wbeg = in(:,1) ; % (starting indices of intersecting edges
@@ -411,12 +411,12 @@ classdef waypointFinder2D < highLevelPlanner2D
 %                 Wmat = sparse(r,c) ;
 %                 Wmat([ind1,ind2]) = 1 ;
 %                 
-%                 Amat = Amat + Wmat.*WP.cup ;
+%                 Amat = Amat + Wmat.*wpf.cup ;
 %                 disp('edges intersect obstacles!')
 %             end
          
             
-            WP.A = Amat ;
+            wpf.A = Amat ;
         end
         
         
@@ -425,14 +425,14 @@ classdef waypointFinder2D < highLevelPlanner2D
         
         
 	%% output waypoint along the path
-        function [wp,h] = makeWaypoint(WP,ddes)
+        function [wp,h] = makeWaypoint(wpf,ddes)
             % Given a desired distance along the path of waypoints, output
             % a waypoint wp that is interpolated from the path
             
             % get distance along polyline that the vehicle is currently at
-            wps = WP.w ;
-            dw = distAlongPolyline(WP.z,wps) ;
-            cw = WP.wdist ; % cumulative distance along waypoints
+            wps = wpf.w ;
+            dw = distAlongPolyline(wpf.z,wps) ;
+            cw = wpf.wdist ; % cumulative distance along waypoints
             
             D = dw + ddes ;
             
@@ -440,18 +440,18 @@ classdef waypointFinder2D < highLevelPlanner2D
             % exceeds the cumulative possible distance, then the waypoint
             % is simply the last point of the waypoint path
             if size(wps,2) <= 1 || D > cw(end)
-                wp = WP.g ;
+                wp = wpf.g ;
 
                 if nargout > 1
                     % get the heading from the current position to the goal and
                     % maintain it
-                    h = atan2(WP.g(2) - WP.z(2), WP.g(1) - WP.z(1)) ;
+                    h = atan2(wpf.g(2) - wpf.z(2), wpf.g(1) - wpf.z(1)) ;
                 else
                     h = [] ;
                 end
             else
-                wpx = interp1(cw,WP.w(1,:),D) ;
-                wpy = interp1(cw,WP.w(2,:),D) ;
+                wpx = interp1(cw,wpf.w(1,:),D) ;
+                wpy = interp1(cw,wpf.w(2,:),D) ;
                 wp = [wpx;wpy] ;
 
                 if nargout > 1
@@ -473,7 +473,7 @@ classdef waypointFinder2D < highLevelPlanner2D
                     
                     if (wp_prev_x == wp_next_x && wp_prev_y == wp_next_y) || ...
                        any(isnan([wp_prev_x,wp_prev_y,wp_next_x,wp_next_y]))
-                        h = atan2(WP.g(2) - WP.z(2), WP.g(1) - WP.z(1)) ;
+                        h = atan2(wpf.g(2) - wpf.z(2), wpf.g(1) - wpf.z(1)) ;
                     else
                         dx = wp_next_x - wp_prev_x ;
                         dy = wp_next_y - wp_prev_y ;
@@ -484,23 +484,23 @@ classdef waypointFinder2D < highLevelPlanner2D
                 end
             end
             
-%             cumd = WP.wdist ;
-%             if size(WP.w,2) > 1 && ddes < cumd(end)
+%             cumd = wpf.wdist ;
+%             if size(wpf.w,2) > 1 && ddes < cumd(end)
 
 %             
 %                 if getHeading
 %                     if ddes < (cumd(end)-0.02)
 %                         % this is an if statement in case the waypoint needs to
 %                         % interpolate beyond the available waypoint path
-%                         wp_next_x = interp1(cumd,WP.w(1,:),ddes+0.01) ;
-%                         wp_next_y = interp1(cumd,WP.w(2,:),ddes+0.01) ;
+%                         wp_next_x = interp1(cumd,wpf.w(1,:),ddes+0.01) ;
+%                         wp_next_y = interp1(cumd,wpf.w(2,:),ddes+0.01) ;
 %                     else
-%                         wp_next_x = WP.g(1) ;
-%                         wp_next_y = WP.g(2) ;
+%                         wp_next_x = wpf.g(1) ;
+%                         wp_next_y = wpf.g(2) ;
 %                     end
 % 
-%                     wp_prev_x = interp1(cumd,WP.w(1,:),ddes-0.01) ;
-%                     wp_prev_y = interp1(cumd,WP.w(2,:),ddes-0.01) ;
+%                     wp_prev_x = interp1(cumd,wpf.w(1,:),ddes-0.01) ;
+%                     wp_prev_y = interp1(cumd,wpf.w(2,:),ddes-0.01) ;
 % 
 %                     % find heading to that waypoint and have it be desired
 %                     dx = wp_next_x - wp_prev_x ;
@@ -512,11 +512,11 @@ classdef waypointFinder2D < highLevelPlanner2D
 %                     h = [] ;
 %                 end
 %             else
-%                 wp = WP.g ;
+%                 wp = wpf.g ;
 %                 
 %                 % get the heading from the current position to the goal and
 %                 % maintain it
-%                 h = atan2(WP.g(2) - WP.z(2), WP.g(1) - WP.z(1)) ;
+%                 h = atan2(wpf.g(2) - wpf.z(2), wpf.g(1) - wpf.z(1)) ;
 %             end
         end
     end

@@ -178,8 +178,8 @@ classdef world2D < handle
         end
         
         %% simple obstacle scanning
-        function O = getNearbyObstacles(W,agent,~,time_indices)
-        % Method: O = getNearbyObstacles(agent,time_indices)
+        function O = getNearbyObstacles(W,agent,planner,time_indices)
+        % Method: O = getNearbyObstacles(agent,planner,time_indices)
         %
         % Given an agent object, use its location and sensor radius to
         % find all obstacles in its vicinity. This is the most generic
@@ -341,7 +341,10 @@ classdef world2D < handle
         end
         
         function plotInLoop(W,n)
-            figure(n) ; hold on ; axis equal ; axis(W.bounds)
+            figure(n) ; hold on ;
+            if ~any(isinf(W.bounds))
+                axis(W.bounds)
+            end
             
             % plot start and goal
             xcirc = cos(linspace(0,2*pi)) ;
@@ -357,8 +360,10 @@ classdef world2D < handle
             plot(O(1,:),O(2,:),'r-')
             
             % plot world bounds
-            B = W.bounds_as_contour ; % [xmin xmax ymin ymax]
-            plot(B(1,:),B(2,:),'r')
+            if ~any(isinf(W.bounds))
+                B = W.bounds_as_contour ; % [xmin xmax ymin ymax]
+                plot(B(1,:),B(2,:),'r')
+            end
         end
         
         function plotResults(W,n)

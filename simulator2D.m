@@ -480,7 +480,9 @@ classdef simulator2D < handle
             fh = figure(S.figure_number) ;
             cla ; hold on ; axis equal ;
             
-            axis(S.world.bounds)
+            if ~any(isinf(S.world.bounds))
+                axis(S.world.bounds)
+            end
             
             color = S.planner_colors(planner_index,:) ;
             
@@ -502,6 +504,12 @@ classdef simulator2D < handle
             end
             
             if S.save_gif
+                if S.start_gif
+                    S.vdisp(['Please resize the figure to the size you ',...
+                             'want saved, or hit any key to continue.'])
+                    pause
+                end
+                
                 frame = getframe(fh) ;
                 im = frame2im(frame);
                 [imind,cm] = rgb2ind(im,256);

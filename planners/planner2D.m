@@ -4,6 +4,7 @@ classdef planner2D < handle
         name
         bounds % world bounds plus planner-specific buffer
         default_buffer % minimum amount to buffer obstacles, given by the world
+        WP % high level waypoint planner
         current_waypoint
         current_obstacles
         verbose
@@ -30,6 +31,7 @@ classdef planner2D < handle
                 P.verbose = 0 ;
             end
 
+            P.WP = [] ;
             P.xy_plan = [] ;
             P.info = [] ;
         end
@@ -44,6 +46,11 @@ classdef planner2D < handle
         
         function [Tout,Uout,Zout] = replan(~,~,~)
             warning('Planner replan function is undefined!')
+            
+            if isempty(P.WP)
+                warning('The high level planner is also undefined!')
+            end
+            
             Tout = [] ; Uout = [] ; Zout = [] ;
         end
         
