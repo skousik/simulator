@@ -1,6 +1,8 @@
 classdef simulator2D < handle
 % Class: simulator2D
 %
+% S = simulator2D(agent, world, planners, varargin)
+%
 % This class is used to simulate an agent (i.e. a robot in SE2 with a
 % footprint and system dynamics) in a world (given by polygonal obstacles
 % and a bounding box). The agent plans its path through the world from some
@@ -59,12 +61,27 @@ classdef simulator2D < handle
         function S = simulator2D(agent, world, planners, varargin)
             % Constructor function: simulator2D
             %
+            % Usage: S = simulator2D(agent, world, planners, varargin)
+            %
             % This constructor takes in an agent, which obeys some physical
             % dynamics; a world object, which contains obstacles and goals;
             % and one or more planners for the agent to perform path
             % planning and obstacle avoidance in the world. The constructor
             % then sets up internal variables needed to simulate the agent
             % in the provided world using each of the provided planners.
+            
+            if nargin < 4
+                verbose_level = 0 ;
+            if nargin < 3
+                planners = planner2D ;
+            if nargin < 2
+                world = world2D ;
+            if nargin < 1
+                agent = agent2D ;
+            end
+            end
+            end
+            end
             
             if length(varargin) == 1
                 verbose_level = varargin{1} ;
@@ -163,10 +180,6 @@ classdef simulator2D < handle
             S.agent = agent ;
             S.world = world ;
             S.planners = planners ;
-            
-            if nargin < 4
-                verbose_level = 0 ;
-            end
             
             % set the world to the same verbosity level as the simulator
             if S.world.verbose < verbose_level

@@ -1,7 +1,7 @@
-classdef highLevelPlanner2D < handle
-% Class: highLevelPlanner2D
+classdef waypointPlanner2D < handle
+% Class: waypointPlanner2D
 %
-% For use with simulator2D. The "high-level planner" is responsible for
+% For use with simulator2D. This "high-level planner" is responsible for
 % creating waypoints for an agent to navigate a world. This class is to be
 % called within a planner2D object at each planning iteration (i.e., when
 % the planner2D.replan method is called); it is not called by the
@@ -12,8 +12,6 @@ classdef highLevelPlanner2D < handle
 %% properties
 properties
     default_lookahead
-    start
-    goal
     waypoint_reached_radius
     waypoints
     N_waypoints
@@ -23,21 +21,24 @@ properties
     verbose
 end
 
-%% methods
 methods
-    function WP = highLevelPlanner2D(start,goal,verbose_level)
-        WP.start = start ;
-        WP.goal = goal ;
+%% constructor
+    function WP = waypointPlanner2D(verbose_level)
+        if nargin < 1
+            verbose_level = 0 ;
+        end
+        
         WP.default_lookahead = 1 ;
-        WP.waypoints = [start(1:2), goal] ;
-        WP.N_waypoints = size(WP.waypoints,2) ;
+        WP.waypoints = [] ;
+        WP.N_waypoints = 0 ;
         WP.waypoint_reached_radius = 1 ;
         WP.waypoints_include_heading = false ;
-        WP.current_waypoint = start(1:2) ;
-        WP.current_waypoint_index = 1 ;
+        WP.current_waypoint = [] ;
+        WP.current_waypoint_index = [] ;
         WP.verbose = verbose_level ;
     end
     
+%% get waypoint
     function waypoint = getWaypoint(~,~,~,~)
     % waypoint = getWaypoint(agent_pose,obstacles,lookahead_distance)
     %
@@ -47,10 +48,20 @@ methods
         warning('The getWaypoint method is undefined!')
         waypoint = [] ;
     end
+
+%% plot waypoints
+    function plotWaypoints(WP,plotformat)
+        if nargin < 2
+            plotformat = '--' ;
+        end        
+        w = WP.waypoints ;        
+        plot(w(1,:),w(2,:),plotformat,'Color',[1 0.5 0]) ;
+    end
     
+%% display info
     function vdisp(WP,s,l)
     % Display a string s if the message's verbose level l is greater
-    % than or equal to the planner's verbose level.
+    % than or equal to the waypoint planner's verbose level.
         if nargin < 3
             l = 1 ;
         end
