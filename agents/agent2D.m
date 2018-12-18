@@ -220,11 +220,14 @@ classdef agent2D < handle
             % method: reset(position)
             %
             % Zeros out the agent's states and inputs, and sets its time to
-            % zero. By default, the position is in SE2.
+            % zero. By default, the position input should be in SE2, i.e.
+            % an (x,y,h) pose.
             
             position = position(:) ;
             A.state(A.xy_state_indices) = position(1:2) ;
-            A.state(A.heading_state_index) = position(3) ;
+            if length(position) > 2
+                A.state(A.heading_state_index) = position(3) ;
+            end
             A.time = 0 ;
             A.input = zeros(A.n_inputs,1) ; % this forces the input size to
                                             % match the time vector size
@@ -369,6 +372,11 @@ classdef agent2D < handle
         end
         
         %% plotting
+        function plot(A)
+            A.plotInLoop(1,[0 0 1])
+            axis equal
+        end
+        
         function plotInLoop(A,n,c)
             if nargin < 3
                 c = [0 0 1] ;

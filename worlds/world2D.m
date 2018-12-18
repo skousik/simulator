@@ -93,7 +93,7 @@ classdef world2D < handle
     
     methods
     %% constructor
-        function W = world2D(bounds,goal_radius,default_buffer,...,
+        function W = world2D(bounds,goal_radius,default_buffer,...
                              obstacle_type, verbose_level)
             if nargin < 5
                 verbose_level = 0 ;
@@ -171,14 +171,14 @@ classdef world2D < handle
         function reset(W,~)
         % Method: reset(planner)
         %
-        % Resets the world's current time index to 1. The planner is also
-        % passed to this method, so that subclasses can extract necessary
-        % info from each planner.
+        % Resets the world's current time index to 1. Planners are also
+        % passed to this method, so that world can extract necessary info
+        % from each planner.
             W.current_time_index = 1 ;
         end
         
         %% simple obstacle scanning
-        function O = getNearbyObstacles(W,agent,planner,time_indices)
+        function O = getNearbyObstacles(W,agent,~,time_indices)
         % Method: O = getNearbyObstacles(agent,planner,time_indices)
         %
         % Given an agent object, use its location and sensor radius to
@@ -323,21 +323,11 @@ classdef world2D < handle
             % update the world time index
             W.current_time_index = length(agent.time) ;
         end 
-        
-%% utility
-        function vdisp(W,s,l)
-        % Display a string s if the message's verbose level l is greater
-        % than or equal to the planner's verbose level.
-            if nargin < 3
-                l = 1 ;
-            end
-            if W.verbose >= l
-                if ischar(s)
-                    disp(['    W: ',s])
-                else
-                    disp('    W: String not provided!')
-                end
-            end
+       
+%% plotting
+        function plot(W)
+            W.plotInLoop(1)
+            axis equal
         end
         
         function plotInLoop(W,n)
@@ -357,7 +347,9 @@ classdef world2D < handle
             
             % plot obstacles
             O = W.obstacles ;
-            plot(O(1,:),O(2,:),'r-')
+            if ~isempty(O) && strcmp(W.obstacle_type,'static')
+                plot(O(1,:),O(2,:),'r-')
+            end
             
             % plot world bounds
             if ~any(isinf(W.bounds))
@@ -368,6 +360,22 @@ classdef world2D < handle
         
         function plotResults(W,n)
             W.plotInLoop(n) ;
+        end
+        
+%% utility
+        function vdisp(W,s,l)
+        % Display a string s if the message's verbose level l is greater
+        % than or equal to the planner's verbose level.
+            if nargin < 3
+                l = 1 ;
+            end
+            if W.verbose >= l
+                if ischar(s)
+                    disp(['    W: ',s])
+                else
+                    disp('    W: String not provided!')
+                end
+            end
         end
     end
 end

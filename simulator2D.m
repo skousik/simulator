@@ -518,6 +518,18 @@ classdef simulator2D < handle
             
             if S.save_gif
                 if S.start_gif
+                    % if gif saving is enabled, check that there isn't already a
+                    % file in the current directory with that name
+                    dir_content = dir(pwd) ;
+                    file_name   = {dir_content.name} ;
+                    check_name = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
+                    file_check  = any(cellfun(@(x) strcmp(check_name,x),file_name)) ;
+                    if file_check
+                        warning(['The current GIF filename already exists! ',...
+                            'change the filename if you do not want to ',...
+                            'overwrite your existing file!'])
+                    end
+                    
                     S.vdisp(['Please resize the figure to the size you ',...
                              'want saved, or hit any key to continue.'])
                     pause
