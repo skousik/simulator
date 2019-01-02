@@ -2,19 +2,13 @@ classdef world2D < handle
 % Class: world2D
 %
 % This superclass contains the generic functions for getting obstacles and
-% checking the path of an agent in the simulator2D framework. Obstacles can
-% be of various types, to be created by subclasses of world2D.
-%
-% Currently, the only type supported is obstacles as 2-by-N points
-% representing counter-clockwise polygonal contours, with distinct
-% obstacles separated by columns of NaNs. These obstacles can be time
-% varying or static, depending on the subclass implementation.
+% checking the path of an agent in the simulator2D framework.
 %
 % PROPERTIES
-%     start                 (x,y,h) coordinates in SE2 of the robot's start
+%     start                 (x,y,h) pose in SE^2 of the robot's start
 %                           location and heading
 %
-%     goal                  (x,y) desired final/goal location of the robot
+%     goal                  (x,y) desired final location of the robot
 %
 %     goal_radius           radius about the goal; if the robot arrives
 %                           anywhere in this area, it is said to have
@@ -29,13 +23,18 @@ classdef world2D < handle
 %
 %     N_obstacles           number of obstacles (scalar)
 %
-%     obstacles             the obstacles in the world; for static
-%                           obstacles, this is a 2-by-N list of CCW
-%                           polygons separated by NaNs; for dynamic
-%                           obstacles, this is a N_obstacles-by-1 structure
-%                           where each entry is an obstacle object
+%     obstacles             the obstacles in the world; this is an
+%                           N_obstacles-by-1 structure of obstacle2D
+%                           objects, which have vertices (in the static
+%                           case) and position and time (dynamic)
 %
-%     obstacle_type         either 'static' or 'dynamic'
+%     obstacle_type         either 'static' or 'dynamic' (outdated, will be
+%                           removed in future implementations)
+%
+%     static_obs_polyline   for all static obstacles in a world2D instance,
+%                           this property stores their vertices as a 2-by-N
+%                           polyline, with the vertices of each obstacle
+%                           separated by a column of NaNs
 %
 %     default_buffer        a scalar amount that the world expects to
 %                           buffer obstacles so that a robot can avoid
@@ -77,7 +76,7 @@ classdef world2D < handle
 %     vdisp                 verbose display; prints messages to screen that
 %                           if they have a low enough verbosity level
 
-    properties
+    properties (Access = public)
         start
         goal
         goal_radius

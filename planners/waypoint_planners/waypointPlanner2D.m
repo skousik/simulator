@@ -50,12 +50,21 @@ methods
     end
 
 %% plot waypoints
-    function plotWaypoints(WP,plotformat)
+    function plotWaypoints(WP,plot_format)
         if nargin < 2
-            plotformat = '--' ;
+            plot_format = '--' ;
         end        
-        w = WP.waypoints ;        
-        plot(w(1,:),w(2,:),plotformat,'Color',[1 0.5 0]) ;
+        wps = WP.waypoints ;
+        
+        if ~isempty(wps)
+            plot(wps(1,:),wps(2,:),plot_format,'Color',[1 0.5 0]) ;
+        end
+        
+        wp_cur = WP.current_waypoint ;
+        
+        if ~isempty(wp_cur)
+            plot(wp_cur(1),wp_cur(2),'^','Color',[1 0.5 0]) ;
+        end
     end
     
 %% display info

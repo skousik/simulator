@@ -1,6 +1,5 @@
 classdef planner2D < handle
-    
-%% properties
+
 properties
 % generic planner properties
     name
@@ -14,7 +13,8 @@ properties
     t_plan % same as timeout; just for notational purposes
     t_move % amount of time the planner expects the agent to move
     xy_plan % current anticipated trajectory
-    info % information about trajectory planning
+    info % information structure to keep a log when planning
+    plot_waypoints_flag
 end
 
 methods
@@ -37,19 +37,31 @@ methods
         P.WP = [] ;
         P.xy_plan = [] ;
         P.info = [] ;
+        P.plot_waypoints_flag = false ;
     end
 
 %% setup and update
     function setup(~,~,~)
+    % P.setup(A,W)
+    %
+    % ADD COMMENTS
         warning('Planner setup function is undefined!')
     end
 
-    function update(~,~,~)
-        warning('Planner update function is undefined!')
+    function update(P,A,W)
+	% P.update(A,W)
+    %
+    % ADD COMMENTS
+    
+        P.vdisp('Running default update method!',1)
+        P.setup(P,A,W)
     end
 
 %% replan
     function [Tout,Uout,Zout] = replan(~,~,~)
+    % [T,U,Z] = P.replan(A,O)
+    %
+    % ADD COMMENTS
         warning('Planner replan function is undefined!')
 
         if isempty(P.WP)
@@ -76,6 +88,15 @@ methods
         % plot anticipated trajectory from planner
         if ~isempty(P.xy_plan)
             plot(P.xy_plan(1,:),P.xy_plan(2,:),':','LineWidth',2,'Color',c)
+        end
+        
+        % plot waypoints
+        if P.plot_waypoints_flag
+            if isa(P.WP,'grid_waypoint_planner')
+                P.WP.plotWaypoints(true)
+            else
+                P.WP.plotWaypoints()
+            end
         end
     end
 

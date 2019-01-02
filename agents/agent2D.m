@@ -330,13 +330,13 @@ classdef agent2D < handle
         end
         
         %% stop
-        function stop(A)
-        % method: stop()
+        function stop(A,t)
+        % method: stop(t)
         %
-        % By default, calls the move function with zero input for one
-        % second; should be overwritten in a subclass.
+        % By default, calls the move function with zero input for duration
+        % t seconds; should be overwritten in a subclass.
         
-            A.move(1,[0 1], zeros(A.n_inputs,2)) ;
+            A.move(t,[0 t], zeros(A.n_inputs,2)) ;
         end
         
         %% default dynamics

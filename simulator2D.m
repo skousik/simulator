@@ -49,15 +49,12 @@ classdef simulator2D < handle
         save_gif
         save_gif_filename
         save_gif_delay_time
-    end
-    
-    properties (Access = private)
         start_gif
     end
     
 %% methods
     methods
-    %% constructors
+    %% constructor
         function S = simulator2D(agent, world, planners, varargin)
             % Constructor function: simulator2D
             %
@@ -250,6 +247,20 @@ classdef simulator2D < handle
             % attempts to reach the goal from its provided start position.
             S.vdisp('Running simulation')
             
+            if nargin < 5
+                plot_in_loop = true ;
+                if nargin < 4
+                    planner_indices = 1:length(S.planners) ;
+                    if nargin < 3
+                        iter_max = 100 ;
+                        if nargin < 2
+                            t_max = 100 ;
+                        end
+                    end
+                end
+            end
+            
+            
             if ~exist('planner_indices','var')
                 planner_indices = 1:length(S.planners) ;
             end
@@ -302,7 +313,7 @@ classdef simulator2D < handle
             %% simulation loop
                 while icur < (iter_max+1) && tcur < t_max
                     S.vdisp('--------------------------------',3,false)
-                    S.vdisp(['ITERATION ',num2str(icur)],2,false)
+                    S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end)),')'],2,false)
                     
                 %% sense world
                     % given the current state of the agent, query the world
@@ -334,7 +345,7 @@ classdef simulator2D < handle
                     % agent if a valid input and time vector were returned
                     if size(T,2) < 2 || size(U,2) < 2 || T(end) == 0
                         S.vdisp('Stopping!',2)
-                        A.stop() ;
+                        A.stop(P.t_move) ;
                         
                         stop_check_vec(icur) = true ;
                         
@@ -345,16 +356,22 @@ classdef simulator2D < handle
                         end
                     else
                         S.stop_count = 0 ;
-                        if P.t_move > T(end)
-                            S.vdisp(['The provided time vector for the ',...
-                                'agent input is shorter than the amount of ',...
-                                'time the agent must move at each ',...
-                                'planning iteration. The agent will only ',...
-                                'be moved for the duration of the ',...
-                                'provided time vector.'],3)
-                            t_move = T(end) ;
+                        
+                        if ~isempty(P.t_move)
+                            if P.t_move > T(end)
+                                S.vdisp(['The provided time vector for the ',...
+                                    'agent input is shorter than the amount of ',...
+                                    'time the agent must move at each ',...
+                                    'planning iteration. The agent will only ',...
+                                    'be moved for the duration of the ',...
+                                    'provided time vector.'],3)
+                                t_move = T(end) ;
+                            else
+                                t_move = P.t_move ;
+                            end
                         else
-                            t_move = P.t_move ;
+                            error(['Planner ',num2str(p),...
+                                   '''s t_move property is empty!'])
                         end
                         
                         A.move(t_move,T,U,Z_plan) ;
@@ -489,6 +506,11 @@ classdef simulator2D < handle
         %% plotting
         function plotInLoop(S,planner_index)
             S.vdisp('Plotting in loop',3)
+            
+            if nargin < 2
+                planner_index = 1 ;
+                S.vdisp('Plotting planner 1 by default!',1) ;
+            end
             
             fh = figure(S.figure_number) ;
             cla ; hold on ; axis equal ;
