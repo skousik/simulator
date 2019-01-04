@@ -6,15 +6,14 @@ properties
     reference_index
     time_discretization
     prediction_horizon
-    A_i_function
-    B_i_function
+    A_jacobian
+    B_jacobian
     input_range
     linearized_xy_range
     linearized_heading_range
     n_decision_variables
     n_decision_variable_states
     n_decision_variable_inputs
-    
 end
 
 methods
@@ -22,16 +21,16 @@ methods
 
 function A=mpc_agent(varargin)
     
+    
     A.n_decision_variables = (A.prediction_horizon+1) * A.n_states + A.prediction_horizon*A.n_inputs;
     A.n_decision_variable_states = (A.prediction_horizon+1) * A.n_states;
     A.n_decision_variable_inputs = A.n_decision_variables-A.n_decision_variable_inputs;
-    
 end
     
 
 
 %% functions to get constraints for lmpc program        
-function [Aeq,beq]=get_equality_constraints(A)
+function [Aeq,beq] = get_equality_constraints(A)
 %build matrix for A_i*x_i+B_i*u_i-x_{i+1}=0
 %in the form Aeq*z=beq
 %initial_idx specifies the time index of initial condition from the reference trajectory 
@@ -50,24 +49,23 @@ input_idxs = A.n_decision_variable_states + 1:A.n_inputs:A.n_decision_variables;
 
 for i=1:A.prediction_horizon
     
+    ztemp=A.reference_trajectory(:,A.reference_index+i-1);
+    
+    utemp=A.reference_input(:,A.reference_index+i-1);
+    
     %negative identity for i+1
     Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,state_idxs(i):state_idxs(i)+A.n_states-1) = -eye(A.n_states);
     
     %A matrix for i
-    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,state_idxs(i)-A.n_states:state_idxs(i)-1) = A.A_i_function(A.reference_index+i-1);
+    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,state_idxs(i)-A.n_states:state_idxs(i)-1) = A.A_jacobian(ztemp,utemp);
     
     %B matrix for i
-    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,input_idxs(i):input_idxs(i)+A.n_inputs-1) = A.B_i_function(A.reference_index+i-1);
+    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,input_idxs(i):input_idxs(i)+A.n_inputs-1) = A.B_jacobian(ztemp,utemp);
 end
 
 end
  
-function [Aineq,bineq]=get_inequality_constraints(A)
-    %size of decision variable and size of part holding states
-    A.n_decision_variables = (A.prediction_horizon+1) * A.n_states + A.prediction_horizon * A.n_inputs;
-    A.n_decision_variable_states = (A.prediction_horizon+1) * A.n_states;
-    A.n_decision_variable_inputs = A.n_decision_variables-A.n_decision_variable_states;
-    
+function [Aineq,bineq] = get_inequality_constraints(A)   
     Aineq_xy=[];
     Aineq_h=[];
     Aineq_input=[];
@@ -106,9 +104,17 @@ function [Aineq,bineq]=get_inequality_constraints(A)
     
 end
 
+%% helper functions
 
-%% helper functions will generate matrices
-function [selector_matrix]=get_state_selector_matrix(A,state_indexs,number)
+%generate jacobians for euler constraints
+function [A_jac,B_jac] = generate_jacobians_from_symbolic_dynamics(A,symbolic_dynamics,z,u)
+    A_jac_cont = jacobian(symbolic_dynamic,z);
+    A_jac_discrete = eye(A.n_states)+A.time_discretization*A_jac_cont;
+    B_jac
+end
+
+%select all states or inputs from decision variable
+function [selector_matrix] = get_state_selector_matrix(A,state_indexs,number)
      if nargin<3
         number=A.prediction_horizon+1;
     end
@@ -121,7 +127,7 @@ function [selector_matrix]=get_state_selector_matrix(A,state_indexs,number)
     selector_matrix=[selector_matrix,zeros(number,A.n_decision_variable_inputs)];
 end
 
-function [selector_matrix]=get_input_selector_matrix(A,input_indexs,number)
+function [selector_matrix] = get_input_selector_matrix(A,input_indexs,number)
     if nargin<3
         number=A.prediction_horizon;
     end
