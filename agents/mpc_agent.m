@@ -4,18 +4,18 @@ properties
     reference_trajectory
     reference_input
     time_discretization
+    default_prediction_horizon
     prediction_horizon
     A_jacobian
     B_jacobian
     input_range
     linearized_xy_range
     linearized_heading_range
+    state_cost
     n_decision_variables
     n_decision_variable_states
     n_decision_variable_inputs
-    state_cost
     input_cost
-    cost_matrix
     agent_state_time_discretization
 end
 
@@ -26,17 +26,12 @@ function A=mpc_agent(mpc_dynamics,varargin)
     
     A@agent2D(varargin{:})
     
-    %default values for time discretization and prediction horizon
-    A.time_discretization=0.01;
-    A.prediction_horizon=10;
-    A.agent_state_time_discretization=0.01;
-    
     for idx = 1:2:length(varargin)
         switch varargin{idx}
             case 'time_discretization'
                 A.time_discretization = varargin{idx+1} ;
-            case 'prediction_horizon'
-                A.prediction_horizon = varargin{idx+1} ;
+            case 'default_prediction_horizon'
+                A.default_prediction_horizon = varargin{idx+1} ;
             case 'input_range'
                 A.input_range = varargin{idx+1} ; 
             case 'linearized_xy_range'
@@ -57,12 +52,7 @@ function A=mpc_agent(mpc_dynamics,varargin)
     if A.agent_state_time_discretization>A.time_discretization
         A.agent_state_time_discretization=A.time_discretization;
     end
-    
-    A.n_decision_variable_states = A.n_states * (A.prediction_horizon+1);
-    A.n_decision_variable_inputs = A.n_inputs * A.prediction_horizon;
-    A.n_decision_variables = A.n_decision_variable_states + A.n_decision_variable_inputs;
-    
-    A.cost_matrix = generate_cost_matrix(A);
+
     [A.A_jacobian,A.B_jacobian] = generate_jacobians_from_mpc_dynamics_function(A,mpc_dynamics);
 
 end
@@ -82,15 +72,17 @@ end
 function move(A,T_total,T_input,U_input,Z_desired)
     %if the desired time to move is longer than the reference trajectory,
     %throw an error
+    T_input=T_input-T_input(1);
+    
     ref_time=0:A.time_discretization:T_input(end);
-    if ref_time(end) < T_total+A.prediction_horizon*A.time_discretization
+    if ref_time(end) < T_total
         warning(['Provided input time vector is shorter than the ',...
             'desired motion time! modifying reference trajectory by repeating last state'])
         
-        if mod(T_total+A.prediction_horizon*A.time_discretization,A.time_discretization)~=0
-            T_input=[T_input,T_total+A.prediction_horizon*A.time_discretization+A.time_discretization-mod(T_total,A.time_discretization)];
+        if mod(T_total,A.time_discretization)~=0
+            T_input=[T_input,T_total+A.time_discretization-mod(T_total,A.time_discretization)];
         else
-            T_input=[T_input,T_total+A.prediction_horizon*A.time_discretization];
+            T_input=[T_input,T_total];
         end
         
         U_input=[U_input,U_input(:,end)];
@@ -109,36 +101,43 @@ function move(A,T_total,T_input,U_input,Z_desired)
         T_input = ref_time;
     end
 
-    %final trajectory
-
-    
-
     %
     T_out_input=unique([0:A.time_discretization:T_total,T_total]);
     
     %applied inputs
     U_out=NaN(A.n_inputs,length(T_out_input));
     
-    T_out=unique([0:A.agent_state_time_discretization:T_total,T_out_input,T_total]);
+    T_out=unique([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
     
     Z_out=NaN(A.n_states,length(T_out));
     
     Z_out(:,1)=A.state(:,end);
-    
-    %
-    f=zeros(A.n_decision_variables,1);
      
     for i=1:length(T_out_input)-1
+        
+        prediction_horizon=min([A.default_prediction_horizon,length(T_out_input)-i]);
+        
+        set_problem_size(A,prediction_horizon);
+        
+        L=(T_out>=T_out_input(i))&((T_out<=T_out_input(i+1)));
+        
+        start_idx=find(L,1);
+        
+        tvec=T_out(L);
           
-        x_initial=Z_out(:,end)-Z_desired(:,i);
+        x_initial=Z_out(:,start_idx)-Z_desired(:,i);
         
         x_initial(A.heading_state_index)=rad2heading(x_initial(A.heading_state_index));
         
         [Aeq,beq] = get_equality_constraints(A,x_initial,T_input,Z_desired,U_input,i);
         
         [Aineq,bineq] = get_inequality_constraints(A,T_input,Z_desired,U_input,i);
+        
+        H = get_cost_matrix(A);
+        
+        f=zeros(A.n_decision_variables,1);
   
-        [x,~,exitflag] = quadprog(A.cost_matrix,f,Aineq,bineq,Aeq,beq);
+        [x,~,exitflag] = quadprog(H,f,Aineq,bineq,Aeq,beq);
         
         if exitflag<0
             warning('qp infeasible, apply reference input')
@@ -150,12 +149,8 @@ function move(A,T_total,T_input,U_input,Z_desired)
         U_out(:,i)=u_mpc+U_input(:,i);
         
         %simulate dynamics
-        L=(T_out>=T_out_input(i))&((T_out<=T_out_input(i+1)));
-        
-        tvec=T_out(L);
-        
-        [~,ztemp]=ode45(@(t,z)A.dynamics(t,z,T_out_input(i),U_out(:,i)),tvec,Z_out(:,find(L,1)));
-        
+        [~,ztemp]=ode45(@(t,z)A.dynamics(t,z,T_out_input(i),U_out(:,i)),tvec,Z_out(:,start_idx));
+    
         if length(tvec)==2
             Z_out(:,L)=ztemp([1,end],:)';
         else
@@ -163,10 +158,19 @@ function move(A,T_total,T_input,U_input,Z_desired)
         end
         
     end
-     
+    
     A.state = [A.state(:,1:end-1),Z_out];
     
     A.time = [A.time,A.time(end)+T_out(2:end)];
+    
+    %remove time points that are almost duplicates due to rounding errors
+    tol=min([1e-9,A.agent_state_time_discretization]);
+    
+    L=diff(A.time)<tol;
+    
+    A.time(L)=[];
+    
+    A.state(:,L)=[];
     
     A.input = [A.input(:,1:end-1),U_out];
     
@@ -185,6 +189,7 @@ function [Aeq,beq] = get_equality_constraints(A,x_initial,T,Z,U,reference_index)
 %in the form Aeq*z=beq
 %initial_idx specifies the time index of initial condition from the reference trajectory 
 %A and B are function handles above
+
 
 Aeq = zeros(A.n_decision_variable_states,A.n_decision_variables);
 Aeq(1:A.n_states,1:A.n_states) = eye(A.n_states); %initial condition 
@@ -261,8 +266,16 @@ function [Aineq,bineq] = get_inequality_constraints(A,~,~,U,reference_index)
 end
 
 %% helper functions
+%set sizes for other functions
+function set_problem_size(A,prediction_horizon)
+    A.n_decision_variable_states=(prediction_horizon+1)*A.n_states;
+    A.n_decision_variable_inputs=prediction_horizon*A.n_inputs;
+    A.n_decision_variables=A.n_decision_variable_states+A.n_decision_variable_inputs;
+    A.prediction_horizon=prediction_horizon;
+end
+
 %construct cost matrix
-function H =  generate_cost_matrix(A)
+function H = get_cost_matrix(A)
     if isempty(A.state_cost)
         Q = eye(A.n_states);
     else
