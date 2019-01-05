@@ -1,37 +1,40 @@
 classdef mpc_agent < agent2D
     
 properties
-    reference_trajectory
-    reference_input
-    time_discretization
-    default_prediction_horizon
-    prediction_horizon
-    A_jacobian
-    B_jacobian
-    input_range
-    linearized_xy_range
-    linearized_heading_range
-    state_cost
-    n_decision_variables
-    n_decision_variable_states
-    n_decision_variable_inputs
-    input_cost
-    agent_state_time_discretization
+    reference_trajectory %store all reference trajecotries at A.input_time
+    reference_input %store all reference inputs at A.input_time
+    time_discretization %time discretization for mpc problem
+    default_prediction_horizon % desired # of control inputs for mpc horizon
+    A_jacobian %function returning the jacobian of mpc dynamic model wrt to state
+    B_jacobian %function returning the jacobian of mpc dynamic model wrt to input
+    input_range %n_inputs x 2 double for [min,max] of inputs allowed
+    linearized_xy_range %2 x 2 double for [min,max] of xy error from reference
+    linearized_heading_range %1 x 2 double for [min,max] of heading error from reference
+    state_cost %n_states x n_states double containing cost weights for states
+    input_cost %n_inputs x n_inputs double containing cost weights for inputs
+    agent_state_time_discretization %time discretization for A.time
+    prediction_horizon % # of control inputs for current mpc problem 
+    %(is default until we reach end of reference trajectory)
+    n_decision_variables % # of decision variables for current mpc problem
+    n_decision_variable_states % # of decision variables that are states
+    n_decision_variable_inputs % # of decision variables that are inputs
 end
 
 methods
 %% constructoer
 
-function A=mpc_agent(mpc_dynamics,varargin)
+function A=mpc_agent(mpc_dynamics,time_discretization,...
+                     default_prediction_horizon,varargin)
+    
+    %input: mpc_dynamics is a function handle @(time,state,input). this
+    %class will use the matlab symbolic toolbox to try to compute the
+    %jacobians from the function. If there is an error a warning pops up.
+    %the 
     
     A@agent2D(varargin{:})
     
     for idx = 1:2:length(varargin)
         switch varargin{idx}
-            case 'time_discretization'
-                A.time_discretization = varargin{idx+1} ;
-            case 'default_prediction_horizon'
-                A.default_prediction_horizon = varargin{idx+1} ;
             case 'input_range'
                 A.input_range = varargin{idx+1} ; 
             case 'linearized_xy_range'
@@ -47,14 +50,26 @@ function A=mpc_agent(mpc_dynamics,varargin)
         end
     end
     
+    A.time_discretization=time_discretization;
+    
+    A.default_prediction_horizon=default_prediction_horizon;
+    
+    if isempty(A.agent_state_time_discretization)
+       A.agent_state_time_discretization=A.time_discretization;
+       warning('setting agent state time discretization to mpc time discretization, this might affect the collision checks if too large')
+    end
+        
     
     %setup
     if A.agent_state_time_discretization>A.time_discretization
         A.agent_state_time_discretization=A.time_discretization;
     end
-
-    [A.A_jacobian,A.B_jacobian] = generate_jacobians_from_mpc_dynamics_function(A,mpc_dynamics);
-
+    
+    try
+        [A.A_jacobian,A.B_jacobian] = generate_jacobians_from_mpc_dynamics_function(A,mpc_dynamics);
+    catch
+        warning('error when symbolically computing jacobians. youre gonna have to do this manually')
+    end
 end
 
 %% function to reset states and reference trajectory
@@ -101,10 +116,9 @@ function move(A,T_total,T_input,U_input,Z_desired)
         T_input = ref_time;
     end
 
-    %
+    %pre allocate vectors
     T_out_input=unique([0:A.time_discretization:T_total,T_total]);
     
-    %applied inputs
     U_out=NaN(A.n_inputs,length(T_out_input));
     
     T_out=unique([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
@@ -112,12 +126,14 @@ function move(A,T_total,T_input,U_input,Z_desired)
     Z_out=NaN(A.n_states,length(T_out));
     
     Z_out(:,1)=A.state(:,end);
+    
+    %mpc loop
      
     for i=1:length(T_out_input)-1
         
-        prediction_horizon=min([A.default_prediction_horizon,length(T_out_input)-i]);
+        pred_horizon=min([A.default_prediction_horizon,length(T_out_input)-i]);
         
-        set_problem_size(A,prediction_horizon);
+        set_problem_size(A,pred_horizon);
         
         L=(T_out>=T_out_input(i))&((T_out<=T_out_input(i+1)));
         
@@ -159,6 +175,21 @@ function move(A,T_total,T_input,U_input,Z_desired)
         
     end
     
+    %interpolate reference trajectories to input timestep
+    
+    U_reference = interp1(T_input',U_input',T_out_input','previous')';
+    
+    Z_reference = interp1(T_input',Z_desired',T_out_input','pchip')';
+    
+    %store motion in agent structure
+    
+    store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference);
+    
+end
+
+%% store trajectories in agent function
+function store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference)
+    
     A.state = [A.state(:,1:end-1),Z_out];
     
     A.time = [A.time,A.time(end)+T_out(2:end)];
@@ -176,11 +207,33 @@ function move(A,T_total,T_input,U_input,Z_desired)
     
     A.input_time = [A.input_time , A.input_time(end)+T_out_input(2:end)];
     
-    A.reference_input = [A.reference_input(:,1:end-1) , interp1(T_input',U_input',T_out_input','previous')'];
+    A.reference_input = [A.reference_input(:,1:end-1) ,U_reference];
     
-    A.reference_trajectory = [A.reference_trajectory(:,1:end-1) , interp1(T_input',Z_desired',T_out_input','pchip')'];
+    A.reference_trajectory = [A.reference_trajectory(:,1:end-1) , Z_reference];
     
-   
+end
+
+%% function called when we stop (apply 0 input, no mpc)
+function stop(A,t)
+    
+    %default is to apply 0 input to the dynamics for time t
+    
+    [ttemp,ztemp]=ode45(@(t,z)A.dynamics(t,z,0,[0;0]),[0,t],A.state(:,end));
+    
+    T_out = unique([0:A.agent_state_time_discretization:t,t]);
+    
+    T_out_input = unique([0:A.time_discretization:t,t]);
+    
+    Z_out = interp1(ttemp',ztemp',T_out','pchip','extrap');
+    
+    U_out = zeros(A.n_inputs,length(T_out_input));
+    
+    U_reference = NaN(size(U_out));
+    
+    Z_reference = NaN(A.n_states,length(T_out_input));
+    
+    store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference);
+    
 end
 
 %% functions to get constraints for lmpc program        
@@ -322,7 +375,7 @@ function [selector_matrix] = get_state_selector_matrix(A,state_indexs,number)
     tmp=zeros(length(state_indexs),A.n_states);
     tmp(state_indexs)=1;
     
-    for i=1:length(input_indexs)
+    for i=1:length(state_indexs)
         tmp(state_indexs(i),state_indexs(i))=1;
     end
     
