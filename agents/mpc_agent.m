@@ -224,7 +224,7 @@ function stop(A,t)
     
     T_out_input = unique([0:A.time_discretization:t,t]);
     
-    Z_out = interp1(ttemp',ztemp',T_out','pchip','extrap');
+    Z_out = interp1(ttemp,ztemp,T_out','pchip','extrap')';
     
     U_out = zeros(A.n_inputs,length(T_out_input));
     
