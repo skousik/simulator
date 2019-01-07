@@ -74,12 +74,21 @@ end
 
 %% function to reset states and reference trajectory
 function reset(A,state)
-    A.time=0;
-    A.state=state;
-    A.input_time=0;
-    A.input=[NaN;NaN];
-    A.reference_trajectory=[];
-    A.reference_input=[];
+    % pad state with zeros
+    if length(state) < A.n_states
+        A.vdisp('Input to A.reset is too small! Padding with zeros.')
+        state = [state ; zeros(A.n_states-size(state,1),1)] ;
+    elseif length(state) > A.n_states
+        error('Input is too large!')
+    end
+    
+    % reset
+    A.time = 0;
+    A.state = state;
+    A.input_time = 0;
+    A.input = [NaN;NaN];
+    A.reference_trajectory = [];
+    A.reference_input = [];
 end
 
 
