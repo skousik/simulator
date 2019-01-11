@@ -4,7 +4,7 @@ properties
     reference_trajectory %store all reference trajecotries at A.input_time
     reference_input %store all reference inputs at A.input_time
     time_discretization %time discretization for mpc problem
-    default_prediction_horizon % desired # of control inputs for mpc horizon
+    mpc_prediction_horizon % desired # of control inputs for mpc horizon
     A_jacobian %function returning the jacobian of mpc dynamic model wrt to state
     B_jacobian %function returning the jacobian of mpc dynamic model wrt to input
     input_range %n_inputs x 2 double for [min,max] of inputs allowed
@@ -13,7 +13,7 @@ properties
     state_cost %n_states x n_states double containing cost weights for states
     input_cost %n_inputs x n_inputs double containing cost weights for inputs
     agent_state_time_discretization %time discretization for A.time
-    prediction_horizon % # of control inputs for current mpc problem 
+    current_prediction_horizon % # of control inputs for current mpc problem 
     %(is default until we reach end of reference trajectory)
     n_decision_variables % # of decision variables for current mpc problem
     n_decision_variable_states % # of decision variables that are states
@@ -24,7 +24,7 @@ methods
 %% constructoer
 
 function A=mpc_agent(mpc_dynamics,time_discretization,...
-                     default_prediction_horizon,varargin)
+                     mpc_prediction_horizon,varargin)
     
     %input: mpc_dynamics is a function handle @(time,state,input). this
     %class will use the matlab symbolic toolbox to try to compute the
@@ -52,7 +52,7 @@ function A=mpc_agent(mpc_dynamics,time_discretization,...
     
     A.time_discretization=time_discretization;
     
-    A.default_prediction_horizon=default_prediction_horizon;
+    A.mpc_prediction_horizon=mpc_prediction_horizon;
     
     if isempty(A.agent_state_time_discretization)
        A.agent_state_time_discretization=A.time_discretization;
@@ -140,7 +140,7 @@ function move(A,T_total,T_input,U_input,Z_desired)
      
     for i=1:length(T_out_input)-1
         
-        pred_horizon=min([A.default_prediction_horizon,length(T_out_input)-i]);
+        pred_horizon=min([A.mpc_prediction_horizon,length(T_out_input)-i]);
         
         set_problem_size(A,pred_horizon);
         
@@ -261,7 +261,7 @@ beq(1:A.n_states) = x_initial;
 state_idxs = A.n_states + 1:A.n_states:A.n_decision_variable_states;
 input_idxs = A.n_decision_variable_states + 1:A.n_inputs:A.n_decision_variables;
 
-for i=1:A.prediction_horizon
+for i=1:A.current_prediction_horizon
     
     ztemp = Z(:,reference_index+i-1);
     
@@ -294,7 +294,7 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
     
     %get bounds for linearized xy state
     if ~isempty(A.linearized_xy_range)
-        
+    
         if (x_initial(A.xy_state_indices(1)) <= A.linearized_xy_range(1,2)) && (x_initial(A.xy_state_indices(1)) >= A.linearized_xy_range(1,1)) &&...
                 (x_initial(A.xy_state_indices(2)) <= A.linearized_xy_range(2,2)) && (x_initial(A.xy_state_indices(2)) >= A.linearized_xy_range(2,1))
             
@@ -302,6 +302,7 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
             bineq_xy = [repmat(A.linearized_xy_range(:,2),[A.prediction_horizon+1,1]);...
                         -repmat(A.linearized_xy_range(:,1),[A.prediction_horizon+1,1])];
         end
+
     end
     
     %get bounds for linearized heading state
@@ -315,6 +316,7 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
         
         end
         
+
     end
     
     %get bounds for input (range is given for the system model (not
@@ -324,11 +326,11 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
         Aineq_input = [zeros(A.n_decision_variable_inputs,A.n_decision_variable_states),eye(A.n_decision_variable_inputs);...
             zeros(A.n_decision_variable_inputs,A.n_decision_variable_states),-eye(A.n_decision_variable_inputs)];
         
-        bineq_input_ub = repmat(A.input_range(:,2),[1,A.prediction_horizon])-U(:,reference_index:reference_index+A.prediction_horizon-1);
-        bineq_input_lb = repmat(A.input_range(:,1),[1,A.prediction_horizon])-U(:,reference_index:reference_index+A.prediction_horizon-1);
+        bineq_input_ub = repmat(A.input_range(:,2),[1,A.current_prediction_horizon])-U(:,reference_index:reference_index+A.current_prediction_horizon-1);
+        bineq_input_lb = repmat(A.input_range(:,1),[1,A.current_prediction_horizon])-U(:,reference_index:reference_index+A.current_prediction_horizon-1);
         
-        bineq_input_ub=reshape(bineq_input_ub,[A.n_inputs*A.prediction_horizon,1]);
-        bineq_input_lb=reshape(bineq_input_lb,[A.n_inputs*A.prediction_horizon,1]);
+        bineq_input_ub=reshape(bineq_input_ub,[A.n_inputs*A.current_prediction_horizon,1]);
+        bineq_input_lb=reshape(bineq_input_lb,[A.n_inputs*A.current_prediction_horizon,1]);
         
         bineq_input=[bineq_input_ub;-bineq_input_lb];
     end
@@ -346,7 +348,7 @@ function set_problem_size(A,prediction_horizon)
     A.n_decision_variable_states=(prediction_horizon+1)*A.n_states;
     A.n_decision_variable_inputs=prediction_horizon*A.n_inputs;
     A.n_decision_variables=A.n_decision_variable_states+A.n_decision_variable_inputs;
-    A.prediction_horizon=prediction_horizon;
+    A.current_prediction_horizon=prediction_horizon;
 end
 
 %construct cost matrix
@@ -363,8 +365,8 @@ function H = get_cost_matrix(A)
         R = A.input_cost;
     end
     
-    tmp_state=repmat({Q},A.prediction_horizon+1,1);
-    tmp_input=repmat({R},A.prediction_horizon,1);
+    tmp_state=repmat({Q},A.current_prediction_horizon+1,1);
+    tmp_input=repmat({R},A.current_prediction_horizon,1);
     tmp=[tmp_state;tmp_input];
        
     H=blkdiag(tmp{:});
@@ -391,7 +393,7 @@ end
 function [selector_matrix] = get_state_selector_matrix(A,state_indexs,number)
     
     if nargin<3
-        number=A.prediction_horizon+1;
+        number=A.current_prediction_horizon+1;
     end
     
     tmp=zeros(length(state_indexs),A.n_states);
@@ -410,7 +412,7 @@ end
 
 function [selector_matrix] = get_input_selector_matrix(A,input_indexs,number)
     if nargin<3
-        number=A.prediction_horizon;
+        number=A.current_prediction_horizon;
     end
     tmp=zeros(length(input_indexs),A.n_inputs);
     for i=1:length(input_indexs)
