@@ -29,7 +29,7 @@ function A=mpc_agent(mpc_dynamics,time_discretization,...
     %input: mpc_dynamics is a function handle @(time,state,input). this
     %class will use the matlab symbolic toolbox to try to compute the
     %jacobians from the function. If there is an error a warning pops up.
-    %the 
+    %and you have to set the jacobians manually
     
     A@agent2D(varargin{:})
     
@@ -66,7 +66,7 @@ function A=mpc_agent(mpc_dynamics,time_discretization,...
     end
     
     try
-        [A.A_jacobian,A.B_jacobian] = generate_jacobians_from_mpc_dynamics_function(A,mpc_dynamics);
+        set_jacobians_from_mpc_dynamics_function(A,mpc_dynamics);
     catch
         warning('error when symbolically computing jacobians. youre gonna have to do this manually')
     end
@@ -373,7 +373,7 @@ function H = get_cost_matrix(A)
 end
 
 %generate jacobians for euler constraints
-function [A_jac,B_jac] = generate_jacobians_from_mpc_dynamics_function(A,mpc_dynamics)
+function set_jacobians_from_mpc_dynamics_function(A,mpc_dynamics)
     syms t real;
     z=sym('z',[A.n_states,1],'real');
     u=sym('u',[A.n_inputs,1],'real');
@@ -382,11 +382,11 @@ function [A_jac,B_jac] = generate_jacobians_from_mpc_dynamics_function(A,mpc_dyn
     
     A_jac_cont = jacobian(symbolic_dynamics,z');
     A_jac_discrete = eye(A.n_states)+A.time_discretization*A_jac_cont;
-    A_jac = matlabFunction(A_jac_discrete,'Vars',{t,z,u});
+    A.A_jacobian = matlabFunction(A_jac_discrete,'Vars',{t,z,u});
     
     B_jac_cont = jacobian(symbolic_dynamics,u');
     B_jac_discrete = A.time_discretization*B_jac_cont;
-    B_jac = matlabFunction(B_jac_discrete,'Vars',{t,z,u});
+    A.B_jacobian = matlabFunction(B_jac_discrete,'Vars',{t,z,u});
 end
 
 %select all states or inputs from decision variable
