@@ -112,8 +112,7 @@ classdef simulator2D < handle
                         case 'save_gif_delay_time'
                             save_gif_delay_time = varargin{idx+1} ;
                         otherwise
-                            error(['Keyword argument number ',...
-                                   num2str((idx+1)/2),' is invalid!'])
+                            error(['Keyword ''',varargin{idx},''' is invalid!'])
                     end
                 end
             end
@@ -261,7 +260,7 @@ classdef simulator2D < handle
             end
             
             
-            if ~exist('planner_indices','var')
+            if ~exist('planner_indices','var') || isempty(planner_indices)
                 planner_indices = 1:length(S.planners) ;
             end
             
@@ -294,20 +293,27 @@ classdef simulator2D < handle
             for p = planner_indices
                 S.vdisp(['Planner ',num2str(p)])
                 
+                % get the planner, agent, and world ready
                 P = S.planners{p} ;
                 A.reset(W.start) ;
                 W.reset(P) ;
                 
+                % initial plot
+                if plot_in_loop
+                    S.plotInLoop(p)
+                end
+                
+                % preallocate for storing planning time spent
                 planning_time_vec = nan(1,iter_max) ;
                 
                 % reset the stop counter
                 S.stop_count = 0 ;
                 stop_check_vec = false(1,iter_max) ;
 
-                runtime = tic ;
-                
+                % start timing
                 icur = 1 ;
-                tstart = tic ;
+                runtime = tic ;
+                tstart = runtime ;
                 tcur = toc(tstart);
                 
             %% simulation loop
@@ -503,114 +509,113 @@ classdef simulator2D < handle
                              'planner_info',planner_info) ;
         end
         
-        %% plotting
-        function plotInLoop(S,planner_index)
-            S.vdisp('Plotting in loop',3)
-            
-            if nargin < 2
-                planner_index = 1 ;
-                S.vdisp('Plotting planner 1 by default!',1) ;
-            end
-            
-            fh = figure(S.figure_number) ;
-            cla ; hold on ; axis equal ;
-            
-            if ~any(isinf(S.world.bounds))
-                axis(S.world.bounds)
-            end
-            
-            color = S.planner_colors(planner_index,:) ;
-            
-            for plot_idx = S.plot_order
-                switch plot_idx
-                    case 'W'
-                        S.world.plotInLoop(S.figure_number)
-                    case 'A'
-                        S.agent.plotInLoop(S.figure_number,color)  
-                    case 'P'
-                        S.planners{planner_index}.plotInLoop(S.figure_number,color)
-                    otherwise
-                        error(['Simulator plot order is broken! Make sure ',...
-                              'it is a string containing the characters ',...
-                              'W (for world), A (for agent), and P (for ',...
-                              'planner), in the order you want them to ',...
-                              'plot (WAP is the default)'])
-                end
-            end
-            
-            if S.save_gif
-                if S.start_gif
-                    % if gif saving is enabled, check that there isn't already a
-                    % file in the current directory with that name
-                    dir_content = dir(pwd) ;
-                    file_name   = {dir_content.name} ;
-                    check_name = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
-                    file_check  = any(cellfun(@(x) strcmp(check_name,x),file_name)) ;
-                    if file_check
-                        warning(['The current GIF filename already exists! ',...
-                            'change the filename if you do not want to ',...
-                            'overwrite your existing file!'])
-                    end
-                    
-                    S.vdisp(['Please resize the figure to the size you ',...
-                             'want saved, or hit any key to continue.'])
-                    pause
-                end
-                
-                frame = getframe(fh) ;
-                im = frame2im(frame);
-                [imind,cm] = rgb2ind(im,256);
-                
-                filename = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
+    %% plotting
+    function plotInLoop(S,planner_index)
+        S.vdisp('Plotting in loop',3)
 
-                if S.start_gif
-                    imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',S.save_gif_delay_time) ; 
-                    S.start_gif = false ;
-                else 
-                    imwrite(imind,cm,filename,'gif','WriteMode','append') ; 
-                end
-            end
+        if nargin < 2
+            planner_index = 1 ;
+            S.vdisp('Plotting planner 1 by default!',1) ;
         end
-        
-        function plotResults(S,summary)
-            S.vdisp('Plotting simulation results',2)
-            
-            figure(S.figure_number+1) ;
-            cla ; hold on ; axis equal ;
-            
-            S.world.plotResults(S.figure_number+1) ;
-            
-            for summary_index = 1:length(summary)
-                planner_index = summary(1).planner_indices(summary_index) ;
-                color = S.planner_colors(planner_index,:) ;
-                S.agent.plotResults(S.figure_number+1,color,summary,planner_index) ;
-                S.planners{planner_index}.plotResults(S.figure_number+1,color,summary) ;
-            end
-            
+
+        fh = figure(S.figure_number) ;
+        cla ; hold on ; axis equal ;
+
+        if ~any(isinf(S.world.bounds))
             axis(S.world.bounds)
         end
-        
-        %% verbose text output
-        function vdisp(S,s,l,use_header)
-        % Display a string 's' if the verbosity is greater than or equal to
-        % the level 'l'; by default, the level is set to 0 and the default
-        % threshold for displaying a message is 1 (so messages do not
-        % display by default)
-            if nargin < 4
-                use_header = true ;
-                if nargin < 3
-                    l = 1 ; 
-                end
-            end
-            
-            if S.verbose >= l
-                if use_header
-                    disp(['S: ',s])
-                else
-                    disp(s)
-                end
+
+        color = S.planner_colors(planner_index,:) ;
+
+        for plot_idx = S.plot_order
+            switch plot_idx
+                case 'W'
+                    S.world.plotInLoop(S.figure_number)
+                case 'A'
+                    S.agent.plotInLoop(S.figure_number,color)  
+                case 'P'
+                    S.planners{planner_index}.plotInLoop(S.figure_number,color)
+                otherwise
+                    error(['Simulator plot order is broken! Make sure ',...
+                          'it is a string containing the characters ',...
+                          'W (for world), A (for agent), and P (for ',...
+                          'planner), in the order you want them to ',...
+                          'plot (WAP is the default)'])
             end
         end
+
+        if S.save_gif
+            if S.start_gif
+                % if gif saving is enabled, check that there isn't already a
+                % file in the current directory with that name
+                dir_content = dir(pwd) ;
+                file_name   = {dir_content.name} ;
+                check_name = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
+                file_check  = any(cellfun(@(x) strcmp(check_name,x),file_name)) ;
+                if file_check
+                    warning(['The current GIF filename already exists! ',...
+                        'change the filename if you do not want to ',...
+                        'overwrite your existing file!'])
+                end
+
+                S.vdisp(['Please resize the figure to the size you ',...
+                         'want saved, or hit any key to continue.'])
+                pause
+            end
+
+            frame = getframe(fh) ;
+            im = frame2im(frame);
+            [imind,cm] = rgb2ind(im,256);
+
+            filename = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
+
+            if S.start_gif
+                imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',S.save_gif_delay_time) ; 
+                S.start_gif = false ;
+            else 
+                imwrite(imind,cm,filename,'gif','WriteMode','append') ; 
+            end
+        end
+    end
+
+    function plotResults(S,summary)
+        S.vdisp('Plotting simulation results',2)
+
+        figure(S.figure_number+1) ;
+        cla ; hold on ; axis equal ;
+
+        S.world.plotResults(S.figure_number+1) ;
+
+        for summary_index = 1:length(summary)
+            planner_index = summary(1).planner_indices(summary_index) ;
+            color = S.planner_colors(planner_index,:) ;
+            S.agent.plotResults(S.figure_number+1,color,summary,planner_index) ;
+            S.planners{planner_index}.plotResults(S.figure_number+1,color,summary) ;
+        end
+
+        axis(S.world.bounds)
+    end
         
+    %% verbose text output
+    function vdisp(S,s,l,use_header)
+    % Display a string 's' if the verbosity is greater than or equal to
+    % the level 'l'; by default, the level is set to 0 and the default
+    % threshold for displaying a message is 1 (so messages do not
+    % display by default)
+        if nargin < 4
+            use_header = true ;
+            if nargin < 3
+                l = 1 ; 
+            end
+        end
+
+        if S.verbose >= l
+            if use_header
+                disp(['S: ',s])
+            else
+                disp(s)
+            end
+        end
+    end        
     end
 end

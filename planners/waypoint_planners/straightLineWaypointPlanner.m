@@ -25,6 +25,10 @@ methods
         u = (g - p)./d ;
         
         % interpolate along line by lookahead distance to create waypoint
+        if lookahead_distance > d
+            lookahead_distance = d ;
+        end
+        
         waypoint = p + lookahead_distance.*u ;
         
         % create heading

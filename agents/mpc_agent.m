@@ -74,12 +74,21 @@ end
 
 %% function to reset states and reference trajectory
 function reset(A,state)
-    A.time=0;
-    A.state=state;
-    A.input_time=0;
-    A.input=[NaN;NaN];
-    A.reference_trajectory=[];
-    A.reference_input=[];
+    % pad state with zeros
+    if length(state) < A.n_states
+        A.vdisp('Input to A.reset is too small! Padding with zeros.')
+        state = [state ; zeros(A.n_states-size(state,1),1)] ;
+    elseif length(state) > A.n_states
+        error('Input is too large!')
+    end
+    
+    % reset
+    A.time = 0;
+    A.state = state;
+    A.input_time = 0;
+    A.input = [NaN;NaN];
+    A.reference_trajectory = [];
+    A.reference_input = [];
 end
 
 
@@ -147,7 +156,7 @@ function move(A,T_total,T_input,U_input,Z_desired)
         
         [Aeq,beq] = get_equality_constraints(A,x_initial,T_input,Z_desired,U_input,i);
         
-        [Aineq,bineq] = get_inequality_constraints(A,T_input,Z_desired,U_input,i);
+        [Aineq,bineq] = get_inequality_constraints(A,x_initial,T_input,Z_desired,U_input,i);
         
         H = get_cost_matrix(A);
         
@@ -272,7 +281,7 @@ end
 
 end
  
-function [Aineq,bineq] = get_inequality_constraints(A,~,~,U,reference_index)   
+function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_index)   
     Aineq_xy=[];
     Aineq_h=[];
     Aineq_input=[];
@@ -281,18 +290,33 @@ function [Aineq,bineq] = get_inequality_constraints(A,~,~,U,reference_index)
     bineq_h=[];
     bineq_input=[];
     
+    
+    
     %get bounds for linearized xy state
     if ~isempty(A.linearized_xy_range)
-        Aineq_xy = [get_state_selector_matrix(A,A.xy_state_indices);-get_state_selector_matrix(A,A.xy_state_indices)];
-        bineq_xy = [repmat(A.linearized_xy_range(:,2),[A.current_prediction_horizon+1,1]);...
-            -repmat(A.linearized_xy_range(:,1),[A.current_prediction_horizon+1,1])];
+    
+        if (x_initial(A.xy_state_indices(1)) <= A.linearized_xy_range(1,2)) && (x_initial(A.xy_state_indices(1)) >= A.linearized_xy_range(1,1)) &&...
+                (x_initial(A.xy_state_indices(2)) <= A.linearized_xy_range(2,2)) && (x_initial(A.xy_state_indices(2)) >= A.linearized_xy_range(2,1))
+            
+            Aineq_xy = [get_state_selector_matrix(A,A.xy_state_indices);-get_state_selector_matrix(A,A.xy_state_indices)];
+            bineq_xy = [repmat(A.linearized_xy_range(:,2),[A.prediction_horizon+1,1]);...
+                        -repmat(A.linearized_xy_range(:,1),[A.prediction_horizon+1,1])];
+        end
+
     end
     
     %get bounds for linearized heading state
     if ~isempty(A.linearized_heading_range)
-        Aineq_h = [get_state_selector_matrix(A,A.heading_state_index);-get_state_selector_matrix(A,A.heading_state_index)];
-        bineq_h = [repmat(A.linearized_heading_range(2),[A.current_prediction_horizon+1,1]);...
-            -repmat(A.linearized_heading_range(:,1),[A.current_prediction_horizon+1,1])];
+        
+        if (x_initial(A.heading_state_index) <= A.linearized_heading_range(2)) && (x_initial(A.heading_state_index) >= A.linearized_heading_range(1))
+            
+            Aineq_h = [get_state_selector_matrix(A,A.heading_state_index);-get_state_selector_matrix(A,A.heading_state_index)];
+            bineq_h = [repmat(A.linearized_heading_range(2),[A.prediction_horizon+1,1]);...
+                        -repmat(A.linearized_heading_range(:,1),[A.prediction_horizon+1,1])];
+        
+        end
+        
+
     end
     
     %get bounds for input (range is given for the system model (not
