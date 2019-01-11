@@ -299,8 +299,8 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
                 (x_initial(A.xy_state_indices(2)) <= A.linearized_xy_range(2,2)) && (x_initial(A.xy_state_indices(2)) >= A.linearized_xy_range(2,1))
             
             Aineq_xy = [get_state_selector_matrix(A,A.xy_state_indices);-get_state_selector_matrix(A,A.xy_state_indices)];
-            bineq_xy = [repmat(A.linearized_xy_range(:,2),[A.prediction_horizon+1,1]);...
-                        -repmat(A.linearized_xy_range(:,1),[A.prediction_horizon+1,1])];
+            bineq_xy = [repmat(A.linearized_xy_range(:,2),[A.current_prediction_horizon+1,1]);...
+                        -repmat(A.linearized_xy_range(:,1),[A.current_prediction_horizon+1,1])];
         end
 
     end
@@ -311,8 +311,8 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
         if (x_initial(A.heading_state_index) <= A.linearized_heading_range(2)) && (x_initial(A.heading_state_index) >= A.linearized_heading_range(1))
             
             Aineq_h = [get_state_selector_matrix(A,A.heading_state_index);-get_state_selector_matrix(A,A.heading_state_index)];
-            bineq_h = [repmat(A.linearized_heading_range(2),[A.prediction_horizon+1,1]);...
-                        -repmat(A.linearized_heading_range(:,1),[A.prediction_horizon+1,1])];
+            bineq_h = [repmat(A.linearized_heading_range(2),[A.current_prediction_horizon+1,1]);...
+                        -repmat(A.linearized_heading_range(:,1),[A.current_prediction_horizon+1,1])];
         
         end
         
