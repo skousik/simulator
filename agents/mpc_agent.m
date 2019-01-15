@@ -119,7 +119,7 @@ function move(A,T_total,T_input,U_input,Z_desired)
         
         warning(['reference trajectory not given at correct timestep'])
 
-        ref_time = 0:A.time_discretization:T_input(end);
+        ref_time = unique([0:A.time_discretization:T_input(end),T_input(end)]);
         U_input = interp1(T_input',U_input',ref_time','previous','extrap')';
         Z_desired = interp1(T_input',Z_desired',ref_time','pchip','extrap')';
         T_input = ref_time;
