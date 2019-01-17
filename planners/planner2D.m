@@ -54,7 +54,7 @@ methods
     % ADD COMMENTS
     
         P.vdisp('Running default update method!',1)
-        P.setup(P,A,W)
+        P.setup(A,W)
     end
 
 %% replan
