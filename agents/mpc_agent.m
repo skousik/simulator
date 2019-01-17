@@ -94,9 +94,18 @@ end
 
 %% function to move and do mpc loop
 function move(A,T_total,T_input,U_input,Z_desired)
-    %if the desired time to move is longer than the reference trajectory,
+    %if the desired time to move is longer than the reference trajf ectory,
     %throw an error
-    T_input=T_input-T_input(1);
+   
+    
+    if T_input(end) < T_total
+        warning(['Provided input time vector is shorter than the ',...
+            'desired motion time! The agent will only be ',...
+            'moved until the largest available time in the ',...
+            'input time vector.'])
+        T_total = T_input(end) ;
+    end
+
 
     if ~isempty(Z_desired)
         [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_loop(A,T_total,T_input,U_input,Z_desired);
@@ -117,14 +126,6 @@ function store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference)
 
     A.time = [A.time,A.time(end)+T_out(2:end)];
 
-    %remove time points that are almost duplicates due to rounding errors
-    tol=min([1e-9,A.agent_state_time_discretization]);
-
-    L=diff(A.time)<tol;
-
-    A.time(L)=[];
-
-    A.state(:,L)=[];
 
     A.input = [A.input(:,1:end-1),U_out];
 
@@ -133,7 +134,8 @@ function store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference)
     A.reference_input = [A.reference_input(:,1:end-1) ,U_reference];
 
     A.reference_trajectory = [A.reference_trajectory(:,1:end-1) , Z_reference];
-
+    
+ 
 end
 
 %% function called when we stop (apply 0 input, no mpc)
@@ -143,9 +145,9 @@ function stop(A,t)
 
     [ttemp,ztemp]=ode45(@(t,z)A.dynamics(t,z,0,[0;0]),[0,t],A.state(:,end));
 
-    T_out = unique([0:A.agent_state_time_discretization:t,t]);
+    T_out = uniquetol([0:A.agent_state_time_discretization:t,t]);
 
-    T_out_input = unique([0:A.time_discretization:t,t]);
+    T_out_input = uniquetol([0:A.time_discretization:t,t]);
 
     Z_out = interp1(ttemp,ztemp,T_out','pchip','extrap')';
 
@@ -156,7 +158,7 @@ function stop(A,t)
     Z_reference = NaN(A.n_states,length(T_out_input));
 
     store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference);
-
+   
 end
 
 %% functions to get constraints for lmpc program
@@ -345,58 +347,46 @@ end
 
 %% helper functions
 function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_loop(A,T_total,T_input,U_input,Z_desired)
-    ref_time=unique([0:A.time_discretization:T_input(end),T_input(end)]);
-    if ref_time(end) < T_total
-        warning(['Provided input time vector is shorter than the ',...
-            'desired motion time! modifying reference trajectory by repeating last state'])
 
-        if mod(T_total,A.time_discretization)~=0
-            T_input=[T_input,T_total+A.time_discretization-mod(T_total,A.time_discretization)];
-        else
-            T_input=[T_input,T_total];
-        end
-
-        U_input=[U_input,U_input(:,end)];
-        Z_desired=[Z_desired,Z_desired(:,end)];
-    end
-
+    ref_time=uniquetol([T_input(1),T_input(1):A.time_discretization:T_input(end),T_input(end)]);
+    
     %if the reference trajectory is not given at the proper time
     %discretization interporlate
 
     if any(diff(T_input)~=A.time_discretization)
+        warning('reference trajectory not given at correct timestep')
 
-        warning(['reference trajectory not given at correct timestep'])
-
-        ref_time = unique([0:A.time_discretization:T_input(end),T_input(end)]);
+        ref_time = uniquetol([T_input(1):A.time_discretization:T_input(end),T_input(end)]);
         U_input = interp1(T_input',U_input',ref_time','pchip','extrap')';
         Z_desired = interp1(T_input',Z_desired',ref_time','pchip','extrap')';
         T_input = ref_time;
+
     end
 
     %pre allocate vectors
-    T_out_input=unique([0:A.time_discretization:T_total,T_total]);
+    T_out_input=uniquetol([0:A.time_discretization:T_total,T_total]);
         
     U_out=NaN(A.n_inputs,length(T_out_input));
 
-    T_out=unique([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
+    T_out=uniquetol([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
 
     Z_out=NaN(A.n_states,length(T_out));
 
     Z_out(:,1)=A.state(:,end);
 
     %mpc loop
-
+    time_diff_matrix = T_out_input-T_out';
+    
     for i=1:length(T_out_input)-1
 
         pred_horizon=min([A.mpc_prediction_horizon,length(T_input)-i]);
 
         set_problem_size(A,pred_horizon);
 
-        L=(T_out>=T_out_input(i))&((T_out<=T_out_input(i+1)));
+        [~,start_idx]=min(abs(time_diff_matrix(:,i)));
+        [~,end_idx]=min(abs(time_diff_matrix(:,i+1)));
 
-        start_idx=find(L,1);
-
-        tvec=T_out(L);
+        tvec=T_out(start_idx:end_idx);
 
         x_initial=Z_out(:,start_idx)-Z_desired(:,i);
 
@@ -425,9 +415,9 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
         [~,ztemp]=ode45(@(t,z)A.dynamics(t,z,T_out_input(i),U_out(:,i)),tvec,Z_out(:,start_idx));
 
         if length(tvec)==2
-            Z_out(:,L)=ztemp([1,end],:)';
+            Z_out(:,start_idx:end_idx)=ztemp([1,end],:)';
         else
-            Z_out(:,L)=ztemp';
+            Z_out(:,start_idx:end_idx)=ztemp';
         end
 
     end
@@ -441,25 +431,11 @@ end
 
 function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = open_loop_movement(A,T_total,T_input,U_input)
 
-    if T_input(end) < T_total
-        warning(['Provided input time vector is shorter than the ',...
-            'desired motion time! modifying reference trajectory by repeating last state'])
 
-        if mod(T_total,A.time_discretization)~=0
-            T_input=[T_input,T_total+A.time_discretization-mod(T_total,A.time_discretization)];
-        else
-            T_input=[T_input,T_total];
-        end
+    T_out_input=uniquetol([0:A.time_discretization:T_total,T_total]);
 
-        U_input=[U_input,U_input(:,end)];
-    end
 
-    %pre allocate vectors
-    T_out_input=T_input;
-
-    U_out=NaN(A.n_inputs,length(T_out_input));
-
-    T_out=unique([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
+    T_out=uniquetol([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
 
 
     %simulate dynamics
@@ -469,7 +445,8 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = open_loop_mov
 
     %interpolate reference trajectories to input timestep
 
-    U_reference = U_input;
+    U_reference = interp1(T_input',U_input',T_out_input','previous','extrap')';
+    U_out = U_reference;
 
     Z_reference = NaN(A.n_states,length(T_out_input));
 end
