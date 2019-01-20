@@ -371,6 +371,7 @@ classdef simulator2D < handle
                                     'planning iteration. The agent will only ',...
                                     'be moved for the duration of the ',...
                                     'provided time vector.'],3)
+                           
                                 t_move = T(end) ;
                             else
                                 t_move = P.t_move ;
@@ -385,7 +386,7 @@ classdef simulator2D < handle
                 
                 %% Note (9 Nov 2018)
                 % For now, dynamic obstacles are treated as follows:
-                %   1) getNearbyObstacles should return a prediction
+                %   1) getNearbyObstacles should return a prediction 
                 %   2) the agent is moved according to the prediction
                 %   3) crashCheck moves the obstacles (according to the
                 %      agent's movement data if needed)
