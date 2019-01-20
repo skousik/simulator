@@ -439,7 +439,44 @@ classdef agent2D < handle
                 
                 plot(rcidx(1,:),rcidx(2,:),'Color',c)
             end
+        end
+        
+        function plotFilledAgent(A,n)
+            if nargin < 2
+                n = 1 ;
+            end
             
+            figure(n) ;
+            
+            face_color = [0.8 0.8 1] ;
+            edge_color = [0 0 1] ;
+            
+            if ~isempty(A.heading_state_index)
+                R = rotmat(A.state(A.heading_state_index,end)) ;
+            else
+                R = rotmat(0) ;
+            end
+            
+            % plot footprint
+            fp = R*A.footprint_contour + A.state(A.xy_state_indices,end) ;
+            patch(fp(1,:),fp(2,:),face_color,'EdgeColor',edge_color,'LineWidth',1.5) ;
+            
+            % plot heading triangle
+            if ~isempty(A.heading_state_index)
+                t = linspace(0,2*pi,4) ;
+                if length(A.footprint) == 2
+                    D = max(A.footprint) / 2 ;
+                else
+                    D = A.footprint ;
+                end
+
+                triangle = R*[(D/2).*cos(t) ;
+                              (D/3).*sin(t)] ;
+
+                triangle = triangle + A.state(A.xy_state_indices,end) ;
+
+                patch(triangle(1,:),triangle(2,:),face_color,'EdgeColor',edge_color,'LineWidth',1.5) ;
+            end
         end
     end
 end
