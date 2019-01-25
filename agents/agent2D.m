@@ -62,7 +62,7 @@ classdef agent2D < handle
 %                        agent2D should typically call, since it
 %                        establishes the default properties
 %
-%   reset                by default, sets the agent's state to the provided
+%   reset                by default, sets the agent's state to the providedlog.world_info.goal
 %                        position and its inputs and time to zero
 %
 %   move                 takes in a control input and associated time, and
@@ -441,15 +441,17 @@ classdef agent2D < handle
             end
         end
         
-        function plotFilledAgent(A,n)
+        function plotFilledAgent(A,n,face_color,edge_color)
+            if nargin <4
+                edge_color = [0 0 1] ;
+            if nargin <3
+                face_color = [0.8 0.8 1] ;
             if nargin < 2
                 n = 1 ;
             end
-            
+            end
+            end
             figure(n) ;
-            
-            face_color = [0.8 0.8 1] ;
-            edge_color = [0 0 1] ;
             
             if ~isempty(A.heading_state_index)
                 R = rotmat(A.state(A.heading_state_index,end)) ;
@@ -466,12 +468,16 @@ classdef agent2D < handle
                 t = linspace(0,2*pi,4) ;
                 if length(A.footprint) == 2
                     D = max(A.footprint) / 2 ;
+                    trans = mean([max(A.footprint_contour(1,:)),min(A.footprint_contour(1,:))]);
+                    xdm=1/3;
                 else
                     D = A.footprint ;
+                    trans=0;
+                    xdm=1/2;
                 end
 
-                triangle = R*[(D/2).*cos(t) ;
-                              (D/3).*sin(t)] ;
+                triangle = R*[((D*xdm).*cos(t) +trans) ;...
+                              (D/4).*sin(t)] ;
 
                 triangle = triangle + A.state(A.xy_state_indices,end) ;
 
