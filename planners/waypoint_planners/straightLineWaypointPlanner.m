@@ -18,7 +18,7 @@ methods
     function waypoint = getWaypoint(WP,agent_pose,~,lookahead_distance)
         % get straight line between agent pose and goal
         p = agent_pose(1:2) ;
-        g = WP.goal ;
+        g = WP.goal(1:2) ;
         
         % find length of the straight line and create unit vector
         d = norm(g - p) ;

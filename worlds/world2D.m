@@ -211,7 +211,7 @@ classdef world2D < handle
         function out = goalCheck(W,agent)
             xyidx = agent.xy_state_indices ;
             Z = agent.state(xyidx,:) ;
-            out = min(distPointToPoints(W.goal,Z)) <= W.goal_radius ;
+            out = min(distPointToPoints(W.goal(1:2),Z)) <= W.goal_radius ;
         end
         
         %% crash check
