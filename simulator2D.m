@@ -50,6 +50,7 @@ classdef simulator2D < handle
         save_gif_filename
         save_gif_delay_time
         start_gif
+        manually_resize_gif
     end
     
 %% methods
@@ -111,6 +112,8 @@ classdef simulator2D < handle
                             save_gif_filename = varargin{idx+1} ;
                         case 'save_gif_delay_time'
                             save_gif_delay_time = varargin{idx+1} ;
+                        case 'manually_resize_gif'
+                            manually_resize_gif = varargin{idx+1} ;
                         otherwise
                             error(['Keyword ''',varargin{idx},''' is invalid!'])
                     end
@@ -169,6 +172,10 @@ classdef simulator2D < handle
                 save_gif_delay_time = 0.1 ;
             end
             
+            if ~exist('manually_resize_gif','var')
+                manually_resize_gif = true;
+            end
+            
             if ~iscell(planners) && length(planners) == 1
                 planners = {planners} ;
             end
@@ -196,6 +203,7 @@ classdef simulator2D < handle
             S.save_gif_filename = save_gif_filename ;
             S.save_gif_delay_time = save_gif_delay_time ;
             S.start_gif = save_gif ;
+            S.manually_resize_gif = manually_resize_gif;
         end
         
         function plannerSetup(S,planner_indices)
@@ -299,6 +307,7 @@ classdef simulator2D < handle
                 W.reset(P) ;
                 
                 % initial plot
+                S.start_gif = true;
                 if plot_in_loop
                     S.plotInLoop(p)
                 end
@@ -308,6 +317,7 @@ classdef simulator2D < handle
                 
                 % reset the stop counter
                 S.stop_count = 0 ;
+                
                 stop_check_vec = false(1,iter_max) ;
 
                 % start timing
@@ -558,10 +568,12 @@ classdef simulator2D < handle
                         'change the filename if you do not want to ',...
                         'overwrite your existing file!'])
                 end
+                if S.manually_resize_gif
 
                 S.vdisp(['Please resize the figure to the size you ',...
                          'want saved, or hit any key to continue.'])
                 pause
+                end
             end
 
             frame = getframe(fh) ;
