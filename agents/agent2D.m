@@ -443,7 +443,7 @@ classdef agent2D < handle
         
         function plotFilledAgent(A,n,face_color,edge_color,line_width,face_alpha)
             if nargin <6
-                face_alpha = 1.0
+                face_alpha = 1.0;
             if nargin <5
                 line_width = 1.5;
             if nargin <4
@@ -472,6 +472,7 @@ classdef agent2D < handle
             % plot heading triangle
             if ~isempty(A.heading_state_index)
                 t = linspace(0,2*pi,4) ;
+         
                 if length(A.footprint) == 2
                     D = max(A.footprint) / 2 ;
                     trans = mean([max(A.footprint_contour(1,:)),min(A.footprint_contour(1,:))]);

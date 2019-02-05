@@ -293,7 +293,7 @@ classdef simulator2D < handle
             control_input = cell(1,L) ;
             control_input_time = cell(1,L) ;
             planner_timeout = cell(1,L) ;
-            
+            obstacles = cell(1,L);
             % index for keeping track of which planner was used
             idx = 1 ;
             
@@ -482,7 +482,7 @@ classdef simulator2D < handle
                 goal_check{idx} = G ;
                 stop_check{idx} = stop_check_vec ;
                 planner_timeout{idx} = P.timeout ;
-                
+                obstacles{idx} = W.obstacles;
                 if G
                     S.vdisp('In final check, agent reached goal!')
                 end
@@ -507,7 +507,7 @@ classdef simulator2D < handle
                              'control_input',control_input,...
                              'control_input_time',control_input_time,...
                              'planner_indices',planner_indices,...
-                             'obstacles',W.obstacles,...
+                             'obstacles',obstacles,...
                              'N_obstacles',W.N_obstacles,...
                              't_max',t_max,...
                              'planner_timeout',planner_timeout,...
