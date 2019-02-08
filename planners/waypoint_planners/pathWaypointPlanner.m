@@ -28,7 +28,7 @@ methods
         end
         
         
-        waypoint = interp1(WP.arc_length',WP.path',sout,'pchip')';
+        waypoint = interp_with_angles(WP.arc_length',WP.path',sout,3,'pchip')';
         
         % add new waypoint to list of past waypoints; just keeps the past
         % 5 waypoints around for now

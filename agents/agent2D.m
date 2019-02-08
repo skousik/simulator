@@ -441,7 +441,9 @@ classdef agent2D < handle
             end
         end
         
-        function plotFilledAgent(A,n,face_color,edge_color,line_width,face_alpha)
+        function plotFilledAgent(A,n,face_color,edge_color,line_width,face_alpha,t)
+            if nargin <7
+                z=A.state(:,end);
             if nargin <6
                 face_alpha = 1.0;
             if nargin <5
@@ -457,16 +459,20 @@ classdef agent2D < handle
             end
             end
             end
+            else
+                z=interp1(A.time',A.state',t,'pchip','extrap')';
+            end
             figure(n) ;
             
+            
             if ~isempty(A.heading_state_index)
-                R = rotmat(A.state(A.heading_state_index,end)) ;
+                R = rotmat(z(A.heading_state_index)) ;
             else
                 R = rotmat(0) ;
             end
             
             % plot footprint
-            fp = R*A.footprint_contour + A.state(A.xy_state_indices,end) ;
+            fp = R*A.footprint_contour + z(A.xy_state_indices) ;
             patch(fp(1,:),fp(2,:),face_color,'EdgeColor',edge_color,'LineWidth',line_width,'FaceAlpha',face_alpha ) ;
             
             % plot heading triangle
@@ -486,7 +492,7 @@ classdef agent2D < handle
                 triangle = R*[((D*xdm).*cos(t) +trans) ;...
                               (D/4).*sin(t)] ;
 
-                triangle = triangle + A.state(A.xy_state_indices,end) ;
+                triangle = triangle + z(A.xy_state_indices) ;
 
                 patch(triangle(1,:),triangle(2,:),face_color,'EdgeColor',edge_color,'LineWidth',line_width,'FaceAlpha',face_alpha ) ;
             end
