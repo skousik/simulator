@@ -7,9 +7,15 @@ properties
     mpc_prediction_horizon % desired # of control inputs for mpc horizon
     A_jacobian %function returning the jacobian of mpc dynamic model wrt to state
     B_jacobian %function returning the jacobian of mpc dynamic model wrt to input
+    A_equality %function returning the equality matrix of mpc dynamic model
+    b_equality %function returning the equliaty matrix of mpc dynamic model
+    A_inequality %function returning the inequality matrix of mpc bounds and rate constraints
+    b_inequality %function return the inequality matrix of mpc bounds and rate constraints
     input_range %n_inputs x 2 double for [min,max] of inputs allowed
+    input_rate_range %n_inputs x 3 double for [min,max] of input rate allowed
     linearized_xy_range %2 x 2 double for [min,max] of xy error from reference
     linearized_heading_range %1 x 2 double for [min,max] of heading error from reference
+    state_range %n_states x 2 doubles of [min,max] of state allowed
     state_cost %n_states x n_states double containing cost weights for states
     input_cost %n_inputs x n_inputs double containing cost weights for inputs
     agent_state_time_discretization %time discretization for A.time
@@ -18,6 +24,7 @@ properties
     n_decision_variables % # of decision variables for current mpc problem
     n_decision_variable_states % # of decision variables that are states
     n_decision_variable_inputs % # of decision variables that are inputs
+    initial_input% default initial inputs for rate constraints
 end
 
 methods
@@ -47,6 +54,12 @@ function A=mpc_agent(mpc_dynamics,time_discretization,...
                 A.input_cost = varargin{idx+1} ;
             case 'agent_state_time_discretization'
                 A.agent_state_time_discretization = varargin{idx+1} ;
+            case 'state_range'
+                A.state_range = varargin{idx+1};
+            case 'input_rate_range'
+                A.input_rate_range = varargin{idx+1};
+            case 'initial_input'
+                A.initial_input = varargin{idx+1};
         end
     end
 
@@ -143,7 +156,7 @@ function stop(A,t)
 
     %default is to apply 0 input to the dynamics for time t
 
-    [ttemp,ztemp]=ode45(@(t,z)A.dynamics(t,z,0,[0;0]),[0,t],A.state(:,end));
+    [ttemp,ztemp]=ode45(@(t,z)A.dynamics(t,z,0,zeros(A.n_inputs,1)),[0,t],A.state(:,end));
 
     T_out = uniquetol([0:A.agent_state_time_discretization:t,t]);
 
@@ -197,44 +210,66 @@ end
 
 end
 
-function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_index)
-    Aineq_xy=[];
-    Aineq_h=[];
-    Aineq_input=[];
-
-    bineq_xy=[];
-    bineq_h=[];
-    bineq_input=[];
-
-
-
+function [Aineq,bineq] = get_inequality_constraints(A,x_initial,u_initial,~,Z,U,reference_index)
+    Aineq=[];
+    bineq=[];
+    
     %get bounds for linearized xy state
     if ~isempty(A.linearized_xy_range)
-
-        if (x_initial(A.xy_state_indices(1)) <= A.linearized_xy_range(1,2)) && (x_initial(A.xy_state_indices(1)) >= A.linearized_xy_range(1,1)) &&...
-                (x_initial(A.xy_state_indices(2)) <= A.linearized_xy_range(2,2)) && (x_initial(A.xy_state_indices(2)) >= A.linearized_xy_range(2,1))
-
-            Aineq_xy = [get_state_selector_matrix(A,A.xy_state_indices);-get_state_selector_matrix(A,A.xy_state_indices)];
-            bineq_xy = [repmat(A.linearized_xy_range(:,2),[A.current_prediction_horizon+1,1]);...
-                        -repmat(A.linearized_xy_range(:,1),[A.current_prediction_horizon+1,1])];
+        for xy_idx=1:2
+        if (x_initial(A.xy_state_indices(xy_idx)) < A.linearized_xy_range(xy_idx,2)) 
+            [Aineq,bineq]=add_state_bound(A,Aineq,bineq,A.xy_state_indices(xy_idx),A.linearized_xy_range(xy_idx,2),0);
         end
-
+        if (x_initial(A.xy_state_indices(xy_idx)) >  A.linearized_xy_range(xy_idx,1))
+            [Aineq,bineq]=add_state_bound(A,Aineq,bineq,A.xy_state_indices(xy_idx),A.linearized_xy_range(xy_idx,1),1);
+        end
+        end
     end
 
     %get bounds for linearized heading state
     if ~isempty(A.linearized_heading_range)
-
-        if (x_initial(A.heading_state_index) <= A.linearized_heading_range(2)) && (x_initial(A.heading_state_index) >= A.linearized_heading_range(1))
-
-            Aineq_h = [get_state_selector_matrix(A,A.heading_state_index);-get_state_selector_matrix(A,A.heading_state_index)];
-            bineq_h = [repmat(A.linearized_heading_range(2),[A.current_prediction_horizon+1,1]);...
-                        -repmat(A.linearized_heading_range(:,1),[A.current_prediction_horizon+1,1])];
-
+        if (x_initial(A.heading_state_index) < A.linearized_heading_range(2)) 
+            [Aineq,bineq]=add_state_bound(A,Aineq,bineq,A.heading_state_index,A.linearized_heading_range(2),0);
         end
-
-
+        if (x_initial(A.heading_state_index) > A.linearized_heading_range(1)) 
+            [Aineq,bineq]=add_state_bound(A,Aineq,bineq,A.heading_state_index,A.linearized_heading_range(1),1);
+        end
     end
-
+    
+    %get bounds for state range 
+    if ~isempty(A.state_range)
+       for state_idx=1:A.n_states
+          if A.state_range(state_idx)>-Inf && x_initial(state_idx)+Z(state_idx,reference_index)>A.state_range(state_idx,1)
+             [Aineq,bineq]=add_state_bound(A,Aineq,bineq,state_idx,A.state_range(state_idx,1),1,Z,reference_index);
+          end
+           if A.state_range(state_idx,2)<Inf && x_initial(state_idx)+Z(state_idx,reference_index)<A.state_range(state_idx,2)
+             [Aineq,bineq]=add_state_bound(A,Aineq,bineq,state_idx,A.state_range(state_idx,2),0,Z,reference_index);
+          end
+       end
+    end
+    
+    %add input rate bounds
+    if ~isempty(A.input_rate_range)
+        for input_idx=1:A.n_inputs
+           
+           if A.input_rate_range(input_idx,1)>-Inf
+               [Aineq,bineq] = add_input_rate_bound(A,Aineq,bineq,input_idx,A.input_rate_range(input_idx,1),1,U,reference_index);
+%               
+                tmp = zeros(1,A.n_inputs);
+                tmp(input_idx)=-1;
+                Aineq=[Aineq;[zeros(1,A.n_decision_variable_states),tmp,zeros(1,A.n_decision_variable_inputs-A.n_inputs)]];
+                 bineq=[bineq;-(A.input_rate_range(input_idx,1)*A.time_discretization+u_initial(input_idx))];
+%                    
+           end
+            if A.input_rate_range(input_idx,2)<Inf
+               [Aineq,bineq] = add_input_rate_bound(A,Aineq,bineq,input_idx,A.input_rate_range(input_idx,2),0,U,reference_index);
+                      tmp = zeros(1,A.n_inputs);
+                tmp(input_idx)=1;
+                 Aineq=[Aineq;[zeros(1,A.n_decision_variable_states),tmp,zeros(1,A.n_decision_variable_inputs-A.n_inputs)]];
+                 bineq=[bineq;A.input_rate_range(input_idx,2)*A.time_discretization+u_initial(input_idx)];
+           end
+        end
+    end
     %get bounds for input (range is given for the system model (not
     %linearized)
     if ~isempty(A.input_range)
@@ -251,9 +286,9 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,~,~,U,reference_
         bineq_input=[bineq_input_ub;-bineq_input_lb];
     end
 
-    Aineq=[Aineq_xy;Aineq_h;Aineq_input];
+    Aineq=[Aineq;Aineq_input];
 
-    bineq=[bineq_xy;bineq_h;bineq_input];
+    bineq=[bineq;bineq_input];
 
 
 end
@@ -305,41 +340,6 @@ function set_jacobians_from_mpc_dynamics_function(A,mpc_dynamics)
     A.B_jacobian = matlabFunction(B_jac_discrete,'Vars',{t,z,u});
 end
 
-%select all states or inputs from decision variable
-function [selector_matrix] = get_state_selector_matrix(A,state_indexs,number)
-
-    if nargin<3
-        number=A.current_prediction_horizon+1;
-    end
-
-    tmp=zeros(length(state_indexs),A.n_states);
-    tmp(state_indexs)=1;
-
-    for i=1:length(state_indexs)
-        tmp(state_indexs(i),state_indexs(i))=1;
-    end
-
-    tmp_repeated=repmat({tmp},number,1);
-
-    selector_matrix=blkdiag(tmp_repeated{:});
-
-    selector_matrix=[selector_matrix,zeros(number*length(state_indexs),A.n_decision_variable_inputs)];
-end
-
-function [selector_matrix] = get_input_selector_matrix(A,input_indexs,number)
-    if nargin<3
-        number=A.current_prediction_horizon;
-    end
-    tmp=zeros(length(input_indexs),A.n_inputs);
-    for i=1:length(input_indexs)
-        tmp(input_indexs(i),input_indexs(i))=1;
-    end
-    tmp_repeated=repmat({tmp},number,1);
-
-    selector_matrix=blkdiag(tmp_repeated{:});
-
-    selector_matrix=[zeros(number*length(input_indexs),A.n_decision_variable_states),selector_matrix];
-end
 
 end
 
@@ -391,10 +391,20 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
         x_initial=Z_out(:,start_idx)-Z_desired(:,i);
 
         x_initial(A.heading_state_index)=rad2heading(x_initial(A.heading_state_index));
+        
+        if i<2
+           if~isempty(A.initial_input)
+               u_initial = A.initial_input-U_input(:,i);
+           else
+              u_initial = zeros(A.n_inputs,1); 
+           end
+        else
+           u_initial=U_out(:,i-1)-U_input(:,i);
+        end
 
         [Aeq,beq] = get_equality_constraints(A,x_initial,T_input,Z_desired,U_input,i);
 
-        [Aineq,bineq] = get_inequality_constraints(A,x_initial,T_input,Z_desired,U_input,i);
+        [Aineq,bineq] = get_inequality_constraints(A,x_initial,u_initial,T_input,Z_desired,U_input,i);
 
         H = get_cost_matrix(A);
 
@@ -449,4 +459,76 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = open_loop_mov
     U_out = U_reference;
 
     Z_reference = NaN(A.n_states,length(T_out_input));
+end
+
+
+%% matrix operations
+
+%select all states or inputs from decision variable
+function [Aineq_out,bineq_out] = add_state_bound(A,Aineq_in,bineq_in,state_index,bound,bound_type,Z,reference_index)
+if strcmp(bound_type,'upper')
+    bound_type = 0;
+elseif strcmp(bound_type,'lower')
+    bound_type = 1;
+end
+
+Aineq_out=[Aineq_in;(-1)^bound_type*get_state_selector_matrix(A,state_index)];
+ 
+if nargin < 7
+   %apply bound as if state is linearized 
+   bineq_out=[bineq_in;(-1)^bound_type*repmat(bound,[A.current_prediction_horizon+1,1])];
+else
+   bineq_out=[bineq_in;...
+       (-1)^bound_type*(repmat(bound,[1,A.current_prediction_horizon+1])-Z(state_index,reference_index:reference_index+A.current_prediction_horizon))'];
+end
+
+end
+
+function [Aineq_out,bineq_out] = add_input_rate_bound(A,Aineq_in,bineq_in,input_index,bound,bound_type,U,reference_index)
+if strcmp(bound_type,'upper')
+    bound_type = 0;
+elseif strcmp(bound_type,'lower')
+    bound_type = 1;
+end
+
+Aineq_out=[Aineq_in;(-1)^bound_type*get_input_rate_selector_matrix(A,input_index)];
+
+bineq_out=[bineq_in;...
+    (-1)^bound_type*(repmat(bound*A.time_discretization,[1,A.current_prediction_horizon-1])-diff(U(input_index,reference_index:reference_index+A.current_prediction_horizon-1)))'];
+
+end
+
+
+function [selector_matrix] = get_state_selector_matrix(A,state_index,number)
+
+    if nargin<3
+        number=A.current_prediction_horizon+1;
+    end
+
+    tmp=zeros(1,A.n_states);
+    tmp(state_index)=1;
+
+
+    tmp_repeated=repmat({tmp},number,1);
+
+    selector_matrix=blkdiag(tmp_repeated{:});
+
+    selector_matrix=[selector_matrix,zeros(number,A.n_decision_variable_inputs)];
+end
+
+function [selector_matrix] = get_input_rate_selector_matrix(A,input_index,number)
+    if nargin<3
+        number=A.current_prediction_horizon-1;
+    end
+    tmp=zeros(1,A.n_inputs);
+
+    tmp(1,input_index)=1;
+    
+    tmp_repeated=repmat({tmp},number,1);
+
+    selector_matrix_1=[-blkdiag(tmp_repeated{:}),zeros(number,A.n_inputs)];
+    
+    selector_matrix_2=[zeros(number,A.n_inputs),blkdiag(tmp_repeated{:})];
+
+    selector_matrix=[zeros(number,A.n_decision_variable_states),selector_matrix_1+selector_matrix_2];
 end
