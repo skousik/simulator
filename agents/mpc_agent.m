@@ -86,7 +86,7 @@ function A=mpc_agent(mpc_dynamics,time_discretization,...
 end
 
 %% function to reset states and reference trajectory
-function reset(A,state)
+function reset(A,state,initial_input)
     % pad state with zeros
     if length(state) < A.n_states
         A.vdisp('Input to A.reset is too small! Padding with zeros.')
@@ -102,6 +102,10 @@ function reset(A,state)
     A.input = [NaN;NaN];
     A.reference_trajectory = [];
     A.reference_input = [];
+    
+    if nargin>=3
+        A.initial_input = initial_input;
+    end
 end
 
 
@@ -202,10 +206,23 @@ for i=1:A.current_prediction_horizon
     Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,state_idxs(i):state_idxs(i)+A.n_states-1) = -eye(A.n_states);
 
     %A matrix for i
-    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,state_idxs(i)-A.n_states:state_idxs(i)-1) = A.A_jacobian(ttemp,ztemp,utemp);
+    Aj = A.A_jacobian(ttemp,ztemp,utemp);
+    if any(isnan(Aj))
+        warning('setting NaNs in A_jacobian to 0')
+        Aj(isnan(Aj))=0;
+    end
+        
+    
+    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,state_idxs(i)-A.n_states:state_idxs(i)-1) = Aj;
 
     %B matrix for i
-    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,input_idxs(i):input_idxs(i)+A.n_inputs-1) = A.B_jacobian(ttemp,ztemp,utemp);
+    Bj =A.B_jacobian(ttemp,ztemp,utemp);
+    if any(isnan(Bj))
+        warning('setting NaNs in B_jacobian to 0')
+        Bj(isnan(Bj))=0;
+    end
+    
+    Aeq(state_idxs(i):state_idxs(i)+A.n_states-1,input_idxs(i):input_idxs(i)+A.n_inputs-1) = Bj;
 end
 
 end
@@ -412,7 +429,7 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
 
         [x,~,exitflag] = quadprog(H,f,Aineq,bineq,Aeq,beq);
 
-        if exitflag<0
+        if exitflag<0 ||isempty(x)
             warning('qp infeasible, apply reference input')
             x=zeros(A.n_decision_variables,1);
         end
