@@ -7,10 +7,6 @@ properties
     mpc_prediction_horizon % desired # of control inputs for mpc horizon
     A_jacobian %function returning the jacobian of mpc dynamic model wrt to state
     B_jacobian %function returning the jacobian of mpc dynamic model wrt to input
-    A_equality %function returning the equality matrix of mpc dynamic model
-    b_equality %function returning the equliaty matrix of mpc dynamic model
-    A_inequality %function returning the inequality matrix of mpc bounds and rate constraints
-    b_inequality %function return the inequality matrix of mpc bounds and rate constraints
     input_range %n_inputs x 2 double for [min,max] of inputs allowed
     input_rate_range %n_inputs x 3 double for [min,max] of input rate allowed
     linearized_xy_range %2 x 2 double for [min,max] of xy error from reference
@@ -99,7 +95,7 @@ function reset(A,state,initial_input)
     A.time = 0;
     A.state = state;
     A.input_time = 0;
-    A.input = [NaN;NaN];
+    A.input =NaN(A.n_inputs,1);
     A.reference_trajectory = [];
     A.reference_input = [];
     
@@ -138,6 +134,9 @@ end
 
 %% store trajectories in agent function
 function store_movement(A,T_out,Z_out,T_out_input,U_out,U_reference,Z_reference)
+    
+    Z_out(A.heading_state_index,:)=rad2heading(Z_out(A.heading_state_index,:));
+    Z_reference(A.heading_state_index,:) = rad2heading(Z_reference(A.heading_state_index,:));
 
     A.state = [A.state(:,1:end-1),Z_out];
 
@@ -357,12 +356,28 @@ function set_jacobians_from_mpc_dynamics_function(A,mpc_dynamics)
     A.B_jacobian = matlabFunction(B_jac_discrete,'Vars',{t,z,u});
 end
 
+function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = open_loop_movement(A,T_total,T_input,U_input)
 
+
+    T_out_input=uniquetol([0:A.time_discretization:T_total,T_total]);
+
+
+    T_out=uniquetol([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
+
+
+    %simulate dynamics
+    [~,Z_out]=ode45(@(t,z)A.dynamics(t,z,T_input,U_input),T_out,A.state(:,end));
+
+    Z_out = Z_out';
+
+    %interpolate reference trajectories to input timestep
+
+    U_reference = interp1(T_input',U_input',T_out_input','previous','extrap')';
+    U_out = U_reference;
+
+    Z_reference = NaN(A.n_states,length(T_out_input));
 end
 
-end
-
-%% helper functions
 function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_loop(A,T_total,T_input,U_input,Z_desired)
 
     ref_time=uniquetol([T_input(1),T_input(1):A.time_discretization:T_input(end),T_input(end)]);
@@ -410,7 +425,9 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
         x_initial(A.heading_state_index)=rad2heading(x_initial(A.heading_state_index));
         
         if i<2
-           if~isempty(A.initial_input)
+           if size(A.input,2)>=2
+               u_initial= A.input(:,end-1)-U_input(:,i);
+           elseif~isempty(A.initial_input)
                u_initial = A.initial_input-U_input(:,i);
            else
               u_initial = zeros(A.n_inputs,1); 
@@ -437,6 +454,30 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
         u_mpc = x(A.n_decision_variable_states+1:A.n_decision_variable_states+A.n_inputs);
 
         U_out(:,i)=u_mpc+U_input(:,i);
+        
+        %double check it satisfies any input constraints
+        if ~isempty(A.input_range)
+            for j=1:A.n_inputs
+                if(U_out(j,i)>A.input_range(j,2))
+                    U_out(j,i)=A.input_range(j,2);
+                end
+                if(U_out(j,i)<A.input_range(j,1))
+                    U_out(j,i)=A.input_range(j,1);
+                end
+            end
+        end
+        
+        if ~isempty(A.input_rate_range)
+            for j=1:A.n_inputs
+                if(U_out(j,i)-u_initial(j)-U_input(j,i))/A.time_discretization>A.input_rate_range(j,2)
+                    U_out(j,i)=A.input_rate_range(j,2)*A.time_discretization+u_initial(j)+U_input(j,i);
+                end
+                if(U_out(j,i)-u_initial(j)-U_input(j,i))/A.time_discretization<A.input_rate_range(j,1)
+                    U_out(j,i)=A.input_rate_range(j,1)*A.time_discretization+u_initial(j)+U_input(j,i);
+                end
+            end
+        end
+        
 
         %simulate dynamics
         [~,ztemp]=ode45(@(t,z)A.dynamics(t,z,T_out_input(i),U_out(:,i)),tvec,Z_out(:,start_idx));
@@ -456,27 +497,13 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
     Z_reference = interp1(T_input',Z_desired',T_out_input','pchip')';
 end
 
-function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = open_loop_movement(A,T_total,T_input,U_input)
 
-
-    T_out_input=uniquetol([0:A.time_discretization:T_total,T_total]);
-
-
-    T_out=uniquetol([T_out_input,0:A.agent_state_time_discretization:T_total,T_total]);
-
-
-    %simulate dynamics
-    [~,Z_out]=ode45(@(t,z)A.dynamics(t,z,T_input,U_input),T_out,A.state(:,end));
-
-    Z_out = Z_out';
-
-    %interpolate reference trajectories to input timestep
-
-    U_reference = interp1(T_input',U_input',T_out_input','previous','extrap')';
-    U_out = U_reference;
-
-    Z_reference = NaN(A.n_states,length(T_out_input));
 end
+
+end
+
+%% helper functions
+
 
 
 %% matrix operations
