@@ -7,6 +7,9 @@ end
 methods
     %% constructor
     function WP = pathWaypointPlanner(path,verbose_level)
+        if nargin<2
+            verbose_level=0;
+        end
         WP@waypointPlanner2D(verbose_level) ;
         WP.path = path ;
         WP.arc_length = [0,cumsum(sqrt(diff(WP.path(1,:)).^2+diff(WP.path(2,:)).^2))];
