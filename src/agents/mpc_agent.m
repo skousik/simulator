@@ -443,8 +443,14 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
         H = get_cost_matrix(A);
 
         f=zeros(A.n_decision_variables,1);
+        
+        try
 
         [x,~,exitflag] = quadprog(H,f,Aineq,bineq,Aeq,beq);
+        catch
+             warning('qp errored, apply reference input')
+            x=zeros(A.n_decision_variables,1);
+        end
 
         if exitflag<0 ||isempty(x)
             warning('qp infeasible, apply reference input')
