@@ -190,9 +190,9 @@ classdef agent < handle
             A.input_time = 0 ;
         end
         
-        %% move and predict
-        function move(A,T_total,T_input,U_input,Z_desired)
-            % method: move(T_total,T_input,U_input,Z_desired)
+        %% move
+        function move(A,t_move,T_input,U_input,Z_desired)
+            % method: move(t_move,T_input,U_input,Z_desired)
             %
             % Moves the agent according to the provided control input, and
             % attempting to track the provided trajectory. The assumption
@@ -202,23 +202,23 @@ classdef agent < handle
             % similarly, we assume that the time vector corresponding to
             % the input starts at 0.
             
-            if T_input(end) < T_total
+            if T_input(end) < t_move
                 warning(['Provided input time vector is shorter than the ',...
                         'desired motion time! The agent will only be ',...
                         'moved until the largest available time in the ',...
                         'input time vector.'])
-                T_total = T_input(end) ;
+                t_move = T_input(end) ;
             end
             
             
             T_input = T_input(:)' ;
             
             % if the inputs T, U, and Z correspond to a longer time horizon
-            % than just T_total, truncate them
-            tlog = T_input <= T_total ;
+            % than just t_move, truncate them
+            tlog = T_input <= t_move ;
             T_used = T_input(tlog) ;
-            if T_used(end) < T_total
-                T_used = [T_used, T_total] ;
+            if T_used(end) < t_move
+                T_used = [T_used, t_move] ;
             end
             
             zcur = A.state(:,end) ;
@@ -226,11 +226,11 @@ classdef agent < handle
             if nargin < 5 || isempty(Z_desired)
                 U_used = matchTrajectories(T_used,T_input,U_input) ;
                 [tout,zout] = A.ode_solver(@(t,z) A.dynamics(t,z,T_used,U_used,[]),...
-                                          [0 T_total], zcur) ;
+                                          [0 t_move], zcur) ;
             else
                 [U_used,Z_used] = matchTrajectories(T_used,T_input,U_input,T_input,Z_desired) ;
                 [tout,zout] = A.ode_solver(@(t,z) A.dynamics(t,z,T_used,U_used,Z_used),...
-                                      [0 T_total], zcur) ;
+                                      [0 t_move], zcur) ;
             end
             
             A.state = [A.state, zout(2:end,:)'] ;
@@ -285,6 +285,9 @@ classdef agent < handle
         function plot(A,n,c)
             if nargin < 3
                 c = [0 0 1] ;
+                if nargin < 2
+                    n = 1 ;
+                end
             end
             
             figure(n)

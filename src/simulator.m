@@ -90,7 +90,7 @@ classdef simulator < handle
                         case 'manual_iteration'
                             manual_iteration = varargin{idx+1} ;
                         case 'plot_while_running'
-                            plot_while_running = vararign{idx+1} ;
+                            plot_while_running = varargin{idx+1} ;
                         case 'plotting_pause_time'
                             plotting_pause_time = varargin{idx+1} ;
                         case 'plot_order'
@@ -240,7 +240,7 @@ classdef simulator < handle
             LW = length(world_indices) ;
             summary = cell(1,LW) ;            
             
-        %% planner loop
+        %% world loop
             for widx = world_indices
                 W = S.worlds{widx} ;
                 
@@ -259,207 +259,212 @@ classdef simulator < handle
                 control_input_time = cell(1,L) ;
                 planner_timeout = cell(1,L) ;
                 obstacles = cell(1,L);
-                
-            for pidx = planner_indices
-                S.vdisp(['Planner ',num2str(pidx)])
-                
-                % get the planner, agent, and world ready
-                A.reset(W.start) ;
-                W.reset() ;
-                P = S.planners{pidx} ;
-                
-                S.vdisp(['Setting up planner ',num2str(planner_index)],2)
-                agent_info = A.get_agent_info() ;
-                world_info = S.worlds{world_index}.get_world_info(agent_info) ;
-                P.setup(agent_info,world_info) ;
-                
-                % initial plot
-                S.start_gif = true;
-                if plot_in_loop_flag
-                    S.plot(widx,pidx)
-                end
-                
-                % preallocate for storing planning time spent
-                planning_time_vec = nan(1,iter_max) ;
-                
-                % reset the stop counter
-                S.stop_count = 0 ;
-                
-                stop_check_vec = false(1,iter_max) ;
+            %% planner loop
+                for pidx = planner_indices
+                    S.vdisp(['Planner ',num2str(pidx)])
 
-                % start timing
-                icur = 1 ;
-                runtime = tic ;
-                tstart = runtime ;
-                tcur = toc(tstart);
-                
-            %% simulation loop
-                while icur < (iter_max+1) && tcur < t_max
-                    S.vdisp('--------------------------------',3,false)
-                    S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end)),')'],2,false)
-                    
-                %% get agent info
-                    agent_info = A.get_info() ;
-                    
-                %% sense world
-                    % given the current state of the agent, query the world
-                    % to get the surrounding obstacles
-                    world_info = W.get_world_info(agent_info,P) ;
-                    
-                %% replan
-                    % given the current state and obstacles, query the
-                    % current planner to get a control input
-                    t_plan_spent = tic ;
-                    if S.allow_replan_errors
-                        [T_nom,U_nom,Z_nom] = P.replan(A,world_info) ;
-                    else
-                        try
-                            [T_nom,U_nom,Z_nom] = P.replan(A,world_info) ;
-                        catch
-                            S.vdisp(['Planner ',num2str(pidx),' errored while ',...
-                                     'replanning!'])
-                            T_nom = [] ; U_nom = [] ; Z_nom = [] ;
-                        end
+                    % get the planner
+                    P = S.planners{pidx} ;
+
+                    % get agent and world ready
+                    A.reset(W.start) ;
+                    W.reset() ;
+
+                    % get planner ready
+                    agent_info = A.get_agent_info() ;
+                    world_info = W.get_world_info(agent_info) ;
+                    P.setup(agent_info,world_info) ;
+
+                    % check to make sure gif start is ready
+                    if S.save_gif
+                        S.start_gif = true ;
                     end
-                    t_plan_spent = toc(t_plan_spent) ;
-                    planning_time_vec(icur) = t_plan_spent ;
-                    S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
-                    
-                %% move agent
-                    % update the agent using the current control input, so
-                    % either stop if no control was returned, or move the
-                    % agent if a valid input and time vector were returned
-                    if size(T_nom,2) < 2 || size(U_nom,2) < 2 || T_nom(end) == 0
-                        S.vdisp('Stopping!',2)
-                        A.stop(P.t_move) ;
-                        
-                        stop_check_vec(icur) = true ;
-                        
-                        % give planner a chance to recover from a stop
-                        S.stop_count = S.stop_count + 1 ;
-                        if S.stop_count > S.stop_threshold
-                            break
-                        end
-                    else
-                        S.stop_count = 0 ;
-                        
-                        if ~isempty(P.t_move)
-                            if P.t_move > T_nom(end)
-                                S.vdisp(['The provided time vector for the ',...
-                                    'agent input is shorter than the amount of ',...
-                                    'time the agent must move at each ',...
-                                    'planning iteration. The agent will only ',...
-                                    'be moved for the duration of the ',...
-                                    'provided time vector.'],3)
-                           
-                                t_move = T_nom(end) ;
-                            else
-                                t_move = P.t_move ;
-                            end
-                        else
-                            error(['Planner ',num2str(pidx),...
-                                   '''s t_move property is empty!'])
-                        end
-                        
-                        A.move(t_move,T_nom,U_nom,Z_nom) ;
-                    end
-                
-                %% Note (9 Nov 2018)
-                % For now, dynamic obstacles are treated as follows:
-                %   1) getNearbyObstacles should return a prediction 
-                %   2) the agent is moved according to the prediction
-                %   3) crashCheck moves the obstacles (according to the
-                %      agent's movement data if needed)
-                    
-                %% crash and goal check
-                    % check if the agent is near the desired goal or if it
-                    % crashed
-                    S.vdisp('Checking if agent reached goal or crashed...',3)
-                    goalCheck = W.goalCheck(A) ;
-                    crashCheck = W.crashCheck(A, false) ;
-                    
-                    if crashCheck && S.stop_sim_when_crashed
-                        S.vdisp('Crashed!',2) ;
-                        break
-                    end
-                    
-                    if goalCheck
-                        S.vdisp('Reached goal!',2) ;
-                        break
-                    end
-                    
-                    % plotting and animation
+
+                    % initial plot
                     if plot_in_loop_flag
                         S.plot(widx,pidx)
-                        if S.save_gif
-                            
+                    end
+
+                    % preallocate for storing planning time spent
+                    planning_time_vec = nan(1,iter_max) ;
+
+                    % reset the stop counter
+                    S.stop_count = 0 ;
+                    stop_check_vec = false(1,iter_max) ;
+
+                    % start timing
+                    icur = 1 ;
+                    runtime = tic ;
+                    tstart = runtime ;
+                    tcur = toc(tstart);
+
+                %% simulation loop
+                    while icur < (iter_max+1) && tcur < t_max
+                        S.vdisp('--------------------------------',3,false)
+                        S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end)),')'],2,false)
+
+                    %% get agent info
+                        agent_info = A.get_info() ;
+
+                    %% get world info
+                        % given the current state of the agent, query the world
+                        % to get the surrounding obstacles
+                        world_info = W.get_world_info(agent_info,P) ;
+
+                    %% replan
+                        % given the current state and obstacles, query the
+                        % current planner to get a control input
+                        t_plan_spent = tic ;
+                        if S.allow_replan_errors
+                            [T_nom,U_nom,Z_nom] = P.replan(A,world_info) ;
                         else
-                            pause(S.plotting_pause_time) ;
+                            try
+                                [T_nom,U_nom,Z_nom] = P.replan(A,world_info) ;
+                            catch
+                                S.vdisp(['Planner ',num2str(pidx),' errored while ',...
+                                         'replanning!'])
+                                T_nom = [] ; U_nom = [] ; Z_nom = [] ;
+                            end
                         end
+                        t_plan_spent = toc(t_plan_spent) ;
+                        planning_time_vec(icur) = t_plan_spent ;
+                        S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
+
+                    %% move agent
+                        % update the agent using the current control input, so
+                        % either stop if no control was returned, or move the
+                        % agent if a valid input and time vector were returned
+                        if size(T_nom,2) < 2 || size(U_nom,2) < 2 || T_nom(end) == 0
+                            S.vdisp('Stopping!',2)
+                            A.stop(P.t_move) ;
+
+                            stop_check_vec(icur) = true ;
+
+                            % give planner a chance to recover from a stop
+                            S.stop_count = S.stop_count + 1 ;
+                            if S.stop_count > S.stop_threshold
+                                break
+                            end
+                        else
+                            S.stop_count = 0 ;
+
+                            if ~isempty(P.t_move)
+                                if P.t_move > T_nom(end)
+                                    S.vdisp(['The provided time vector for the ',...
+                                        'agent input is shorter than the amount of ',...
+                                        'time the agent must move at each ',...
+                                        'planning iteration. The agent will only ',...
+                                        'be moved for the duration of the ',...
+                                        'provided time vector.'],3)
+
+                                    t_move = T_nom(end) ;
+                                else
+                                    t_move = P.t_move ;
+                                end
+                            else
+                                error(['Planner ',num2str(pidx),...
+                                       '''s t_move property is empty!'])
+                            end
+
+                            A.move(t_move,T_nom,U_nom,Z_nom) ;
+                        end
+
+                    %% Note (9 Nov 2018)
+                    % For now, dynamic obstacles are treated as follows:
+                    %   1) getNearbyObstacles should return a prediction 
+                    %   2) the agent is moved according to the prediction
+                    %   3) crashCheck moves the obstacles (according to the
+                    %      agent's movement data if needed)
+
+                    %% crash and goal check
+                        % check if the agent is near the desired goal or if it
+                        % crashed
+                        S.vdisp('Checking if agent reached goal or crashed...',3)
+                        goalCheck = W.goalCheck(A) ;
+                        crashCheck = W.crashCheck(A, false) ;
+
+                        if crashCheck && S.stop_sim_when_crashed
+                            S.vdisp('Crashed!',2) ;
+                            break
+                        end
+
+                        if goalCheck
+                            S.vdisp('Reached goal!',2) ;
+                            break
+                        end
+
+                        % plotting and animation
+                        if plot_in_loop_flag
+                            S.plot(widx,pidx)
+                            if S.save_gif
+
+                            else
+                                pause(S.plotting_pause_time) ;
+                            end
+                        end
+
+                        % pause for user if needed
+                        if S.manual_iteration
+                            user_pause = tic ;
+                            S.vdisp('Pausing for user. Press any key to continue.',2)
+                            pause
+                            user_pause = toc(user_pause) ;
+                        else
+                            user_pause = 0 ;
+                        end
+
+                        % iterate and increment time
+                        S.vdisp(['END ITERATION ',num2str(icur)],4,false)
+                        icur = icur + 1 ;
+                        tcur = toc(tstart) - user_pause ;
                     end
-                    
-                    % pause for user if needed
-                    if S.manual_iteration
-                        user_pause = tic ;
-                        S.vdisp('Pausing for user. Press any key to continue.',2)
-                        pause
-                        user_pause = toc(user_pause) ;
+                    runtime = toc(runtime) ;
+                    S.vdisp(['Planning time spent: ',num2str(runtime)],5)
+
+                    % plot the last portion of the agent's trajectory after the
+                    % simulation ends
+                    if plot_in_loop_flag
+                        S.plot(widx,pidx)
+                    end
+
+                    S.vdisp(['Planner ',num2str(pidx), ' simulation complete!'])
+
+                %% create summary (for the current planner)
+                    % get results at end of simulation
+                    S.vdisp('Running final crash and goal checks.',2)
+                    Z = A.state ;
+                    T_nom = A.time ;
+                    U_nom = A.input ;
+                    TU = A.input_time ;
+                    C = W.crashCheck(A) ;
+                    G = W.goalCheck(A) ;
+
+                    if S.save_planner_info
+                        planner_info{pidx} = S.planners{pidx}.info ;
                     else
-                        user_pause = 0 ;
+                        planner_info{pidx} = 'no info saved' ;
                     end
-                    
-                    % iterate and increment time
-                    S.vdisp(['END ITERATION ',num2str(icur)],4,false)
-                    icur = icur + 1 ;
-                    tcur = toc(tstart) - user_pause ;
+
+                    % fill in the results for the current planner
+                    planner_name{pidx} = P.name ;
+                    trajectory{pidx} = Z ;
+                    sim_time{pidx} = T_nom ;
+                    control_input{pidx} = U_nom ;
+                    control_input_time{pidx} = TU ;
+                    total_real_time{pidx} = runtime ;
+                    planning_times{pidx} = planning_time_vec ;
+                    crash_check{pidx} = C ;
+                    goal_check{pidx} = G ;
+                    stop_check{pidx} = stop_check_vec ;
+                    planner_timeout{pidx} = P.timeout ;
+                    obstacles{pidx} = W.obstacles;
+                    if G
+                        S.vdisp('In final check, agent reached goal!')
+                    end
+                    if C
+                        S.vdisp('In final check, agent crashed!')
+                    end
                 end
-                runtime = toc(runtime) ;
-                S.vdisp(['Planning time spent: ',num2str(runtime)],5)
-                
-                % plot the last portion of the agent's trajectory after the
-                % simulation ends
-                if plot_in_loop_flag
-                    S.plot(widx,pidx)
-                end
-                
-                S.vdisp(['Planner ',num2str(pidx), ' simulation complete!'])
-                
-            %% create summary (for the current planner)
-                % get results at end of simulation
-                S.vdisp('Running final crash and goal checks.',2)
-                Z = A.state ;
-                T_nom = A.time ;
-                U_nom = A.input ;
-                TU = A.input_time ;
-                C = W.crashCheck(A) ;
-                G = W.goalCheck(A) ;
-                
-                if S.save_planner_info
-                    planner_info{pidx} = S.planners{pidx}.info ;
-                else
-                    planner_info{pidx} = 'no info saved' ;
-                end
-                
-                % fill in the results for the current planner
-                planner_name{pidx} = P.name ;
-                trajectory{pidx} = Z ;
-                sim_time{pidx} = T_nom ;
-                control_input{pidx} = U_nom ;
-                control_input_time{pidx} = TU ;
-                total_real_time{pidx} = runtime ;
-                planning_times{pidx} = planning_time_vec ;
-                crash_check{pidx} = C ;
-                goal_check{pidx} = G ;
-                stop_check{pidx} = stop_check_vec ;
-                planner_timeout{pidx} = P.timeout ;
-                obstacles{pidx} = W.obstacles;
-                if G
-                    S.vdisp('In final check, agent reached goal!')
-                end
-                if C
-                    S.vdisp('In final check, agent crashed!')
-                end
-            end
                 S.vdisp(['World ',num2str(widx),'complete! Generating summary.'])
                 summary{widx} = struct('planner_name',planner_name,...
                                  'trajectory',trajectory,...

@@ -5,7 +5,7 @@ properties
     name
     bounds % world bounds plus planner-specific buffer
     default_buffer % minimum amount to buffer obstacles, given by the world
-    HLP % high level waypoint planner
+    HLP % high level planner
     current_plan
     current_obstacles
     verbose
