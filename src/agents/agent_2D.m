@@ -1,5 +1,5 @@
-classdef agent2D < handle
-% Class: agent2D
+classdef agent_2D < handle
+% Class: agent_2D
 %
 % Generic 2D agent with zero dynamics as default. Other agents should
 % inherit this as a superclass.
@@ -58,8 +58,8 @@ classdef agent2D < handle
 %                        agent's final trajectory
 %
 % METHODS:
-%   agent2D              the constructor method, which any subclass of
-%                        agent2D should typically call, since it
+%   agent_2D              the constructor method, which any subclass of
+%                        agent_2D should typically call, since it
 %                        establishes the default properties
 %
 %   reset                by default, sets the agent's state to the providedlog.world_info.goal
@@ -114,14 +114,14 @@ classdef agent2D < handle
     
     methods
     %% constructor
-        function A = agent2D(varargin)
-        % method: A = agent2D(verbose_level,varargin)
+        function A = agent_2D(varargin)
+        % method: A = agent_2D(verbose_level,varargin)
         %
         % This method creates an agent object. It takes in string/argument
-        % pairs, where the strings are the names of the agent2D default
-        % properties. Call "help agent2D" for a walkthrough of these
+        % pairs, where the strings are the names of the agent_2D default
+        % properties. Call "help agent_2D" for a walkthrough of these
         % properties. Typically, a user will not call this method, but a
-        % subclass of agent2D will call it in its own constructor method.
+        % subclass of agent_2D will call it in its own constructor method.
             if mod(length(varargin),2) == 1
                 verbose_level = varargin{1} ;
                 varargin = varargin(2:end) ;
@@ -286,7 +286,7 @@ classdef agent2D < handle
                                       tcur)
             % method: out = predict(T_total,T_input,U_input,Z_desired,tcur)
             %
-            % See agent2D.move. This method performs the same calculation
+            % See agent_2D.move. This method performs the same calculation
             % as "move" but without updating the agent's state, time, or
             % input. This method also takes in an additional input, tcur,
             % which allows for a prediction from an arbitrary time (not

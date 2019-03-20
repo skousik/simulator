@@ -1,5 +1,5 @@
 function plot_data = plot_coord_frame_3D(R,varargin)
-% plot_data = plot_coord_frame_3D(orientation,position,varargin)
+% plot_data = plot_coord_frame_3D(orientation,varargin)
 %
 % Given a pose in SE(3) as a rotation matrix (3x3) and a position (3x1),
 % plot a right-handed coordinate frame representing the pose. The default

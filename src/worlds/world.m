@@ -58,46 +58,27 @@ classdef world < handle
 %                           if they have a low enough verbosity level
 
     properties (Access = public)
-        dimension
-        start
-        goal
-        goal_radius
-        bounds
-        N_obstacles
-        obstacles
-        current_time_index
-        verbose
+        dimension = 2 ;
+        start = [0;0] ;
+        goal = [0;0] ;
+        goal_radius = 1 ;
+        bounds = Inf*[-1 1 -1 1] ;
+        N_obstacles = 0 ;
+        obstacles = [] ;
+        current_time_index = 1 ;
+        verbose = 0 ;
+        plot_data
     end
     
     methods
     %% constructor
         function W = world(varargin)
-        %% to do: parse varargin
-            if nargin < 5
-                verbose_level = 0 ;
+            for idx = 1:2:length(varargin)
+                W.(varargin{idx}) = varargin{idx+1} ;                                            
             end
-            
-            if nargin < 2
-                goal_radius = 1 ;
-            end
-            
-            if nargin < 1
-                bounds = Inf*[-1 1 -1 1] ;
-            end
-            
-            W.goal_radius = goal_radius ;
-            
-            % default settings
-            W.verbose = verbose_level ;
-            W.start = [0;0] ;
-            W.goal = [0;0] ;
-            W.bounds = bounds ;
-            W.obstacles = [] ;
-            W.N_obstacles = 0 ;
-            W.current_time_index = 1 ; % initializes at t = 0
         end
         
-        %% setup
+    %% setup
         function setup(W)
         % Method: setup()
         %
@@ -125,7 +106,7 @@ classdef world < handle
             W.current_time_index = 1 ;
         end
         
-        %% reset
+    %% reset
         function reset(W)
         % Method: reset()
         %
@@ -134,7 +115,7 @@ classdef world < handle
             W.current_time_index = 1 ;
         end
         
-        %% get world info for planning
+    %% get world info for planning
         function I = get_world_info(W,~,~)
         % Method: I = get_world_info(agent_info,planner_info)
         %
@@ -146,7 +127,7 @@ classdef world < handle
             I.obstacle_type = W.obstacle_type ;
         end
         
-        %% goal check
+    %% goal check
         function out = goal_check(W,agent_info)
         % Method: out = goal_check(agent_info)
         %
@@ -157,7 +138,7 @@ classdef world < handle
             out = min(norm(W.goal - z,2)) <= W.goal_radius ;
         end
         
-        %% crash check
+    %% crash check
         function out = collision_check(W,agent,check_full_traj_flag)
         % Function: collision_check(agent,check_full_traj_flag)
         %
@@ -266,7 +247,7 @@ classdef world < handle
             W.current_time_index = length(agent.time) ;
         end 
        
-%% plotting
+    %% plotting
         function plot(W,n)
             if nargin < 2
                 n = 1 ;

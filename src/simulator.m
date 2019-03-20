@@ -6,33 +6,33 @@ classdef simulator < handle
 %% properties
     properties (Access = public)
         % basic properties
-        agent
-        worlds
-        planners
-        verbose
+        agent = agent() ;
+        worlds = {world()} ;
+        planners = {planner()} ;
+        verbose = 1 ;
         
         % simulation
-        max_sim_time % per planner
-        max_sim_iterations % per planner
-        stop_count
-        stop_threshold
-        stop_sim_when_crashed
-        allow_replan_errors
-        save_planner_info
-        manual_iteration
+        max_sim_time = 100 ; % s per planner
+        max_sim_iterations = 100 ; % per planner
+        stop_count = 0 ;
+        stop_threshold = 20 ;
+        stop_sim_when_crashed = true ;
+        allow_replan_errors = false ;
+        save_planner_info = false ;
+        manual_iteration = false;
         
         % plotting
-        figure_number
-        figure_handle
-        planner_colors
-        plot_while_running
-        plotting_pause_time
-        plot_order
-        save_gif
-        save_gif_filename
-        save_gif_delay_time
-        start_gif
-        manually_resize_gif
+        figure_number = 1 ;
+        figure_handle = [] ;
+        planner_colors = [] ;
+        plot_while_running = true ;
+        plotting_pause_time = 0.1 ; % s
+        plot_order = 'WAP' ;
+        save_gif = false ;
+        save_gif_filename = 'simulator_gif_output' ;
+        save_gif_delay_time = 0.1 ;
+        start_gif = true ;
+        manually_resize_gif = true ;
     end
     
 %% methods
@@ -68,152 +68,15 @@ classdef simulator < handle
                 verbose_level = varargin{1} ;
             else
                 for idx = 1:2:length(varargin)
-                    switch varargin{idx}
-                        case 'max_sim_time'
-                            max_sim_time = varargin{idx+1} ;
-                        case 'max_sim_iterations'
-                            max_sim_iterations = varargin{idx+1} ;
-                        case 'stop_threshold'
-                            stop_threshold = varargin{idx+1} ;
-                        case 'figure_number'
-                            figure_number = varargin{idx+1} ;
-                        case 'verbose_level'
-                            verbose_level = varargin{idx+1} ;
-                        case 'stop_sim_when_crashed'
-                            stop_sim_when_crashed = varargin{idx+1} ;
-                        case 'allow_replan_errors'
-                            allow_replan_errors = varargin{idx+1} ;
-                        case 'save_planner_info'
-                            save_planner_info = varargin{idx+1} ;
-                        case 'planner_colors'
-                            planner_colors = varargin{idx+1} ;
-                        case 'manual_iteration'
-                            manual_iteration = varargin{idx+1} ;
-                        case 'plot_while_running'
-                            plot_while_running = varargin{idx+1} ;
-                        case 'plotting_pause_time'
-                            plotting_pause_time = varargin{idx+1} ;
-                        case 'plot_order'
-                            plot_order = varargin{idx+1} ;
-                        case 'save_gif'
-                            save_gif = varargin{idx+1} ;
-                        case 'save_gif_filename'
-                            save_gif_filename = varargin{idx+1} ;
-                        case 'save_gif_delay_time'
-                            save_gif_delay_time = varargin{idx+1} ;
-                        case 'manually_resize_gif'
-                            manually_resize_gif = varargin{idx+1} ;
-                        otherwise
-                            error(['Keyword ''',varargin{idx},''' is invalid!'])
-                    end
+                    S.(varargin{idx}) = varargin{idx+1} ;                                            
                 end
             end
             
-        %% create default properties
-            if ~exist('max_sim_time','var')
-                max_sim_time = 100 ; % seconds
-            end
-            
-            if ~exist('max_sim_iterations','var')
-                max_sim_iterations = 100 ; % seconds
-            end
-            
-            if ~exist('stop_threshold','var')
-                stop_threshold = 5 ;
-            end
-            
-            if ~exist('stop_threshold','var')
-                stop_threshold = 5 ;
-            end
-            
-            if ~exist('figure_number','var')
-                figure_number = 1 ;
-            end
-            
-            if ~exist('verbose_level','var')
-                verbose_level = 0 ;
-            end
-            
-            if ~exist('stop_sim_when_crashed','var')
-                stop_sim_when_crashed = true ;
-            end
-            
-            if ~exist('allow_replan_errors','var')
-                allow_replan_errors = false ;
-            end
-            
-            if ~exist('save_planner_info','var')
-                save_planner_info = true ;
-            end
-            
-            if ~exist('planner_colors','var')
-                planner_colors = repmat([0 0 1],length(planners),1) ;
-            end
-            
-            if ~exist('manual_iteration','var')
-                manual_iteration = false ;
-            end
-            
-            if ~exist('plot_while_running','var')
-                plot_while_running = false ;
-            end
-            
-            if ~exist('plotting_pause_time','var')
-                plotting_pause_time = 0.2 ;
-            end
-            
-            if ~exist('plot_order','var')
-                plot_order = 'WAP' ;
-            end
-            
-            if ~exist('save_gif','var')
-                save_gif = false ;
-            end
-            
-            if ~exist('save_gif_filename','var')
-                save_gif_filename = 'simulator_gif_output' ;
-            end
-            
-            if ~exist('save_gif_delay_time','var')
-                save_gif_delay_time = 0.1 ;
-            end
-            
-            if ~exist('manually_resize_gif','var')
-                manually_resize_gif = true;
-            end
-            
-            if ~iscell(worlds) && length(worlds) == 1
-                worlds = {worlds} ;
-            end
-            
-            if ~iscell(planners) && length(planners) == 1
-                planners = {planners} ;
-            end
-
-            
         %% wrap up construction
+            S.verbose = verbose_level ;
             S.agent = agent ;
             S.worlds = worlds ;
-            S.planners = planners ;      
-            
-            S.max_sim_time = max_sim_time ;
-            S.max_sim_iterations = max_sim_iterations ;
-            S.verbose = verbose_level ;
-            S.figure_number = figure_number ;
-            S.stop_threshold = stop_threshold ;
-            S.stop_sim_when_crashed = stop_sim_when_crashed ;
-            S.allow_replan_errors = allow_replan_errors ;
-            S.save_planner_info = save_planner_info ;
-            S.manual_iteration = manual_iteration ;
-            S.plot_while_running = plot_while_running ;
-            S.planner_colors = planner_colors ;
-            S.plotting_pause_time = plotting_pause_time ;
-            S.plot_order = plot_order ;
-            S.save_gif = save_gif ;
-            S.save_gif_filename = save_gif_filename ;
-            S.save_gif_delay_time = save_gif_delay_time ;
-            S.start_gif = save_gif ;
-            S.manually_resize_gif = manually_resize_gif;
+            S.planners = planners ;
         end
         
     %% run simulation
@@ -530,11 +393,11 @@ classdef simulator < handle
         for plot_idx = S.plot_order
             switch plot_idx
                 case 'A'
-                    A.plot(S.figure_number,color)  
+                    A.plot(color)  
                 case 'W'
-                    W.plot(S.figure_number)
+                    W.plot()
                 case 'P'
-                    P.plot(S.figure_number,color)
+                    P.plot(color)
                 otherwise
                     error(['Simulator plot order is broken! Make sure ',...
                           'it is a string containing the characters ',...
@@ -579,24 +442,6 @@ classdef simulator < handle
             end
         end
     end
-
-%     function plotResults(S,summary)
-%         S.vdisp('Plotting simulation results',2)
-% 
-%         figure(S.figure_number+1) ;
-%         cla ; hold on ; axis equal ;
-% 
-%         S.world.plotResults(S.figure_number+1) ;
-% 
-%         for summary_index = 1:length(summary)
-%             planner_index = summary(1).planner_indices(summary_index) ;
-%             color = S.planner_colors(planner_index,:) ;
-%             S.agent.plotResults(S.figure_number+1,color,summary,planner_index) ;
-%             S.planners{planner_index}.plotResults(S.figure_number+1,color,summary) ;
-%         end
-% 
-%         axis(S.world.bounds)
-%     end
         
     %% verbose text output
     function vdisp(S,s,l,use_header)

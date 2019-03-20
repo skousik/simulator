@@ -6,14 +6,15 @@ properties
     bounds % world bounds plus planner-specific buffer
     default_buffer % minimum amount to buffer obstacles, given by the world
     HLP % high level planner
-    current_plan
-    current_obstacles
-    verbose
-    timeout % time allowed for "replan" function to execute
-    t_plan % same as timeout; just for notational purposes
-    t_move % amount of time the planner expects the agent to move
-    info % information structure to keep a log when planning
-    plot_waypoints_flag
+    current_plan ;
+    current_obstacles ;
+    verbose = 0 ;
+    timeout = 1 ; % time allowed for "replan" function to execute
+    t_plan = 1 ; % same as timeout; just for notational purposes
+    t_move = 0.1 ;% amount of time the planner expects the agent to move
+    info = [] ; % information structure to keep a log when planning
+    plot_data % data for current plot
+    plot_waypoints_flag = false ;
 end
 
 methods
@@ -22,21 +23,11 @@ methods
         if nargin > 0
             P.timeout = timeout ;
             P.t_plan = timeout ;
-        else
-            P.timeout = 1 ;
-            P.t_plan = 1 ;
         end
 
         if nargin > 1
             P.verbose = verbose_level ;
-        else
-            P.verbose = 0 ;
         end
-
-        P.HLP = [] ;
-        P.current_plan ;
-        P.info = [] ;
-        P.plot_waypoints_flag = false ;
     end
 
 %% setup
@@ -62,27 +53,34 @@ methods
     end
     
 %% plotting
-    function plot(P)
-        P.plotInLoop(1,[1 0 0]) ;    
-    end
-    
-    function plotInLoop(P,n,c)
-        P.vdisp('Plotting in loop',4)
-
-        if nargin < 3
-            c = [1 0 0] ;
-        end
-
-        figure(n) ;
-
-        % plot anticipated trajectory from planner
-        if ~isempty(P.current_plan)
-            plot(P.xy_plan(1,:),P.xy_plan(2,:),':','LineWidth',2,'Color',c)
+    function plot(P,color)
+        if nargin < 2
+            color = [0 0 1] ;
         end
         
-        % plot waypoints
-        if P.plot_waypoints_flag
-            P.HLP.plotWaypoints()
+        % check if a figure is up; if so, create a new figure,
+        % otherwise update the existing data
+        fh = get(groot,'CurrentFigure') ;
+
+        if isempty(A.plot_data) || isempty(fh)
+            hold on 
+            
+            % plot anticipated trajectory from planner
+            if ~isempty(P.current_plan)
+                P.plot_data.current_plan = plot(P.current_plan(1,:),P.current_plan(2,:),...
+                                                ':','LineWidth',2,'Color',color) ;
+            end
+
+            % plot waypoints
+            if P.plot_waypoints_flag
+                error('Plotting waypoints is not implemented yet!')
+                % P.HLP.plotWaypoints() ;
+            end
+            
+            hold off
+        else
+            P.plot_data.current_plan.XData = P.current_plan(1,:) ;
+            P.plot_data.current_plan.YData = P.current_plan(2,:) ;
         end
     end
     
