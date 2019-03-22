@@ -26,7 +26,7 @@ methods
     end
     
 %% get control inputs
-    function U = get_control_inputs(~,~,t,~,T_ref,U_ref,~)
+    function U = get_control_inputs(~,~,t,~,varargin)
         % method: U = get_control_inputs(agent,t_cur,z_cur,T_ref,U_ref,Z_ref)
         %
         % Given an agent, current time, current state, and reference
@@ -36,6 +36,9 @@ methods
         % This method is meant to be called by A.dynamics when in the
         % forward-integration loop of A.integrator. By default, it linearly
         % interpolates an input U at the time t given T_ref and U_ref.
+        
+        T_ref = varargin{1} ;
+        U_ref = varargin{2} ;
         
         U = match_trajectories(t,T_ref,U_ref) ;
     end

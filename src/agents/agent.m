@@ -186,10 +186,10 @@ classdef agent < handle
             
             % input and reference traj setup
             if nargin < 5 || isempty(Z_ref)
-                U = matchTrajectories(T,T_ref,U_ref) ;
+                U = match_trajectories(T,T_ref,U_ref) ;
                 Z = [] ;
             else
-                [U,Z] = matchTrajectories(T,T_ref,U_ref,T_ref,Z_ref) ;
+                [U,Z] = match_trajectories(T,T_ref,U_ref,T_ref,Z_ref) ;
             end
         end
         
