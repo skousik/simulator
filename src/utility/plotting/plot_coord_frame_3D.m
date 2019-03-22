@@ -77,14 +77,21 @@ function plot_data = plot_coord_frame_3D(R,varargin)
     
     % start new plot if none is available
     if ~exist('plot_data','var')
-        hold on
+        
+        hold_check = ishold ;
+        
+        if ~hold_check
+            hold on
+        end
 
         % plot 'em!
         e1_data = plot3(e1(1,:),e1(2,:),e1(3,:),'Color',c(1,:),args_list{:}) ;
         e2_data = plot3(e2(1,:),e2(2,:),e2(3,:),'Color',c(2,:),args_list{:}) ;
         e3_data = plot3(e3(1,:),e3(2,:),e3(3,:),'Color',c(3,:),args_list{:}) ;
 
-        hold off
+        if ~hold_check
+            hold off
+        end
 
         % create output
         if nargout > 0

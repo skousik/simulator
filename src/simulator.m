@@ -260,7 +260,7 @@ classdef simulator < handle
                         if plot_in_loop_flag
                             S.plot(widx,pidx)
                             if S.save_gif
-
+                                error('Shreyas this is unfinished!')
                             else
                                 pause(S.plotting_pause_time) ;
                             end
@@ -435,10 +435,12 @@ classdef simulator < handle
             filename = [S.save_gif_filename,'_planner_',num2str(planner_index),'.gif'] ;
 
             if S.start_gif
-                imwrite(imind,cm,filename,'gif', 'Loopcount',inf,'DelayTime',S.save_gif_delay_time) ; 
+                imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
+                        'DelayTime',S.save_gif_delay_time) ; 
                 S.start_gif = false ;
             else 
-                imwrite(imind,cm,filename,'gif','WriteMode','append') ; 
+                imwrite(imind,cm,filename,'gif','WriteMode','append',...
+                        'DelayTime',S.save_gif_delay_time) ;
             end
         end
     end

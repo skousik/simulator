@@ -157,7 +157,7 @@ classdef agent < handle
             [tout,zout] = A.integrator(@(t,z) A.dynamics(t,z,T_used,U_used,Z_used),...
                                        [0 t_move], zcur) ;
             
-            A.commit_move_data(tout,zout,T_used,U_used) ;
+            A.commit_move_data(tout,zout,T_used,U_used,Z_used) ;
         end
         
         function [T,U,Z] = move_setup(A,t_move,T_ref,U_ref,Z_ref)
@@ -193,8 +193,8 @@ classdef agent < handle
             end
         end
         
-        function commit_move_data(A,T_state,Z_state,T_used,U_used)
-            % method: commit_move_data(T_state,Z_state,T_input,U_input)
+        function commit_move_data(A,T_state,Z_state,T_used,U_used,~)
+            % method: commit_move_data(T_state,Z_state,T_input,U_input,Z_input)
             %
             % After moving the agent, commit the new state and input
             % trajectories, and associated time vectors, to the agent's
