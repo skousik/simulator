@@ -1,6 +1,4 @@
 function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
-error('need to implement this!')
-
     %% parse inputs
     if nargin < 5
         % take ten time steps by default
@@ -36,21 +34,36 @@ error('need to implement this!')
         % get time and time step
         t_idx = tout(idx) ;
         dt_idx = dt_vec(idx-1) ;
+        half_dt_idx = dt_idx/2 ;
         
         % get current state and orientation
-        y_idx = yout(:,idx-1) ;
-        R_idx = Rout(:,:,idx-1) ;
+        y1_idx = yout(:,idx-1) ;
+        R1_idx = Rout(:,:,idx-1) ;
         
-        % compute state dynamics
-        y_dot = dyn(t_idx,y_idx,R_idx) ;
-        
-        % compute rotation matrix dynamics
-        O_idx = y_idx(O_idxs) ;
-        F_idx = expm(dt_idx.*skew(O_idx)) ;
-        
+    % compute state and rotation matrix dynamics with RK2
+        % get first time step
+        y1_dot = dyn(t_idx,y1_idx,R1_idx) ;
+        k1 = half_dt_idx*y1_dot ;
+        O1_idx = y1_idx(O_idxs) ;
+        F1_idx = expm(half_dt_idx.*skew(O1_idx)) ;
+        R2_idx = F1_idx*R1_idx ;
+
+        % get second time step
+        y2_dot = dyn(t_idx + half_dt_idx, y1_idx + k1, R2_idx) ;
+        if ~any(isnan(y2_dot))
+            k2 = dt_idx*y2_dot ;
+            y2_idx = y1_idx + k1 ;
+            O2_idx = y2_idx(O_idxs) ;
+            F2_idx = expm(half_dt_idx.*skew(O1_idx + O2_idx)) ;
+        else
+            warning('NaNs detected in dynamics! Attempting Euler step.')
+            k2 = dt_idx*y1_dot ;
+            F2_idx = expm(dt_idx.*skew(O1_idx)) ;
+        end
+
         % compute new state
-        yout(:,idx) = y_idx + dt_idx.*y_dot ;
-        Rout(:,:,idx) = F_idx*R_idx ;
+        yout(:,idx) = y1_idx + k2 ;
+        Rout(:,:,idx) = F2_idx*R1_idx ;
     end
 end
 

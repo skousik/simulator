@@ -92,8 +92,8 @@ methods
         [T_used,U_used,Z_used] = A.move_setup(t_move,T_ref,U_ref,Z_ref) ;
         
         % get current state and orientation
-        z_cur = A.state(:,end) ;
-        R_cur = A.attitude(:,:,end) ;
+        z_cur = A.state(:,end) ; % (position, velocity, angular velocity) in R^9
+        R_cur = A.attitude(:,:,end) ; % orientation in SO(3)
         
         % call integrator to simulate agent's dynamics
         [tout,zout,Rout] = A.integrator(@(t,y,R) A.dynamics(t,y,R,T_used,U_used,Z_used),...
@@ -112,6 +112,9 @@ methods
         [tout,yout,Rout] = ode1_with_SO3(fun,tspan,y0,R0,...
                                          A.integrator_time_discretization,...
                                          A.angular_velocity_indices) ;
+%         [tout,yout,Rout] = ode2_with_SO3(fun,tspan,y0,R0,...
+%                                          A.integrator_time_discretization,...
+%                                          A.angular_velocity_indices) ;
     end
     
 %% dynamics
@@ -125,8 +128,8 @@ methods
         % Note that acceleration due to gravity is added by default. This
         % can be changed by setting A.gravity_on_flag to false.
         
-        % compute current force and moment inputs
-        U = match_trajectories(t,T_ref,U_ref) ;
+        % compute current force and moment inputs (zero order hold)
+        U = match_trajectories(t,T_ref,U_ref,'previous') ;
         F = U(A.force_indices) ;
         M = U(A.moment_indices) ;
         

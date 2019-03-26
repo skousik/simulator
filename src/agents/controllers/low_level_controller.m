@@ -9,9 +9,7 @@ end
 methods
 %% constructor
     function LLC = low_level_controller(varargin)
-        for idx = 1:2:length(varargin)
-            LLC.(varargin{idx}) = varargin{idx+1} ;
-        end
+        LLC = parse_args(LLC,varargin{:}) ;
     end
     
 %% setup
