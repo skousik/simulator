@@ -132,6 +132,13 @@ classdef agent < handle
             A.input_time = 0 ;
         end
         
+        %% get agent info
+        function agent_info = get_agent_info(A)
+            agent_info.state = A.state ;
+            agent_info.positon = A.state(A.position_indices,:) ;
+            agent_info.time = A.time ;
+        end
+        
         %% move
         function move(A,t_move,T_ref,U_ref,Z_ref)
             % method: move(t_move,T_ref,U_ref,Z_ref)

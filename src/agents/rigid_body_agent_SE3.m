@@ -83,6 +83,12 @@ methods
         end
     end
     
+%% get agent info
+    function agent_info = get_agent_info(A)
+        agent_info = get_agent_info@agent(A) ;
+        agent_info.attitude = A.attitude ;
+    end
+    
 %% move
     function move(A,t_move,T_ref,U_ref,Z_ref)
         if nargin < 5
@@ -104,7 +110,7 @@ methods
     
     function commit_move_data(A,tout,zout,Rout,T_used,U_used,~)
         commit_move_data@agent_3D(A,tout,zout,T_used,U_used) ;
-        A.attitude = cat(3,A.attitude,Rout) ;
+        A.attitude = cat(3,A.attitude,Rout(:,:,2:end)) ;
     end
     
 %% default integrator with SO(3)

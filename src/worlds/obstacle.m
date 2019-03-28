@@ -22,6 +22,9 @@ methods
 %% constructor
 function O = obstacle(varargin)
     O = parse_args(O,varargin{:}) ;
+    if isempty(O.plot_data)
+        O.plot_data.body = [] ;
+    end
 end
 
 %% reset

@@ -130,8 +130,8 @@ classdef simulator < handle
                     P = S.planners{pidx} ;
 
                     % get agent and world ready
-                    A.reset(W.start) ;
                     W.reset() ;
+                    A.reset(W.start) ;
 
                     % get planner ready
                     agent_info = A.get_agent_info() ;

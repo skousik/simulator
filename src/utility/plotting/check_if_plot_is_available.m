@@ -11,7 +11,11 @@ function out = check_if_plot_is_available(simulator_object,fieldname)
         F = fieldnames(simulator_object.plot_data) ;
         fieldname = F{1} ;
     end
-    fh = get(groot,'CurrentFigure') ;
-    h = simulator_object.plot_data.(fieldname) ;
-    out = ~(isempty(h) || ~isvalid(h) || isempty(fh)) ;
+    try
+        fh = get(groot,'CurrentFigure') ;
+        h = simulator_object.plot_data.(fieldname) ;
+        out = ~(isempty(h) || ~isvalid(h) || isempty(fh)) ;
+    catch
+        out = false ;
+    end
 end
