@@ -203,7 +203,7 @@ classdef agent < handle
             A.state = [A.state, Z_state(:,2:end)] ;
             A.time = [A.time, A.time(end) + T_state(2:end)] ;
             A.input_time = [A.input_time, A.input_time(end) + T_used(2:end)] ;
-            A.input = [A.input(:,1:end-1), U_used] ;
+            A.input = [A.input, U_used(:,1:end-1)] ;
         end
         
         %% stop
@@ -285,16 +285,6 @@ classdef agent < handle
                     hold off
                 end
             end
-        end
-        
-        function out = check_if_plot_is_available(A,fieldname)
-            if nargin < 2
-                F = fieldnames(A.plot_data) ;
-                fieldname = F{1} ;
-            end
-            fh = get(groot,'CurrentFigure') ;
-            h = A.plot_data.(fieldname) ;
-            out = ~(isempty(h) || ~isvalid(h) || isempty(fh)) ;
         end
     end
 end

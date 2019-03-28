@@ -33,7 +33,7 @@ methods
         xyz = A.state(A.position_indices,:) ;
         
         % check whether or not to create new plot data
-        if A.check_if_plot_is_available('trajectory')
+        if check_if_plot_is_available(A,'trajectory')
             A.vdisp('Updating plot',5) ;
             A.plot_data.trajectory.XData = xyz(1,:) ;
             A.plot_data.trajectory.YData = xyz(2,:) ;

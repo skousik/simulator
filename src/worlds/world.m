@@ -1,10 +1,13 @@
 classdef world < handle
 % Class: world
 %
+% This world superclass contains generic properties and methods to be used
+% in the simulator framework. It is 2-D by default.
+%
 % PROPERTIES
 %     dimension             specifies 2-D or 3-D world; default is 2
 %
-%     start                 (x,y) or (x,y,z) start position
+%     start                 (x,y) or (x,y,z) agent start position
 %
 %     goal                  (x,y) or (x,y,z) desired final location
 %
@@ -17,18 +20,22 @@ classdef world < handle
 %
 %     N_obstacles           number of obstacles (integer)
 %
-%     obstacles             the obstacles in the world; this is an
-%                           N_obstacles-by-1 structure of obstacle
-%                           objects, which have vertices (in the static
-%                           case) and position and time (dynamic)
+%     obstacles             the obstacles in the world; by default, this is
+%                           a 2-by-N array defining polygons by their
+%                           vertices, and separated by columns of nans
 %
 %     current_time_index    an integer representing the current simulation
-%                           time of the agent; this is used by world as
+%                           time of the agent; this is used by the world as
 %                           current_time = agent.time(current_time_index)
 %
 %     verbose               verbosity level of display; 0 is silent, 1 is
-%                           mildly talkative, and 2 or greater is very
+%                           mildly talkative, and 2 or greater is more
 %                           talkative
+%
+%     plot_data             a structure containing the data output of, for
+%                           example, the plot function; data can be updated
+%                           in the world.plot method instead of re-plotting
+%                           entirely, which makes for smooth animations
 %
 % METHODS
 %     world                 constructor method
@@ -73,9 +80,7 @@ classdef world < handle
     methods
     %% constructor
         function W = world(varargin)
-            for idx = 1:2:length(varargin)
-                W.(varargin{idx}) = varargin{idx+1} ;                                            
-            end
+            W = parse_args(W,varargin{:}) ;
         end
         
     %% setup
@@ -133,7 +138,7 @@ classdef world < handle
         %
         % Checks if the agent's center of mass is within W.goal_radius of
         % W.goal in the 2-norm.
-            pos_idx = agent_info.position_state_indices ;
+            pos_idx = agent_info.position_indices ;
             z = agent_info.state(pos_idx,:) ;
             out = min(norm(W.goal - z,2)) <= W.goal_radius ;
         end
@@ -144,6 +149,8 @@ classdef world < handle
         %
         % Given an agent in the world, return true if it has crashed into
         % any obstacles.
+        
+        % TO DO: fix this up for the new obstacle type
         
         % by default, don't check the full trajectory
             if nargin < 3
@@ -248,36 +255,21 @@ classdef world < handle
         end 
        
     %% plotting
-        function plot(W,n)
-            if nargin < 2
-                n = 1 ;
-            end
-            
-            figure(n) ; hold on ;
+        function plot(W)
             if ~any(isinf(W.bounds))
                 axis(W.bounds)
             end
             
-            % plot start and goal
-            xcirc = cos(linspace(0,2*pi)) ;
-            ycirc = sin(linspace(0,2*pi)) ;
+            % TO DO: plot start and goal, obstacles, and world bounds
             
-            plot(W.start(1), W.start(2), 'ko')
-            plot(W.goal(1), W.goal(2), 'kx')
-            r = W.goal_radius ;
-            plot(r*xcirc + W.goal(1), r*ycirc + W.goal(2), 'k:')
-            
-            % plot obstacles
-            O = W.obstacles ;
-            if ~isempty(O) && strcmp(W.obstacle_type,'static')
-                plot(O(1,:),O(2,:),'r-')
-            end
-            
-            % plot world bounds
-            if ~any(isinf(W.bounds))
-                B = W.bounds_as_contour ; % [xmin xmax ymin ymax]
-                plot(B(1,:),B(2,:),'r')
-            end
+%             % plot start and goal
+%             xcirc = cos(linspace(0,2*pi)) ;
+%             ycirc = sin(linspace(0,2*pi)) ;
+%             
+%             plot(W.start(1), W.start(2), 'ko')
+%             plot(W.goal(1), W.goal(2), 'kx')
+%             r = W.goal_radius ;
+%             plot(r*xcirc + W.goal(1), r*ycirc + W.goal(2), 'k:')
         end
         
 %% utility
