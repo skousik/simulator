@@ -23,7 +23,7 @@ function [F,V] = make_cuboid_for_patch(L,W,D,C)
     % make vertices
     Vx = L.*[0 1 1 0 0 1 1 0]' - L/2 + C(1) ;
     Vy = W.*[0 0 1 1 0 0 1 1]' - W/2 + C(2) ;
-    Vz = D.*[0 0 0 0 1 1 1 1]' - D/2 + C(1) ;
+    Vz = D.*[0 0 0 0 1 1 1 1]' - D/2 + C(3) ;
     V = [Vx Vy Vz] ;
     
     % make faces

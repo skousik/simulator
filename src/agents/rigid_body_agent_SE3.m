@@ -23,7 +23,7 @@ properties
     moment_indices = 4:6 ;
     
     % timing
-    integrator_time_discretization = 0.05 ;
+    integrator_time_discretization = 0.01 ;
     animation_time_discretization  = 0.1 ;
     
     % plotting

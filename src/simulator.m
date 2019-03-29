@@ -51,29 +51,23 @@ classdef simulator < handle
             % in the provided world using each of the provided planners.
             
         %% parse inputs
-            if nargin < 4
-                verbose_level = 0 ;
-            if nargin < 3
-                planners = planner2D ;
-            if nargin < 2
-                worlds = world2D ;
-            if nargin < 1
-                agent = agent2D ;
-            end
-            end
-            end
+            S = parse_args(S,varargin{:}) ;
+            
+            % if world or planner is alone, wrap it in a cell
+            if length(worlds) == 1 && ~iscell(worlds)
+                worlds = {worlds} ;
             end
             
-            if length(varargin) == 1
-                verbose_level = varargin{1} ;
-            else
-                for idx = 1:2:length(varargin)
-                    S.(varargin{idx}) = varargin{idx+1} ;                                            
-                end
+            if length(planners) == 1 && ~iscell(planners)
+                planners = {planners} ;
+            end
+            
+            % check for planner colors
+            if isempty(S.planner_colors)
+                S.planner_colors = repmat([0 0 1],length(planners),1) ;
             end
             
         %% wrap up construction
-            S.verbose = verbose_level ;
             S.agent = agent ;
             S.worlds = worlds ;
             S.planners = planners ;
@@ -167,7 +161,7 @@ classdef simulator < handle
                         S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end)),')'],2,false)
 
                     %% get agent info
-                        agent_info = A.get_info() ;
+                        agent_info = A.get_agent_info() ;
 
                     %% get world info
                         % given the current state of the agent, query the world
@@ -179,10 +173,10 @@ classdef simulator < handle
                         % current planner to get a control input
                         t_plan_spent = tic ;
                         if S.allow_replan_errors
-                            [T_nom,U_nom,Z_nom] = P.replan(A,world_info) ;
+                            [T_nom,U_nom,Z_nom] = P.replan(agent_info,world_info) ;
                         else
                             try
-                                [T_nom,U_nom,Z_nom] = P.replan(A,world_info) ;
+                                [T_nom,U_nom,Z_nom] = P.replan(agent_info,world_info) ;
                             catch
                                 S.vdisp(['Planner ',num2str(pidx),' errored while ',...
                                          'replanning!'])
@@ -243,15 +237,16 @@ classdef simulator < handle
                         % check if the agent is near the desired goal or if it
                         % crashed
                         S.vdisp('Checking if agent reached goal or crashed...',3)
-                        goalCheck = W.goalCheck(A) ;
-                        crashCheck = W.crashCheck(A, false) ;
+                        agent_info = A.get_agent_info() ;
+                        goal_check = W.goal_check(agent_info) ;
+                        crash_check = W.collision_check(agent_info,false) ;
 
-                        if crashCheck && S.stop_sim_when_crashed
+                        if crash_check && S.stop_sim_when_crashed
                             S.vdisp('Crashed!',2) ;
                             break
                         end
 
-                        if goalCheck
+                        if goal_check
                             S.vdisp('Reached goal!',2) ;
                             break
                         end

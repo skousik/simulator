@@ -135,7 +135,8 @@ classdef agent < handle
         %% get agent info
         function agent_info = get_agent_info(A)
             agent_info.state = A.state ;
-            agent_info.positon = A.state(A.position_indices,:) ;
+            agent_info.position = A.state(A.position_indices,:) ;
+            agent_info.position_indices = A.position_indices ;
             agent_info.time = A.time ;
         end
         

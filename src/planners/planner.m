@@ -12,35 +12,28 @@ properties
     timeout = 1 ; % time allowed for "replan" function to execute
     t_plan = 1 ; % same as timeout; just for notational purposes
     t_move = 0.1 ;% amount of time the planner expects the agent to move
-    info = [] ; % information structure to keep a log when planning
+    info % information structure to keep a log when planning
     plot_data % data for current plot
     plot_waypoints_flag = false ;
 end
 
 methods
 %% constructor
-    function P = planner(timeout,verbose_level)
-        if nargin > 0
-            P.timeout = timeout ;
-            P.t_plan = timeout ;
-        end
-
-        if nargin > 1
-            P.verbose = verbose_level ;
-        end
+    function P = planner(varargin)
+        P = parse_args(P,varargin{:}) ;
     end
 
 %% setup
-    function setup(~,~,~)
+    function setup(P,~,~)
     % P.setup(agent_info,world_info)
     %
     % ADD COMMENTS
-        warning('Planner setup function is undefined!')
+        P.vdisp('Planner setup function is undefined!')
     end
 
 %% replan
     function [T_nom,U_nom,Z_nom] = replan(~,~,~)
-    % [T_nom,U_nom,Z_nom] = P.replan(A,O)
+    % [T_nom,U_nom,Z_nom] = P.replan(agent_info,world_info)
     %
     % ADD COMMENTS
         warning('Planner replan function is undefined!')
