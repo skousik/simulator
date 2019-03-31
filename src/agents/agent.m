@@ -138,6 +138,7 @@ classdef agent < handle
             agent_info.position = A.state(A.position_indices,:) ;
             agent_info.position_indices = A.position_indices ;
             agent_info.time = A.time ;
+            agent_info.sensor_radius = A.sensor_radius ;
         end
         
         %% move

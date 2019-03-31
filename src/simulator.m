@@ -108,7 +108,7 @@ classdef simulator < handle
                 trajectory = cell(1,L) ;
                 total_real_time = cell(1,L) ;
                 planning_times = cell(1,L) ;
-                crash_check = cell(1,L) ;
+                collision_check = cell(1,L) ;
                 goal_check = cell(1,L) ;
                 stop_check = cell(1,L) ;
                 sim_time = cell(1,L) ;
@@ -238,15 +238,15 @@ classdef simulator < handle
                         % crashed
                         S.vdisp('Checking if agent reached goal or crashed...',3)
                         agent_info = A.get_agent_info() ;
-                        goal_check = W.goal_check(agent_info) ;
-                        crash_check = W.collision_check(agent_info,false) ;
+                        goal_check_cur = W.goal_check(agent_info) ;
+                        collision_check_cur = W.collision_check(agent_info,false) ;
 
-                        if crash_check && S.stop_sim_when_crashed
+                        if collision_check_cur && S.stop_sim_when_crashed
                             S.vdisp('Crashed!',2) ;
                             break
                         end
 
-                        if goal_check
+                        if goal_check_cur
                             S.vdisp('Reached goal!',2) ;
                             break
                         end
@@ -294,8 +294,9 @@ classdef simulator < handle
                     T_nom = A.time ;
                     U_nom = A.input ;
                     TU = A.input_time ;
-                    C = W.crashCheck(A) ;
-                    G = W.goalCheck(A) ;
+                    agent_info = A.get_agent_info() ;
+                    C = W.collision_check(agent_info) ;
+                    G = W.goal_check(agent_info) ;
 
                     if S.save_planner_info
                         planner_info{pidx} = S.planners{pidx}.info ;
@@ -311,7 +312,7 @@ classdef simulator < handle
                     control_input_time{pidx} = TU ;
                     total_real_time{pidx} = runtime ;
                     planning_times{pidx} = planning_time_vec ;
-                    crash_check{pidx} = C ;
+                    collision_check{pidx} = C ;
                     goal_check{pidx} = G ;
                     stop_check{pidx} = stop_check_vec ;
                     planner_timeout{pidx} = P.timeout ;
@@ -328,7 +329,7 @@ classdef simulator < handle
                                  'trajectory',trajectory,...
                                  'total_real_time',total_real_time,...
                                  'planning_time',planning_times,...
-                                 'crash_check',crash_check,...
+                                 'crash_check',collision_check,...
                                  'goal_check',goal_check,...
                                  'stop_check',stop_check,...
                                  'sim_time_vector',sim_time,...

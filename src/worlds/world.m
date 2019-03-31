@@ -24,9 +24,8 @@ classdef world < handle
 %                           a 2-by-N array defining polygons by their
 %                           vertices, and separated by columns of nans
 %
-%     current_time_index    an integer representing the current simulation
-%                           time of the agent; this is used by the world as
-%                           current_time = agent.time(current_time_index)
+%     current_time          the current time in the world, updated using
+%                           agent_info the world does a collision check
 %
 %     verbose               verbosity level of display; 0 is silent, 1 is
 %                           mildly talkative, and 2 or greater is more
@@ -72,7 +71,7 @@ classdef world < handle
         bounds = Inf*[-1 1 -1 1] ;
         N_obstacles = 0 ;
         obstacles = [] ;
-        current_time_index = 1 ;
+        current_time = 0 ;
         verbose = 0 ;
         plot_data
     end
@@ -108,7 +107,7 @@ classdef world < handle
             end
             
             % reset world time index
-            W.current_time_index = 1 ;
+            W.current_time = 0 ;
         end
         
     %% reset
@@ -116,8 +115,10 @@ classdef world < handle
         % Method: reset()
         %
         % Reset the world's current time index to 1. This is generic and
-        % can be overwritten in a subclass.
-            W.current_time_index = 1 ;
+        % can be overwritten in a subclass. This allows a world to reset
+        % its timing without creating new start/goal/obstacles, which is
+        % the point of the world.setup method.
+            W.current_time = 0 ;
         end
         
     %% get world info for planning
@@ -165,7 +166,7 @@ classdef world < handle
 %         % extract agent info
 %             xyidx = agent.xy_state_indices ;
 %             hidx = agent.heading_state_index ;
-%             tidx = W.current_time_index ;
+%             tidx = W.current_time ;
 %             afc = agent.footprint_contour ;
 %             
 %         % set up obstacles
@@ -253,7 +254,7 @@ classdef world < handle
 %             end
 % 
 %             % update the world time index
-%             W.current_time_index = length(agent.time) ;
+%             W.current_time = length(agent.time) ;
         end 
        
     %% plotting

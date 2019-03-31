@@ -31,6 +31,7 @@ properties
     plot_frame_scale = 1 ;
     plot_frame_colors = eye(3) ;
     animation_plot_buffer = 1 ; % meter
+    set_axes_when_animating = true ;
 end
 
 methods
@@ -273,8 +274,11 @@ methods
         for t_idx = t_vec
             % create plot
             A.plot_at_time(t_idx)
-            axis equal
-            axis([xmin xmax ymin ymax zmin zmax])
+            
+            if A.set_axes_when_animating
+                axis equal
+                axis([xmin xmax ymin ymax zmin zmax])
+            end
             
             % create gif
             if save_gif
