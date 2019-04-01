@@ -10,7 +10,7 @@ classdef simulator < handle
         worlds = {world()} ;
         planners = {planner()} ;
         verbose = 1 ;
-        
+
         % simulation
         max_sim_time = 100 ; % s per planner
         max_sim_iterations = 100 ; % per planner
@@ -20,7 +20,7 @@ classdef simulator < handle
         allow_replan_errors = false ;
         save_planner_info = false ;
         manual_iteration = false;
-        
+
         % plotting
         figure_number = 1 ;
         figure_handle = [] ;
@@ -34,7 +34,7 @@ classdef simulator < handle
         start_gif = true ;
         manually_resize_gif = true ;
     end
-    
+
 %% methods
     methods
     %% constructor
@@ -49,30 +49,30 @@ classdef simulator < handle
             % planning and obstacle avoidance in the world. The constructor
             % then sets up internal variables needed to simulate the agent
             % in the provided world using each of the provided planners.
-            
+
         %% parse inputs
             S = parse_args(S,varargin{:}) ;
-            
+
             % if world or planner is alone, wrap it in a cell
             if length(worlds) == 1 && ~iscell(worlds)
                 worlds = {worlds} ;
             end
-            
+
             if length(planners) == 1 && ~iscell(planners)
                 planners = {planners} ;
             end
-            
+
             % check for planner colors
             if isempty(S.planner_colors)
                 S.planner_colors = repmat([0 0 1],length(planners),1) ;
             end
-            
+
         %% wrap up construction
             S.agent = agent ;
             S.worlds = worlds ;
             S.planners = planners ;
         end
-        
+
     %% run simulation
         function summary = run(S)
             % Method: run
@@ -80,27 +80,27 @@ classdef simulator < handle
             % This function simulates the agent in the provided world as it
             % attempts to reach the goal from its provided start position.
             S.vdisp('Running simulation')
-            
+
             % get simulation info
             t_max = S.max_sim_time ;
             iter_max = S.max_sim_iterations ;
             plot_in_loop_flag = S.plot_while_running ;
-            
+
             % get world and planner indices
             world_indices = 1:length(S.worlds) ;
             planner_indices = 1:length(S.planners) ;
-            
+
             % get agent
             A = S.agent ;
-            
+
             % set up summaries
             LW = length(world_indices) ;
-            summary = cell(1,LW) ;            
-            
+            summary = cell(1,LW) ;
+
         %% world loop
             for widx = world_indices
                 W = S.worlds{widx} ;
-                
+
                 % set up summary objects
                 L = length(planner_indices) ;
                 planner_name = cell(1,L) ;
@@ -108,7 +108,7 @@ classdef simulator < handle
                 trajectory = cell(1,L) ;
                 total_real_time = cell(1,L) ;
                 planning_times = cell(1,L) ;
-                crash_check = cell(1,L) ;
+                collision_check = cell(1,L) ;
                 goal_check = cell(1,L) ;
                 stop_check = cell(1,L) ;
                 sim_time = cell(1,L) ;
@@ -130,7 +130,7 @@ classdef simulator < handle
                     % get planner ready
                     agent_info = A.get_agent_info() ;
                     world_info = W.get_world_info(agent_info,P) ;
-                        
+
                     P.setup(agent_info,world_info) ;
 
                     % check to make sure gif start is ready
@@ -229,7 +229,7 @@ classdef simulator < handle
 
                     %% Note (9 Nov 2018)
                     % For now, dynamic obstacles are treated as follows:
-                    %   1) getNearbyObstacles should return a prediction 
+                    %   1) getNearbyObstacles should return a prediction
                     %   2) the agent is moved according to the prediction
                     %   3) crashCheck moves the obstacles (according to the
                     %      agent's movement data if needed)
@@ -239,15 +239,15 @@ classdef simulator < handle
                         % crashed
                         S.vdisp('Checking if agent reached goal or crashed...',3)
                         agent_info = A.get_agent_info() ;
-                        goal_check_run = W.goal_check(agent_info) ;
-                        crash_check_run = W.collision_check(agent_info,false) ;
+                        goal_check_cur = W.goal_check(agent_info) ;
+                        collision_check_cur = W.collision_check(agent_info,false) ;
 
-                        if crash_check_run && S.stop_sim_when_crashed
+                        if collision_check_cur && S.stop_sim_when_crashed
                             S.vdisp('Crashed!',2) ;
                             break
                         end
 
-                        if goal_check_run
+                        if goal_check_cur
                             S.vdisp('Reached goal!',2) ;
                             break
                         end
@@ -295,8 +295,9 @@ classdef simulator < handle
                     T_nom = A.time ;
                     U_nom = A.input ;
                     TU = A.input_time ;
-                    C = W.collision_check(A) ;
-                    G = W.goal_check(A) ;
+                    agent_info = A.get_agent_info() ;
+                    C = W.collision_check(agent_info) ;
+                    G = W.goal_check(agent_info) ;
 
                     if S.save_planner_info
                         planner_info{pidx} = S.planners{pidx}.info ;
@@ -312,7 +313,7 @@ classdef simulator < handle
                     control_input_time{pidx} = TU ;
                     total_real_time{pidx} = runtime ;
                     planning_times{pidx} = planning_time_vec ;
-                    crash_check{pidx} = C ;
+                    collision_check{pidx} = C ;
                     goal_check{pidx} = G ;
                     stop_check{pidx} = stop_check_vec ;
                     planner_timeout{pidx} = P.timeout ;
@@ -329,7 +330,7 @@ classdef simulator < handle
                                  'trajectory',trajectory,...
                                  'total_real_time',total_real_time,...
                                  'planning_time',planning_times,...
-                                 'crash_check',crash_check,...
+                                 'crash_check',collision_check,...
                                  'goal_check',goal_check,...
                                  'stop_check',stop_check,...
                                  'sim_time_vector',sim_time,...
@@ -348,17 +349,17 @@ classdef simulator < handle
                                  'notes','',...
                                  'planner_info',planner_info) ;
             end
-            
+
             % clean up summary if only one world was run
-            if LW == 1 
+            if LW == 1
                 summary = summary{1} ;
             end
-            
+
             S.vdisp('Simulation complete!')
-            
-            
+
+
         end
-        
+
     %% plotting
     function plot(S,world_index,planner_index)
         S.vdisp('Plotting',3)
@@ -374,7 +375,7 @@ classdef simulator < handle
 
         fh = figure(S.figure_number) ;
         cla ; hold on ; axis equal ;
-        
+
         % get agent, world, and planner
         A = S.agent ;
         W = S.worlds{world_index} ;
@@ -389,7 +390,7 @@ classdef simulator < handle
         for plot_idx = S.plot_order
             switch plot_idx
                 case 'A'
-                    A.plot(color)  
+                    A.plot(color)
                 case 'W'
                     W.plot()
                 case 'P'
@@ -432,15 +433,15 @@ classdef simulator < handle
 
             if S.start_gif
                 imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
-                        'DelayTime',S.save_gif_delay_time) ; 
+                        'DelayTime',S.save_gif_delay_time) ;
                 S.start_gif = false ;
-            else 
+            else
                 imwrite(imind,cm,filename,'gif','WriteMode','append',...
                         'DelayTime',S.save_gif_delay_time) ;
             end
         end
     end
-        
+
     %% verbose text output
     function vdisp(S,s,l,use_header)
     % Display a string 's' if the verbosity is greater than or equal to
@@ -450,7 +451,7 @@ classdef simulator < handle
         if nargin < 4
             use_header = true ;
             if nargin < 3
-                l = 1 ; 
+                l = 1 ;
             end
         end
 
@@ -461,6 +462,6 @@ classdef simulator < handle
                 disp(s)
             end
         end
-    end        
+    end
     end
 end
