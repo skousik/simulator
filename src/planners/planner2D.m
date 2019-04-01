@@ -72,8 +72,11 @@ methods
     end
     
 %% plotting
-    function plot(P)
-        P.plotInLoop(1,[1 0 0]) ;    
+    function plot(P,c)
+        if nargin<2
+            c=[0,0,1];
+        end
+        P.plotInLoop(1,c) ;    
     end
     
     function plotInLoop(P,n,c)

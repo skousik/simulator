@@ -129,7 +129,8 @@ classdef simulator < handle
 
                     % get planner ready
                     agent_info = A.get_agent_info() ;
-                    world_info = W.get_world_info(agent_info) ;
+                    world_info = W.get_world_info(agent_info,P) ;
+                        
                     P.setup(agent_info,world_info) ;
 
                     % check to make sure gif start is ready
@@ -238,15 +239,15 @@ classdef simulator < handle
                         % crashed
                         S.vdisp('Checking if agent reached goal or crashed...',3)
                         agent_info = A.get_agent_info() ;
-                        goal_check = W.goal_check(agent_info) ;
-                        crash_check = W.collision_check(agent_info,false) ;
+                        goal_check_run = W.goal_check(agent_info) ;
+                        crash_check_run = W.collision_check(agent_info,false) ;
 
-                        if crash_check && S.stop_sim_when_crashed
+                        if crash_check_run && S.stop_sim_when_crashed
                             S.vdisp('Crashed!',2) ;
                             break
                         end
 
-                        if goal_check
+                        if goal_check_run
                             S.vdisp('Reached goal!',2) ;
                             break
                         end
@@ -294,8 +295,8 @@ classdef simulator < handle
                     T_nom = A.time ;
                     U_nom = A.input ;
                     TU = A.input_time ;
-                    C = W.crashCheck(A) ;
-                    G = W.goalCheck(A) ;
+                    C = W.collision_check(A) ;
+                    G = W.goal_check(A) ;
 
                     if S.save_planner_info
                         planner_info{pidx} = S.planners{pidx}.info ;
