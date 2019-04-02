@@ -1,4 +1,4 @@
-classdef mpc_agent < agent2D
+classdef mpc_agent < agent_2D
 
 properties
     reference_trajectory %store all reference trajecotries at A.input_time
@@ -34,7 +34,7 @@ function A=mpc_agent(mpc_dynamics,time_discretization,...
     %jacobians from the function. If there is an error a warning pops up.
     %and you have to set the jacobians manually
 
-    A@agent2D(varargin{:})
+    A@agent_2D(varargin{:})
 
     for idx = 1:2:length(varargin)
         switch varargin{idx}
@@ -309,6 +309,9 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,u_initial,~,Z,U,
 
 end
 
+function A=get_agent_info(A)
+    A=A;
+end
 %% helper functions
 %set sizes for other functions
 function set_problem_size(A,prediction_horizon)

@@ -372,8 +372,11 @@ classdef agent_2D < handle
         end
         
         %% plotting
-        function plot(A)
-            A.plotInLoop(1,[0 0 1])
+        function plot(A,c)
+            if nargin<2
+                c=[0,0,1];
+            end
+            A.plotInLoop(1,c)
             axis equal
         end
         

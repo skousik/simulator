@@ -66,7 +66,7 @@ classdef world2D < handle
 %                           the agent by default; should be overwritten by
 %                           subclasses to be more situation-specific
 %
-%     goalCheck             checks if the agent is within goal_radius of
+%     goal_check             checks if the agent is within goal_radius of
 %                           the goal
 %
 %     crashCheck            checks if the agent has collided with any
@@ -208,14 +208,14 @@ classdef world2D < handle
         end
         
         %% goal check
-        function out = goalCheck(W,agent)
+        function out = goal_check(W,agent)
             xyidx = agent.xy_state_indices ;
             Z = agent.state(xyidx,:) ;
             out = min(distPointToPoints(W.goal(1:2),Z)) <= W.goal_radius ;
         end
         
         %% crash check
-        function out = crashCheck(W,agent, check_full_traj_flag)
+        function out = collision_check(W,agent, check_full_traj_flag)
         % Function: crashCheck(agent)
         %
         % Given an agent in the world, return true if it has crashed into
