@@ -309,9 +309,7 @@ function [Aineq,bineq] = get_inequality_constraints(A,x_initial,u_initial,~,Z,U,
 
 end
 
-function A=get_agent_info(A)
-    A=A;
-end
+
 %% helper functions
 %set sizes for other functions
 function set_problem_size(A,prediction_horizon)

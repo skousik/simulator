@@ -354,11 +354,23 @@ classdef agent_2D < handle
         function [tout,zout] = odesolver(~,fun,tspan,z0)
             [tout,zout] = ode45(@(t,z) fun(t,z),tspan,z0(:)) ;
         end
-        
+        %% default agent info
+        function A_info = get_agent_info(A)
+            A_info.state = A.state;
+            A_info.time = A.time;
+            A_info.xy_state_indices  = A.xy_state_indices;
+            A_info.heading_state_index = A.heading_state_index;
+            A_info.footprint = A.footprint;
+            A_info.footprint_contour= A.footprint_contour;
+            A_info.sensor_radius  = A.sensor_radius;
+            A_info.n_inputs = A.n_inputs;
+            A_info.n_states = A.n_states;
+        end
+
         %% verbose display
         function vdisp(A,s,l)
-        % Display a string s if the message's verbose level l is greater
-        % than or equal to the planner's verbose level.
+            % Display a string s if the message's verbose level l is greater
+            % than or equal to the planner's verbose level.
             if nargin < 3
                 l = 1 ;
             end
@@ -370,7 +382,7 @@ classdef agent_2D < handle
                 end
             end
         end
-        
+
         %% plotting
         function plot(A,c)
             if nargin<2
