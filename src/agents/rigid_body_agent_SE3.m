@@ -29,6 +29,7 @@ properties
     % plotting
     plot_frame_flag = true ;
     plot_frame_scale = 1 ;
+    plot_frame_linewidth = 2 ;
     plot_frame_colors = eye(3) ;
     animation_plot_buffer = 1 ; % meter
     set_axes_when_animating = true ;
@@ -216,13 +217,13 @@ methods
                                                 'Data',A.plot_data,...
                                                 'Scale',A.plot_frame_scale,...
                                                 'Colors',A.plot_frame_colors,...
-                                                'LineWidth',2) ;
+                                                'LineWidth',A.plot_frame_linewidth) ;
         else
             % create new coordinate frame plot data
             new_plot_data = plot_coord_frame_3D(R,p,...
                                                 'Scale',A.plot_frame_scale,...
                                                 'Colors',A.plot_frame_colors,...
-                                                'LineWidth',2) ;             
+                                                'LineWidth',A.plot_frame_linewidth) ;             
         end
         
         % update A.plot_data
@@ -243,11 +244,12 @@ methods
             start_gif = false ;
         else
             start_gif = true ;
-            filename = 'rigid_body_agent_animation.gif' ;
+            filename = 'animation.gif' ;
             
             dir_content = dir(pwd) ;
             filenames   = {dir_content.name} ;
             file_check  = any(cellfun(@(x) strcmp(filename,x),filenames)) ;
+            filename_new = filename ;
             cur_int = 1 ;
             
             while file_check

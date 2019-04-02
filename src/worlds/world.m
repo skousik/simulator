@@ -69,7 +69,7 @@ classdef world < handle
         goal = [0;0] ;
         goal_radius = 1 ;
         bounds = Inf*[-1 1 -1 1] ;
-        N_obstacles = 0 ;
+        N_obstacles = [] ;
         obstacles = [] ;
         current_time = 0 ;
         verbose = 0 ;
