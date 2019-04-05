@@ -85,6 +85,10 @@ classdef agent < handle
         plot_sensor_radius = false
         plot_time_step = false ;
         LLC = [] ; % low-level controller
+        
+        % plotting
+        animation_plot_buffer = 1 ; % meter
+        animation_time_discretization  = 0.1 ;
     end
     
     methods
@@ -294,6 +298,119 @@ classdef agent < handle
                     hold off
                 end
             end
+        end
+        
+        function plot_at_time(A,t,color)
+            if nargin < 3
+                color = [0 0 1] ;
+            end
+            
+            % get state at time t
+            z_t = match_trajectories(t,A.time,A.state) ;
+            xy = z_t(A.position_indices);
+            
+            % check if a figure is up; if so, create a new figure,
+            % otherwise update the existing data
+            if check_if_plot_is_available(A,'trajectory')
+                A.plot_data.trajectory.XData = xy(1) ;
+                A.plot_data.trajectory.YData = xy(2) ;
+                
+                if A.plot_sensor_radius
+                    A.plot_data.sensor_radius.XData = xcirc ;
+                    A.plot_data.sensor_radius.YData = ycirc ;
+                end
+            else
+                % plot trajectory
+                trajectory_data = plot(xy(1),xy(2),'o','Color',color) ;
+                A.plot_data.trajectory = trajectory_data ;
+
+                % plot sensor radius
+                if A.plot_sensor_radius
+                    hold on
+                    sensor_radius_data = plot(xcirc, ycirc,'--','Color',[0.5 0.5 1]) ;
+                    A.plot_data.sensor_radius = sensor_radius_data ;
+                    hold off
+                end
+            end
+        end
+        
+        function animate(A,save_gif)
+        % method: animate(save_gif)
+        %
+        % Given the agent's executed trajectory, animate it for the
+        % duration given by A.time. The time between animated frames is
+        % given by A.animation_time_discretization.
+
+            if nargin < 2
+                save_gif = false ;
+                start_gif = false ;
+            else
+                start_gif = true ;
+                filename = A.gif_setup() ;
+            end
+
+            % get time
+            t_vec = A.time(1):A.animation_time_discretization:A.time(end) ;
+
+            % get axis limits
+            lims = A.get_axis_lims() ;
+
+            for t_idx = t_vec
+                % create plot
+                A.plot_at_time(t_idx)
+
+                if A.set_axes_when_animating
+                    axis equal
+                    axis(lims)
+                end
+
+                % create gif
+                if save_gif
+                    % get current figure
+                    fh = get(groot,'CurrentFigure') ;
+                    frame = getframe(fh) ;
+                    im = frame2im(frame);
+                    [imind,cm] = rgb2ind(im,256);
+
+                    if start_gif
+                        imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
+                                'DelayTime',A.animation_time_discretization) ; 
+                        start_gif = false ;
+                    else 
+                        imwrite(imind,cm,filename,'gif','WriteMode','append',...
+                                'DelayTime',A.animation_time_discretization) ; 
+                    end
+                else
+                    pause(A.animation_time_discretization)
+                end
+            end
+        end
+        
+        function lims = get_axis_lims(A)
+            z = A.state(A.position_indices,:) ;
+            xmin = min(z(1,:)) - A.animation_plot_buffer ;
+            xmax = max(z(1,:)) + A.animation_plot_buffer ;
+            ymin = min(z(2,:)) - A.animation_plot_buffer ;
+            ymax = max(z(2,:)) + A.animation_plot_buffer ;
+            lims = [xmin xmax ymin ymax] ;
+        end
+    
+        function filename = gif_setup(A)       
+            filename = 'animation.gif' ;
+
+            dir_content = dir(pwd) ;
+            filenames   = {dir_content.name} ;
+            file_check  = any(cellfun(@(x) strcmp(filename,x),filenames)) ;
+            filename_new = filename ;
+            cur_int = 1 ;
+
+            while file_check
+                filename_new = [filename(1:end-4),'_',num2str(cur_int),filename(end-3:end)] ;
+                file_check  = any(cellfun(@(x) strcmp(filename_new,x),filenames)) ;
+                cur_int = cur_int + 1 ;
+            end
+
+            filename = filename_new ;
         end
     end
 end

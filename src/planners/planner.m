@@ -77,6 +77,14 @@ methods
         end
     end
     
+    function plot_at_time(P,t,color)
+        if nargin < 2
+            color = [0 0 1] ;
+        end
+        
+        P.vdisp('Plotting at a specific time is undefined.',1)        
+    end
+    
 %% utility
     function vdisp(P,s,l)
     % Display a string s if the message's verbose level l is greater

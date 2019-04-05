@@ -275,6 +275,14 @@ classdef world < handle
 %             plot(r*xcirc + W.goal(1), r*ycirc + W.goal(2), 'k:')
         end
         
+        function plot_at_time(W,t,color)
+            if nargin < 3
+                color = [1 0 0] ;
+            end
+            
+            W.vdisp('Plotting at a specific time is undefined.',2)
+        end
+        
 %% utility
         function vdisp(W,s,l)
         % Display a string s if the message's verbose level l is greater

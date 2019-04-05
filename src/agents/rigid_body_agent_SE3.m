@@ -23,15 +23,13 @@ properties
     moment_indices = 4:6 ;
     
     % timing
-    integrator_time_discretization = 0.01 ;
-    animation_time_discretization  = 0.1 ;
+    integrator_time_discretization = 0.005 ;
     
     % plotting
     plot_frame_flag = true ;
     plot_frame_scale = 1 ;
     plot_frame_linewidth = 2 ;
     plot_frame_colors = eye(3) ;
-    animation_plot_buffer = 1 ; % meter
     set_axes_when_animating = true ;
 end
 
@@ -232,76 +230,76 @@ methods
         A.plot_data.e3_data = new_plot_data.e3_data ;
     end
     
-    function animate(A,save_gif)
-        % method: animate(save_gif)
-        %
-        % Given the agent's executed trajectory, animate it for the
-        % duration given by A.time. The time between animated frames is
-        % given by A.animation_time_discretization.
-        
-        if nargin < 2
-            save_gif = false ;
-            start_gif = false ;
-        else
-            start_gif = true ;
-            filename = 'animation.gif' ;
-            
-            dir_content = dir(pwd) ;
-            filenames   = {dir_content.name} ;
-            file_check  = any(cellfun(@(x) strcmp(filename,x),filenames)) ;
-            filename_new = filename ;
-            cur_int = 1 ;
-            
-            while file_check
-                filename_new = [filename(1:end-4),'_',num2str(cur_int),filename(end-3:end)] ;
-                file_check  = any(cellfun(@(x) strcmp(filename_new,x),filenames)) ;
-                cur_int = cur_int + 1 ;
-            end
-            
-            filename = filename_new ;
-        end
-        
-        % get time
-        t_vec = A.time(1):A.animation_time_discretization:A.time(end) ;
-        
-        % get axis limits
-        z = A.state(A.position_indices,:) ;
-        xmin = min(z(1,:)) - A.animation_plot_buffer ;
-        xmax = max(z(1,:)) + A.animation_plot_buffer ;
-        ymin = min(z(2,:)) - A.animation_plot_buffer ;
-        ymax = max(z(2,:)) + A.animation_plot_buffer ;
-        zmin = min(z(3,:)) - A.animation_plot_buffer ;
-        zmax = max(z(3,:)) + A.animation_plot_buffer ;            
-        
-        for t_idx = t_vec
-            % create plot
-            A.plot_at_time(t_idx)
-            
-            if A.set_axes_when_animating
-                axis equal
-                axis([xmin xmax ymin ymax zmin zmax])
-            end
-            
-            % create gif
-            if save_gif
-                % get current figure
-                fh = get(groot,'CurrentFigure') ;
-                frame = getframe(fh) ;
-                im = frame2im(frame);
-                [imind,cm] = rgb2ind(im,256);
-                
-                if start_gif
-                    imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
-                            'DelayTime',A.animation_time_discretization) ; 
-                    start_gif = false ;
-                else 
-                    imwrite(imind,cm,filename,'gif','WriteMode','append',...
-                            'DelayTime',A.animation_time_discretization) ; 
-                end
-            else
-                pause(A.animation_time_discretization)
-            end
-        end
-    end
+%     function animate(A,save_gif)
+%         % method: animate(save_gif)
+%         %
+%         % Given the agent's executed trajectory, animate it for the
+%         % duration given by A.time. The time between animated frames is
+%         % given by A.animation_time_discretization.
+%         
+%         if nargin < 2
+%             save_gif = false ;
+%             start_gif = false ;
+%         else
+%             start_gif = true ;
+%             filename = 'animation.gif' ;
+%             
+%             dir_content = dir(pwd) ;
+%             filenames   = {dir_content.name} ;
+%             file_check  = any(cellfun(@(x) strcmp(filename,x),filenames)) ;
+%             filename_new = filename ;
+%             cur_int = 1 ;
+%             
+%             while file_check
+%                 filename_new = [filename(1:end-4),'_',num2str(cur_int),filename(end-3:end)] ;
+%                 file_check  = any(cellfun(@(x) strcmp(filename_new,x),filenames)) ;
+%                 cur_int = cur_int + 1 ;
+%             end
+%             
+%             filename = filename_new ;
+%         end
+%         
+%         % get time
+%         t_vec = A.time(1):A.animation_time_discretization:A.time(end) ;
+%         
+%         % get axis limits
+%         z = A.state(A.position_indices,:) ;
+%         xmin = min(z(1,:)) - A.animation_plot_buffer ;
+%         xmax = max(z(1,:)) + A.animation_plot_buffer ;
+%         ymin = min(z(2,:)) - A.animation_plot_buffer ;
+%         ymax = max(z(2,:)) + A.animation_plot_buffer ;
+%         zmin = min(z(3,:)) - A.animation_plot_buffer ;
+%         zmax = max(z(3,:)) + A.animation_plot_buffer ;            
+%         
+%         for t_idx = t_vec
+%             % create plot
+%             A.plot_at_time(t_idx)
+%             
+%             if A.set_axes_when_animating
+%                 axis equal
+%                 axis([xmin xmax ymin ymax zmin zmax])
+%             end
+%             
+%             % create gif
+%             if save_gif
+%                 % get current figure
+%                 fh = get(groot,'CurrentFigure') ;
+%                 frame = getframe(fh) ;
+%                 im = frame2im(frame);
+%                 [imind,cm] = rgb2ind(im,256);
+%                 
+%                 if start_gif
+%                     imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
+%                             'DelayTime',A.animation_time_discretization) ; 
+%                     start_gif = false ;
+%                 else 
+%                     imwrite(imind,cm,filename,'gif','WriteMode','append',...
+%                             'DelayTime',A.animation_time_discretization) ; 
+%                 end
+%             else
+%                 pause(A.animation_time_discretization)
+%             end
+%         end
+%     end    
 end
 end

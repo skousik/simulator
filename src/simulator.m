@@ -33,6 +33,7 @@ classdef simulator < handle
         save_gif_delay_time = 0.1 ;
         start_gif = true ;
         manually_resize_gif = true ;
+        animation_time_discretization = 0.1 ; % s
     end
 
 %% methods
@@ -104,7 +105,8 @@ classdef simulator < handle
                 % set up summary objects
                 L = length(planner_indices) ;
                 planner_name = cell(1,L) ;
-                planner_info = cell(1,L) ;
+                planner_info_cell = cell(1,L) ;
+                agent_info_cell = cell(1,L) ;
                 trajectory = cell(1,L) ;
                 total_real_time = cell(1,L) ;
                 planning_times = cell(1,L) ;
@@ -298,11 +300,12 @@ classdef simulator < handle
                     agent_info = A.get_agent_info() ;
                     C = W.collision_check(agent_info) ;
                     G = W.goal_check(agent_info) ;
+                    agent_info_cell{pidx} = agent_info ;
 
                     if S.save_planner_info
-                        planner_info{pidx} = S.planners{pidx}.info ;
+                        planner_info_cell{pidx} = S.planners{pidx}.info ;
                     else
-                        planner_info{pidx} = 'no info saved' ;
+                        planner_info_cell{pidx} = 'no info saved' ;
                     end
 
                     % fill in the results for the current planner
@@ -348,7 +351,8 @@ classdef simulator < handle
                                  'goal',W.goal,...
                                  'bounds',W.bounds,...
                                  'notes','',...
-                                 'planner_info',planner_info) ;
+                                 'agent_info',agent_info_cell,...    
+                                 'planner_info',planner_info_cell) ;
             end
 
             % clean up summary if only one world was run
@@ -405,7 +409,7 @@ classdef simulator < handle
             end
         end
 
-        if S.save_gif
+        if S.save_gif            
             if S.start_gif
                 % if gif saving is enabled, check that there isn't already a
                 % file in the current directory with that name
@@ -419,10 +423,9 @@ classdef simulator < handle
                         'overwrite your existing file!'])
                 end
                 if S.manually_resize_gif
-
-                S.vdisp(['Please resize the figure to the size you ',...
-                         'want saved, or hit any key to continue.'])
-                pause
+                    S.vdisp(['Please resize the figure to the size you ',...
+                             'want saved, or hit any key to continue.'])
+                    pause
                 end
             end
 
@@ -441,6 +444,98 @@ classdef simulator < handle
                         'DelayTime',S.save_gif_delay_time) ;
             end
         end
+    end
+    
+    %% animate
+    function animate(S,planner_index,world_index,save_animation_gif)
+    % method: animate(planner_index,world_index,save_gif)
+    %
+    % Animate the agent, world, and planner for the duration given by
+    % A.time. The time between animated frames is given by the simulator's
+    % animation_time_discretization property. The planner and world to
+    % animate are given by the planner_index and world_index inputs, so the
+    % simulator plots S.worlds{world_index} and S.planners{planner_index}.
+        if nargin < 4
+            save_animation_gif = false ;
+            start_animation_gif = false ;
+        else
+            start_animation_gif = true ;
+            filename = S.animation_gif_setup() ;
+        end
+        
+        if nargin < 3
+            world_index = 1 ;
+        end
+        
+        if nargin < 2
+            planner_index = 1 ;
+        end
+        
+        % get agent, world, and planner
+        A = S.agent ;
+        W = S.worlds{world_index} ;
+        P = S.planners{planner_index} ;
+        
+        % get time
+        t_vec = A.time(1):A.animation_time_discretization:A.time(end) ;
+
+        for t_idx = t_vec
+            % create plot
+            for plot_idx = S.plot_order
+                switch plot_idx
+                    case 'A'
+                        A.plot_at_time(t_idx)
+                    case 'W'
+                        W.plot_at_time(t_idx)
+                    case 'P'
+                        P.plot_at_time(t_idx)
+                    otherwise
+                        error(['Simulator plot order is broken! Make sure ',...
+                              'it is a string containing the characters ',...
+                              'A (for agent), W (for world), and P (for ',...
+                              'planner), in the order you want them to ',...
+                              'plot (WAP is the default).'])
+                end
+            end
+            
+            % create gif
+            if save_animation_gif
+                % get current figure
+                fh = get(groot,'CurrentFigure') ;
+                frame = getframe(fh) ;
+                im = frame2im(frame);
+                [imind,cm] = rgb2ind(im,256);
+                
+                if start_animation_gif
+                    imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
+                        'DelayTime',A.animation_time_discretization) ;
+                    start_animation_gif = false ;
+                else
+                    imwrite(imind,cm,filename,'gif','WriteMode','append',...
+                        'DelayTime',A.animation_time_discretization) ;
+                end
+            else
+                pause(A.animation_time_discretization)
+            end
+        end
+    end
+    
+    function filename = animation_gif_setup(S)       
+        filename = S.save_gif_filename ;
+
+        dir_content = dir(pwd) ;
+        filenames   = {dir_content.name} ;
+        file_check  = any(cellfun(@(x) strcmp(filename,x),filenames)) ;
+        filename_new = filename ;
+        cur_int = 1 ;
+
+        while file_check
+            filename_new = [filename(1:end-4),'_',num2str(cur_int),filename(end-3:end)] ;
+            file_check  = any(cellfun(@(x) strcmp(filename_new,x),filenames)) ;
+            cur_int = cur_int + 1 ;
+        end
+
+        filename = filename_new ;
     end
 
     %% verbose text output

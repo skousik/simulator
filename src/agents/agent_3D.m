@@ -48,5 +48,38 @@ methods
             A.plot_data.trajectory = trajectory_data ;
         end
     end
+    
+    function plot_at_time(A,t,color)
+        if nargin < 3
+            color = [0 0 1] ;
+        end
+        
+        % get state at time t
+        z_t = match_trajectories(t,A.time,A.state) ;
+        xyz = z_t(A.position_indices);
+
+        % check if a figure is up; if so, create a new figure,
+        % otherwise update the existing data
+        if check_if_plot_is_available(A,'trajectory')
+            A.plot_data.trajectory.XData = xyz(1) ;
+            A.plot_data.trajectory.YData = xyz(2) ;
+            A.plot_data.trajectory.ZData = xyz(3) ;
+        else
+            % plot trajectory
+            trajectory_data = plot3(xyz(1),xyz(2),xyz(3),'o','Color',color) ;
+            A.plot_data.trajectory = trajectory_data ;
+        end
+    end
+    
+    function lims = get_axis_lims(A)
+        z = A.state(A.position_indices,:) ;
+        xmin = min(z(1,:)) - A.animation_plot_buffer ;
+        xmax = max(z(1,:)) + A.animation_plot_buffer ;
+        ymin = min(z(2,:)) - A.animation_plot_buffer ;
+        ymax = max(z(2,:)) + A.animation_plot_buffer ;
+        zmin = min(z(3,:)) - A.animation_plot_buffer ;
+        zmax = max(z(3,:)) + A.animation_plot_buffer ; 
+        lims = [xmin xmax ymin ymax zmin zmax] ;
+    end
 end
 end
