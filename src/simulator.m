@@ -477,7 +477,7 @@ classdef simulator < handle
         P = S.planners{planner_index} ;
         
         % get time
-        t_vec = A.time(1):A.animation_time_discretization:A.time(end) ;
+        t_vec = A.time(1):S.animation_time_discretization:A.time(end) ;
 
         for t_idx = t_vec
             % create plot
@@ -515,7 +515,7 @@ classdef simulator < handle
                         'DelayTime',A.animation_time_discretization) ;
                 end
             else
-                pause(A.animation_time_discretization)
+                pause(S.animation_time_discretization)
             end
         end
     end
