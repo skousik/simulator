@@ -2,14 +2,19 @@ classdef pathWaypointPlanner < waypointPlanner2D
 properties
     path
     arc_length
+    arc_length_avoid
     N_waypoints_keep
 end
 methods
     %% constructor
-    function WP = pathWaypointPlanner(path,verbose_level)
-        if nargin<2
+    function WP = pathWaypointPlanner(path,avoid_polygon,verbose_level)
+        if nargin<3
             verbose_level=0;
+            if nargin<2
+                avoid_polygon = [];
+            end
         end
+        
         WP@waypointPlanner2D(verbose_level) ;
         WP.path = path ;
         WP.arc_length = [0,cumsum(sqrt(diff(WP.path(1,:)).^2+diff(WP.path(2,:)).^2))];
@@ -17,6 +22,23 @@ methods
         WP.N_waypoints = 1 ;
         WP.N_waypoints_keep = 5 ;
         WP.waypoints = nan(3,WP.N_waypoints_keep+1) ;
+        
+        if ~isempty(avoid_polygon)
+          [~, xc_is, yc_is] = poly_poly_dist(path(1,:),path(2,:),avoid_polygon(1,:),avoid_polygon(2,:));
+          
+          path_points_avoid = [xc_is(:,1)';yc_is(:,1)'];
+          
+          arc_length_avoid = NaN(1,length(path_points_avoid));
+          
+          for i=1:size(path_points_avoid,2)
+              arc_length_avoid(i) = distAlongPolyline(path_points_avoid(:,i),path(1:2,:));
+          end
+          
+          WP.arc_length_avoid = [min(arc_length_avoid),max(arc_length_avoid)];
+          
+        else
+           WP.arc_length_avoid = [Inf,-Inf]; 
+        end
     end
     
     %% get waypoint
@@ -30,7 +52,10 @@ methods
             sout=WP.arc_length(end);
         end
         
-        
+        if sout < WP.arc_length_avoid(2) && sout>WP.arc_length_avoid(1)
+            sout = WP.arc_length_avoid(2)+0.01*WP.arc_length(end);
+        end
+            
         waypoint = interp_with_angles(WP.arc_length',WP.path',sout,3,'pchip')';
         
         % add new waypoint to list of past waypoints; just keeps the past
