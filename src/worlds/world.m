@@ -280,7 +280,7 @@ classdef world < handle
                 color = [1 0 0] ;
             end
             
-            W.vdisp('Plotting at a specific time is undefined.',2)
+            W.vdisp('Plotting at a specific time is undefined.',1)
         end
         
 %% utility

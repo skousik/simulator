@@ -446,6 +446,55 @@ classdef simulator < handle
         end
     end
     
+    function plot_at_time(S,t,planner_index,world_index)
+        % method: plot_at_time(t)
+        %
+        % Plot the agent, world, and planner at the time t; this calls the
+        % plot_at_time method for each of class.
+        
+        if nargin < 4
+            world_index = 1 ;
+        end
+        
+        if nargin < 3
+            planner_index = 1 ;
+        end
+        
+        % get agent, world, and planner
+        A = S.agent ;
+        W = S.worlds{world_index} ;
+        P = S.planners{planner_index} ;
+        
+        % set up hold
+        if ~ishold
+            hold on
+            hold_check = true ;
+        else
+            hold_check = false ;
+        end
+        
+        for plot_idx = S.plot_order
+            switch plot_idx
+                case 'A'
+                    A.plot_at_time(t)
+                case 'W'
+                    W.plot_at_time(t)
+                case 'P'
+                    P.plot_at_time(t)
+                otherwise
+                    error(['Simulator plot order is broken! Make sure ',...
+                        'it is a string containing the characters ',...
+                        'A (for agent), W (for world), and P (for ',...
+                        'planner), in the order you want them to ',...
+                        'plot (WAP is the default).'])
+            end
+        end
+        
+        if hold_check
+            hold off
+        end
+    end
+    
     %% animate
     function animate(S,planner_index,world_index,save_animation_gif)
     % method: animate(planner_index,world_index,save_gif)
@@ -471,32 +520,21 @@ classdef simulator < handle
             planner_index = 1 ;
         end
         
-        % get agent, world, and planner
+        % get agent
         A = S.agent ;
-        W = S.worlds{world_index} ;
-        P = S.planners{planner_index} ;
         
         % get time
         t_vec = A.time(1):S.animation_time_discretization:A.time(end) ;
 
+        % set hold
+        if ~ishold
+            hold on
+            hold_check = true ;
+        end
+        
         for t_idx = t_vec
             % create plot
-            for plot_idx = S.plot_order
-                switch plot_idx
-                    case 'A'
-                        A.plot_at_time(t_idx)
-                    case 'W'
-                        W.plot_at_time(t_idx)
-                    case 'P'
-                        P.plot_at_time(t_idx)
-                    otherwise
-                        error(['Simulator plot order is broken! Make sure ',...
-                              'it is a string containing the characters ',...
-                              'A (for agent), W (for world), and P (for ',...
-                              'planner), in the order you want them to ',...
-                              'plot (WAP is the default).'])
-                end
-            end
+            S.plot_at_time(t_idx,planner_index,world_index)
             
             % create gif
             if save_animation_gif
@@ -517,6 +555,10 @@ classdef simulator < handle
             else
                 pause(S.animation_time_discretization)
             end
+        end
+        
+        if hold_check
+            hold off
         end
     end
     
