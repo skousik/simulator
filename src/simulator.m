@@ -530,6 +530,8 @@ classdef simulator < handle
         if ~ishold
             hold on
             hold_check = true ;
+        else
+            hold_check = false ;
         end
         
         for t_idx = t_vec
