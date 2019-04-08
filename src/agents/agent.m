@@ -275,9 +275,16 @@ classdef agent < handle
             xcirc = rsense*cos(linspace(0,2*pi)) + xy(1,end) ;
             ycirc = rsense*sin(linspace(0,2*pi)) + xy(2,end) ;
             
+            hold_check = ~ishold ;
+            if hold_check
+                hold on
+            end
+            
             % check if a figure is up; if so, create a new figure,
             % otherwise update the existing data
             if check_if_plot_is_available(A,'trajectory')
+                A.vdisp('Updating plot',5)
+                
                 A.plot_data.trajectory.XData = xy(1,:) ;
                 A.plot_data.trajectory.YData = xy(2,:) ;
                 
@@ -286,6 +293,8 @@ classdef agent < handle
                     A.plot_data.sensor_radius.YData = ycirc ;
                 end
             else
+                A.vdisp('Plotting new data',5)
+                
                 % plot trajectory
                 trajectory_data = plot(xy(1,:),xy(2,:),'Color',color) ;
                 A.plot_data.trajectory = trajectory_data ;
@@ -297,6 +306,10 @@ classdef agent < handle
                     A.plot_data.sensor_radius = sensor_radius_data ;
                     hold off
                 end
+            end
+            
+            if hold_check
+                hold off
             end
         end
         

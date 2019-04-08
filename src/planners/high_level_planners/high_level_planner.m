@@ -10,32 +10,30 @@ classdef high_level_planner < handle
 
 %% properties
 properties
-    default_lookahead_distance
-    waypoint_reached_radius
-    waypoints
-    N_waypoints
-    current_waypoint
-    current_waypoint_index
-    waypoints_include_heading
-    verbose
-    plot_data
+    dimension = 2 ;
+    default_lookahead_distance = 1 ;
+    waypoint_reached_radius = 1 ;
+    waypoints = [] ;
+    N_waypoints = 0 ;
+    current_waypoint = [] ;
+    current_waypoint_index = 1 ;
+    waypoints_include_heading = false
+    verbose = 0 ;
+    plot_data = [] ;
+    waypoint_color = [1 0.5 0] ;
+    waypoint_marker = '^' ;
+    waypoint_line_style = '--' ;
+    goal = [1;0] ;
 end
 
 methods
 %% constructor
-    function HLP = high_level_planner(verbose_level)
-        if nargin < 1
-            verbose_level = 0 ;
-        end
+    function HLP = high_level_planner(varargin)
+        HLP = parse_args(HLP,varargin{:}) ;
+        HLP.dimension = length(HLP.goal) ;
         
-        HLP.default_lookahead_distance = 1 ;
-        HLP.waypoints = [] ;
-        HLP.N_waypoints = 0 ;
-        HLP.waypoint_reached_radius = 1 ;
-        HLP.waypoints_include_heading = false ;
         HLP.current_waypoint = [] ;
-        HLP.current_waypoint_index = [] ;
-        HLP.verbose = verbose_level ;
+        % set default plot data
         HLP.plot_data.waypoints = [] ;
         HLP.plot_data.current_waypoint = [] ;
     end
@@ -52,10 +50,15 @@ methods
     end
 
 %% plotf
-    function plot(HLP,plot_format)
-        if nargin < 2
-            plot_format = '--' ;
-        end
+    function plot(HLP)
+    % plot(HLP)
+    %
+    % Plots all current waypoints as a line, and plots the current waypoint
+    % with a marker (default is a triangle). This method plots in 2D or 3D
+    % as appropriate. Note, this plot method should be called by the
+    % planner in its plot method, since it is not called by simulator.
+        
+        plot_format = HLP.waypoint_line_style ;
         wps = HLP.waypoints ;
         
         % check for plot
@@ -65,8 +68,19 @@ methods
             if plot_up
                 HLP.plot_data.waypoints.XData = wps(1,:) ;
                 HLP.plot_data.waypoints.YData = wps(2,:) ;
+                
+                if HLP.dimension > 2
+                    HLP.plot_data.waypoints.ZData = wps(3,:) ;
+                end
             else
-                HLP.plot_data.waypoints = plot(wps(1,:),wps(2,:),plot_format,'Color',[1 0.5 0]) ;
+                switch HLP.dimension
+                    case 2
+                        HLP.plot_data.waypoints = plot(wps(1,:),wps(2,:),...
+                            plot_format,'Color',HLP.waypoint_color) ;
+                    case 3
+                        HLP.plot_data.waypoints = plot2(wps(1,:),wps(2,:),wps(3,:),...
+                            plot_format,'Color',HLP.waypoint_color) ;
+                end
             end
         end
         
@@ -76,8 +90,19 @@ methods
             if plot_up
                 HLP.plot_data.current_waypoint.XData = wp_cur(1) ;
                 HLP.plot_data.current_waypoint.YData = wp_cur(2) ;
+                
+                if HLP.dimension > 2
+                    HLP.plot_data.current_waypoint.ZData = wp_cur(3) ;
+                end
             else
-                HLP.plot_data.current_waypoint = plot(wp_cur(1),wp_cur(2),'^','Color',[1 0.5 0]) ;
+                switch HLP.dimension
+                    case 2
+                        HLP.plot_data.current_waypoint = plot(wp_cur(1),wp_cur(2),...
+                            HLP.waypoint_marker,'Color',HLP.waypoint_color) ;
+                    case 3
+                        HLP.plot_data.current_waypoint = plot3(wp_cur(1),wp_cur(2),wp_cur(3),...
+                            HLP.waypoint_marker,'Color',HLP.waypoint_color) ;
+                end
             end
         end
     end
