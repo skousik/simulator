@@ -55,11 +55,14 @@ methods
         if sout < WP.arc_length_avoid(2) && sout>WP.arc_length_avoid(1)
             sout = WP.arc_length_avoid(2)+0.01*WP.arc_length(end);
         end
+        
+        
             
         waypoint = interp_with_angles(WP.arc_length',WP.path',sout,3,'pchip')';
         
         % add new waypoint to list of past waypoints; just keeps the past
         % 5 waypoints around for now
+        
         waypoint_list = [WP.waypoints(:,end-(WP.N_waypoints_keep-1):end), waypoint] ;
         WP.waypoints = waypoint_list ;
     end

@@ -456,6 +456,62 @@ classdef agent_2D < handle
             end
         end
         
+        function plot_at_time(A,t,face_color,edge_color,line_width,face_alpha)
+   
+            if nargin <6
+                face_alpha = 1.0;
+            if nargin <5
+                line_width = 1.5;
+            if nargin <4
+                edge_color = [0 0 1] ;
+            if nargin <3
+                face_color = [0.8 0.8 1] ;
+            if nargin < 2
+                n = 1 ;
+            end
+            end
+            end
+            end
+            end
+            if isempty(A.heading_state_index)
+                z=interp1(A.time',A.state',t)';
+            else
+                z= interp_with_angles(A.time',A.state',t,A.heading_state_index)';
+            end
+
+            
+            if ~isempty(A.heading_state_index)
+                R = rotmat(z(A.heading_state_index)) ;
+            else
+                R = rotmat(0) ;
+            end
+            
+            % plot footprint
+            fp = R*A.footprint_contour + z(A.xy_state_indices) ;
+            patch(fp(1,:),fp(2,:),face_color,'EdgeColor',edge_color,'LineWidth',line_width,'FaceAlpha',face_alpha ) ;
+            
+            % plot heading triangle
+            if ~isempty(A.heading_state_index)
+                t = linspace(0,2*pi,4) ;
+         
+                if length(A.footprint) == 2
+                    D = max(A.footprint) / 2 ;
+                    trans = mean([max(A.footprint_contour(1,:)),min(A.footprint_contour(1,:))]);
+                    xdm=1/3;
+                else
+                    D = A.footprint ;
+                    trans=0;
+                    xdm=1/2;
+                end
+
+                triangle = R*[((D*xdm).*cos(t) +trans) ;...
+                              (D/4).*sin(t)] ;
+
+                triangle = triangle + z(A.xy_state_indices) ;
+
+                patch(triangle(1,:),triangle(2,:),face_color,'EdgeColor',edge_color,'LineWidth',line_width,'FaceAlpha',face_alpha ) ;
+            end
+        end
         function plotFilledAgent(A,n,face_color,edge_color,line_width,face_alpha,t)
             if nargin <7
                 z=A.state(:,end);
