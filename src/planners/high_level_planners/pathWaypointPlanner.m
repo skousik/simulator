@@ -1,4 +1,4 @@
-classdef pathWaypointPlanner < waypointPlanner2D
+classdef pathWaypointPlanner < high_level_planner
 properties
     path
     arc_length
@@ -15,7 +15,7 @@ methods
             end
         end
         
-        WP@waypointPlanner2D(verbose_level) ;
+        WP@high_level_planner('verbose',verbose_level) ;
         WP.path = path ;
         WP.arc_length = [0,cumsum(sqrt(diff(WP.path(1,:)).^2+diff(WP.path(2,:)).^2))];
         WP.waypoints_include_heading = true ;
