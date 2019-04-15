@@ -29,7 +29,7 @@ classdef simulator < handle
         plotting_pause_time = 0.1 ; % s
         plot_order = 'WAP' ;
         save_gif = false ;
-        save_gif_filename = 'simulator_gif_output' ;
+        save_gif_filename = 'simulator_gif_output.gif' ;
         save_gif_delay_time = 0.1 ;
         start_gif = true ;
         manually_resize_gif = true ;
@@ -458,6 +458,10 @@ classdef simulator < handle
         
         if nargin < 3
             planner_index = 1 ;
+        end
+        
+        if nargin < 2
+            t = 0 ;
         end
         
         % get agent, world, and planner

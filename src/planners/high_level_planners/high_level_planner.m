@@ -32,7 +32,6 @@ methods
         HLP = parse_args(HLP,varargin{:}) ;
         HLP.dimension = length(HLP.goal) ;
         
-        HLP.current_waypoint = [] ;
         % set default plot data
         HLP.plot_data.waypoints = [] ;
         HLP.plot_data.current_waypoint = [] ;
