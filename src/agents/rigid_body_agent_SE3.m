@@ -30,7 +30,6 @@ properties
     plot_frame_scale = 1 ;
     plot_frame_linewidth = 2 ;
     plot_frame_colors = eye(3) ;
-    set_axes_when_animating = true ;
 end
 
 methods
@@ -176,8 +175,8 @@ methods
         end
     end
     
-    function [R_out,p_out] = plot_at_time(A,t)
-        % method [R_out,p_out] = plot_at_time(t)
+    function [R_out,z_out] = plot_at_time(A,t)
+        % method [R_out,z_out] = plot_at_time(t)
         %
         % Plot the rigid body's coordinate frame at the specified time t,
         % which should be in the interval of [A.time(1),A.time(end)]. Note
@@ -204,7 +203,7 @@ methods
         
         if nargout > 0
             R_out = R_t ;
-            p_out = p_t ;
+            z_out = z_t ;
         end
     end
     

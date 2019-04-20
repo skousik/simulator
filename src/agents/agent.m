@@ -89,6 +89,7 @@ classdef agent < handle
         % plotting
         animation_plot_buffer = 1 ; % meter
         animation_time_discretization  = 0.1 ;
+        set_axes_when_animating = false ;
     end
     
     methods
@@ -104,10 +105,8 @@ classdef agent < handle
                 varargin = varargin(2:end) ;
                 A.verbose = verbose_level ;
             end
-
-            for idx = 1:2:length(varargin)
-                A.(varargin{idx}) = varargin{idx+1} ;
-            end
+            
+            A = parse_args(A,varargin{:}) ;
             
             A.reset() ;
         end
@@ -271,9 +270,12 @@ classdef agent < handle
             
             % set up data to plot
             xy = A.state(A.position_indices,:) ;
-            rsense = A.sensor_radius ;
-            xcirc = rsense*cos(linspace(0,2*pi)) + xy(1,end) ;
-            ycirc = rsense*sin(linspace(0,2*pi)) + xy(2,end) ;
+            
+            if A.plot_sensor_radius
+                rsense = A.sensor_radius ;
+                xcirc = rsense*cos(linspace(0,2*pi)) + xy(1,end) ;
+                ycirc = rsense*sin(linspace(0,2*pi)) + xy(2,end) ;
+            end
             
             hold_check = ~ishold ;
             if hold_check

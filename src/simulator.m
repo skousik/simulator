@@ -19,7 +19,8 @@ classdef simulator < handle
         stop_sim_when_crashed = true ;
         allow_replan_errors = false ;
         save_planner_info = false ;
-        manual_iteration = false;
+        manual_iteration = false ;
+        run_full_collision_check_at_end = false ;
 
         % plotting
         figure_number = 1 ;
@@ -109,10 +110,10 @@ classdef simulator < handle
                 agent_info_cell = cell(1,L) ;
                 trajectory = cell(1,L) ;
                 total_real_time = cell(1,L) ;
-                planning_times = cell(1,L) ;
-                collision_check = cell(1,L) ;
-                goal_check = cell(1,L) ;
-                stop_check = cell(1,L) ;
+                planning_times_cell = cell(1,L) ;
+                collision_check_cell = cell(1,L) ;
+                goal_check_cell = cell(1,L) ;
+                stop_check_cell = cell(1,L) ;
                 sim_time = cell(1,L) ;
                 control_input = cell(1,L) ;
                 control_input_time = cell(1,L) ;
@@ -241,15 +242,15 @@ classdef simulator < handle
                         % crashed
                         S.vdisp('Checking if agent reached goal or crashed...',3)
                         agent_info = A.get_agent_info() ;
-                        goal_check_cur = W.goal_check(agent_info) ;
-                        collision_check_cur = W.collision_check(agent_info,false) ;
+                        goal_check = W.goal_check(agent_info) ;
+                        collision_check = W.collision_check(agent_info,false) ;
 
-                        if collision_check_cur && S.stop_sim_when_crashed
+                        if collision_check && S.stop_sim_when_crashed
                             S.vdisp('Crashed!',2) ;
                             break
                         end
 
-                        if goal_check_cur
+                        if goal_check
                             S.vdisp('Reached goal!',2) ;
                             break
                         end
@@ -292,14 +293,20 @@ classdef simulator < handle
 
                 %% create summary (for the current planner)
                     % get results at end of simulation
-                    S.vdisp('Running final crash and goal checks.',2)
+                    S.vdisp('Compiling summary',3)
                     Z = A.state ;
                     T_nom = A.time ;
                     U_nom = A.input ;
                     TU = A.input_time ;
                     agent_info = A.get_agent_info() ;
-                    C = W.collision_check(agent_info) ;
-                    G = W.goal_check(agent_info) ;
+                    
+                    if S.run_full_collision_check_at_end
+                        S.vdisp('Running final collision check.',4)
+                        collision_check = W.collision_check(agent_info) ;
+                    end
+                    
+                    S.vdisp('Running final goal check',4)
+                    goal_check = W.goal_check(agent_info) ;
                     agent_info_cell{pidx} = agent_info ;
 
                     if S.save_planner_info
@@ -315,16 +322,16 @@ classdef simulator < handle
                     control_input{pidx} = U_nom ;
                     control_input_time{pidx} = TU ;
                     total_real_time{pidx} = runtime ;
-                    planning_times{pidx} = planning_time_vec ;
-                    collision_check{pidx} = C ;
-                    goal_check{pidx} = G ;
-                    stop_check{pidx} = stop_check_vec ;
+                    planning_times_cell{pidx} = planning_time_vec ;
+                    collision_check_cell{pidx} = collision_check ;
+                    goal_check_cell{pidx} = goal_check ;
+                    stop_check_cell{pidx} = stop_check_vec ;
                     planner_timeout{pidx} = P.timeout ;
                     obstacles{pidx} = W.obstacles;
-                    if G
+                    if goal_check
                         S.vdisp('In final check, agent reached goal!')
                     end
-                    if C
+                    if collision_check
                         S.vdisp('In final check, agent crashed!')
                     end
                 end
@@ -333,10 +340,10 @@ classdef simulator < handle
                                  'trajectory',trajectory,...
                                  'total_real_time',total_real_time,...
                                  'total_iterations',icur,...
-                                 'planning_time',planning_times,...
+                                 'planning_time',planning_times_cell,...
                                  'crash_check',collision_check,...
-                                 'goal_check',goal_check,...
-                                 'stop_check',stop_check,...
+                                 'goal_check',goal_check_cell,...
+                                 'stop_check',stop_check_cell,...
                                  'sim_time_vector',sim_time,...
                                  'control_input',control_input,...
                                  'control_input_time',control_input_time,...

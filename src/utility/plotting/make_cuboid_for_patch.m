@@ -1,6 +1,6 @@
-function [F,V] = make_cuboid_for_patch(L,W,D,C)
-    % [F,V] = make_cuboid_for_patch(L,W,D)
-    % [F,V] = make_cuboid_for_patch(L,W,D,C)
+function [F,V] = make_cuboid_for_patch(L,W,H,C)
+    % [F,V] = make_cuboid_for_patch(L,W,H)
+    % [F,V] = make_cuboid_for_patch(L,W,H,C)
     %
     % Generate 6 faces and 8 vertices of an axis-aligned cuboid (in 3-D) of
     % length L in x, width W in y, and depth D in Z. An optional fourth
@@ -16,14 +16,14 @@ function [F,V] = make_cuboid_for_patch(L,W,D,C)
         if nargin < 1
             L = 1 ;
             W = 1 ;
-            D = 1 ;
+            H = 1 ;
         end
     end    
     
     % make vertices
     Vx = L.*[0 1 1 0 0 1 1 0]' - L/2 + C(1) ;
     Vy = W.*[0 0 1 1 0 0 1 1]' - W/2 + C(2) ;
-    Vz = D.*[0 0 0 0 1 1 1 1]' - D/2 + C(3) ;
+    Vz = H.*[0 0 0 0 1 1 1 1]' - H/2 + C(3) ;
     V = [Vx Vy Vz] ;
     
     % make faces
