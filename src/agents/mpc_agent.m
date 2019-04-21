@@ -391,11 +391,18 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
 
         ref_time = uniquetol([T_input(1):A.time_discretization:T_input(end),T_input(end)]);
         U_input = interp1(T_input',U_input',ref_time','pchip','extrap')';
-        Z_desired = interp1(T_input',Z_desired',ref_time','pchip','extrap')';
+        if ~isempty(A.heading_state_index)
+            Z_desired = interp_with_angles(T_input',Z_desired',ref_time',A.heading_state_index,'pchip','extrap')';
+        else
+            Z_desired = interp1(T_input',Z_desired',ref_time','pchip','extrap')';
+        end
+        
         T_input = ref_time;
 
     end
-
+%     if ~isempty(A.heading_state_index)
+%         Z_desired(A.heading_state_index,:)=unwrap(Z_desired(A.heading_state_index,:));
+%     end
     %pre allocate vectors
     T_out_input=uniquetol([0:A.time_discretization:T_total,T_total]);
         
@@ -422,8 +429,10 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
         tvec=T_out(start_idx:end_idx);
 
         x_initial=Z_out(:,start_idx)-Z_desired(:,i);
-
-        x_initial(A.heading_state_index)=rad2heading(x_initial(A.heading_state_index));
+        
+        if ~isempty(A.heading_state_index)
+            x_initial(A.heading_state_index)=rad2heading(x_initial(A.heading_state_index));
+        end
         
         if i<2
            if size(A.input,2)>=2
@@ -500,8 +509,12 @@ function [T_out,Z_out,T_out_input,U_out,U_reference,Z_reference] = mpc_movement_
     %interpolate reference trajectories to input timestep
 
     U_reference = interp1(T_input',U_input',T_out_input','pchip')';
-
-    Z_reference = interp1(T_input',Z_desired',T_out_input','pchip')';
+    
+    if ~isempty(A.heading_state_index)
+        Z_reference = interp_with_angles(T_input',Z_desired',T_out_input',A.heading_state_index,'pchip')';
+    else
+        Z_reference = interp1(T_input',Z_desired',T_out_input','pchip')';
+    end
 end
 
 
