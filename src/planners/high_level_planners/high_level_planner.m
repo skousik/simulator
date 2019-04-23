@@ -48,7 +48,7 @@ methods
         waypoint = [] ;
     end
 
-%% plotf
+%% plot
     function plot(HLP)
     % plot(HLP)
     %

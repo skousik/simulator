@@ -13,7 +13,7 @@ methods
         z = agent_info.position(:,end) ;
         dir_des = g - z ;
         dir_des = dir_des./norm(dir_des) ;
-        waypoint = lookahead_distance.*dir_des ;
+        waypoint = lookahead_distance.*dir_des + z ;
         
         % update current waypoints
         HLP.current_waypoint = waypoint ;

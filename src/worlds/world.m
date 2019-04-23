@@ -131,6 +131,8 @@ classdef world < handle
         % sensor radius, or model occlusions.
             I.obstacles = W.obstacles ;
             I.obstacle_type = W.obstacle_type ;
+            I.start = W.start ;
+            I.goal = W.goal ;
         end
         
     %% goal check
@@ -139,9 +141,9 @@ classdef world < handle
         %
         % Checks if the agent's center of mass is within W.goal_radius of
         % W.goal in the 2-norm.
-            pos_idx = agent_info.position_indices ;
-            z = agent_info.state(pos_idx,:) ;
-            out = min(norm(W.goal - z,2)) <= W.goal_radius ;
+            z = agent_info.position ;
+            dz = z - repmat(W.goal,1,size(z,2)) ;
+            out = min(vecnorm(dz,2)) <= W.goal_radius ;
         end
         
     %% crash check

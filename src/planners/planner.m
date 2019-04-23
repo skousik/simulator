@@ -1,17 +1,16 @@
 classdef planner < handle
-    
     properties
         % generic planner properties
         name
         bounds % world bounds plus planner-specific buffer
-        default_buffer % minimum amount to buffer obstacles, given by the world
+        buffer % minimum amount to buffer obstacles, given by the world
         HLP % high level planner
         current_plan ;
         current_obstacles ;
         verbose = 0 ;
         timeout = 1 ; % time allowed for "replan" function to execute
         t_plan = 1 ; % same as timeout; just for notational purposes
-        t_move = 0.1 ;% amount of time the planner expects the agent to move
+        t_move = 1 ;% amount of time the planner expects the agent to move
         info % information structure to keep a log when planning
         plot_data % data for current plot
         plot_waypoints_flag = false ;

@@ -124,10 +124,12 @@ classdef agent < handle
             end
             
             A.state = zeros(A.n_states,1) ;
-            if length(state) < A.n_states
-                A.state(A.position_indices) = state ;
+            if length(state) == 2
+                A.state(A.position_indices) = state(1:2) ;
             else
-                A.state = state(:) ;
+                N = length(state) ;
+                A.state = zeros(A.n_states,1) ;
+                A.state(1:N) = state ;
             end
             A.time = 0 ;
             A.input = zeros(A.n_inputs,1) ; % this forces the input size to
@@ -142,6 +144,8 @@ classdef agent < handle
             agent_info.position_indices = A.position_indices ;
             agent_info.time = A.time ;
             agent_info.sensor_radius = A.sensor_radius ;
+            agent_info.n_inputs = A.n_inputs ;
+            agent_info.n_states = A.n_states ;
         end
         
         %% move

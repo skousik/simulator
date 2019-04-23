@@ -52,7 +52,7 @@ classdef simulator < handle
             % then sets up internal variables needed to simulate the agent
             % in the provided world using each of the provided planners.
 
-        %% parse inputs
+            % parse inputs
             S = parse_args(S,varargin{:}) ;
 
             % if world or planner is alone, wrap it in a cell
@@ -69,7 +69,7 @@ classdef simulator < handle
                 S.planner_colors = repmat([0 0 1],length(planners),1) ;
             end
 
-        %% wrap up construction
+            % wrap up construction
             S.agent = agent ;
             S.worlds = worlds ;
             S.planners = planners ;
