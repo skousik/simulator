@@ -10,11 +10,14 @@ methods
         end
 
         g = HLP.goal ;
-        z = agent_info(1:2,end) ;
+        z = agent_info.position(1:2,end) ;
         dir_des = g - z ;
         dir_des = dir_des./norm(dir_des) ;
-        waypoint = lookahead_distance.*dir_des +z;
-        waypoint(3) = atan2(dir_des(2),dir_des(1));
+        waypoint = lookahead_distance.*dir_des + z ;
+        
+        if HLP.waypoints_include_heading
+            waypoint(3) = atan2(dir_des(2),dir_des(1)) ;
+        end
 
         % update current waypoints
         HLP.current_waypoint = waypoint ;
