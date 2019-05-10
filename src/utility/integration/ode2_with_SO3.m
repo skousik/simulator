@@ -45,7 +45,7 @@ function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
         y1_dot = dyn(t_idx,y1_idx,R1_idx) ;
         k1 = half_dt_idx*y1_dot ;
         O1_idx = y1_idx(O_idxs) ;
-        F1_idx = expm(half_dt_idx.*skew(O1_idx)) ;
+        F1_idx = expm_SO3(half_dt_idx.*skew(O1_idx)) ;
         R2_idx = F1_idx*R1_idx ;
 
         % get second time step
@@ -54,11 +54,11 @@ function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
             k2 = dt_idx*y2_dot ;
             y2_idx = y1_idx + k1 ;
             O2_idx = y2_idx(O_idxs) ;
-            F2_idx = expm(half_dt_idx.*skew(O1_idx + O2_idx)) ;
+            F2_idx = expm_SO3(half_dt_idx.*skew(O1_idx + O2_idx)) ;
         else
             warning('NaNs detected in dynamics! Attempting Euler step.')
             k2 = dt_idx*y1_dot ;
-            F2_idx = expm(dt_idx.*skew(O1_idx)) ;
+            F2_idx = expm_SO3(dt_idx.*skew(O1_idx)) ;
         end
 
         % compute new state

@@ -162,6 +162,11 @@ classdef agent < handle
             % updated. Similarly, this method assumes that the nominal time
             % starts at 0.
             
+            % set up default reference trajectory
+            if nargin < 5
+                Z_ref = [] ;
+            end
+            
             % get the time, input, and reference trajectory to use for
             % moving the agent
             [T_used,U_used,Z_used] = A.move_setup(t_move,T_ref,U_ref,Z_ref) ;

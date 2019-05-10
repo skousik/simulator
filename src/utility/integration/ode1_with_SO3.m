@@ -44,7 +44,7 @@ function [tout,yout,Rout] = ode1_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
         
         % compute rotation matrix dynamics
         O_idx = y_idx(O_idxs) ;
-        F_idx = expm(dt_idx.*skew(O_idx)) ;
+        F_idx = expm_SO3(dt_idx.*skew(O_idx)) ;
         
         % compute new state
         yout(:,idx) = y_idx + dt_idx.*y_dot ; % Euler step in state

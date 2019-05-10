@@ -10,7 +10,7 @@ methods
         end
 
         g = HLP.goal ;
-        z = agent_info.position(1:2,end) ;
+        z = agent_info.position(:,end) ;
         dir_des = g - z ;
         dir_des = dir_des./norm(dir_des) ;
         waypoint = lookahead_distance.*dir_des + z ;
