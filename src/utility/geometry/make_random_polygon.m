@@ -25,7 +25,7 @@ function P = make_random_polygon(Nvertices,offset,scale)
 
     if length(Nvertices) == 1
         vertices = rand(2,Nvertices) - 0.5 ;
-        P = scale*pointsToCCW(vertices, true) + offset ;
+        P = scale*points_to_CCW(vertices, true) + offset ;
     else
         P = [] ;
         for idx = 1:length(Nvertices)

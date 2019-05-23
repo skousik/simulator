@@ -24,8 +24,8 @@ methods
     end
     
 %% get control inputs
-    function U = get_control_inputs(~,~,t,~,varargin)
-        % method: U = get_control_inputs(agent,t_cur,z_cur,T_ref,U_ref,Z_ref)
+    function U = get_control_inputs(LLC,agent,t,z_cur,varargin)
+        % method: U = LLC.get_control_inputs(agent,t_cur,z_cur,T_ref,U_ref,Z_ref)
         %
         % Given an agent, current time, current state, and reference
         % trajectory as time/input/desired state, generate a control input
