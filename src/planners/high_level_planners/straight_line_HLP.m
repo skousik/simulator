@@ -13,6 +13,13 @@ methods
         z = agent_info.position(:,end) ;
         dir_des = g - z ;
         dir_des = dir_des./norm(dir_des) ;
+        
+        % adjust lookahead distance to not overshoot goal
+        dist_to_goal = norm(g - z) ;
+        if lookahead_distance > dist_to_goal
+            lookahead_distance = dist_to_goal ;
+        end
+        
         waypoint = lookahead_distance.*dir_des + z ;
         
         if HLP.waypoints_include_heading
