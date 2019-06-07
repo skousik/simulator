@@ -63,9 +63,13 @@ classdef planner < handle
                 P.vdisp('Plotting new data',5)
                 
                 % plot anticipated trajectory from planner
-                if ~isempty(P.current_plan)
-                    P.plot_data.current_plan = plot(P.current_plan(1,:),P.current_plan(2,:),...
-                        ':','LineWidth',2,'Color',color) ;
+                try
+                    if ~isempty(P.current_plan)
+                        P.plot_data.current_plan = plot(P.current_plan(1,:),P.current_plan(2,:),...
+                            ':','LineWidth',2,'Color',color) ;
+                    end
+                catch
+                    P.vdisp('Unable to plot current plan!',5)
                 end
             end
             
