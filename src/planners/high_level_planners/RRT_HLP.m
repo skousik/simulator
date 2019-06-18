@@ -1,7 +1,11 @@
 classdef RRT_HLP  < high_level_planner
     properties
+        % timing
         timeout = 0.1 ; % seconds
-        d_stop = 2 ;
+        
+        % tree parameters
+        d_edge = 0.1 ; % distance to extend per new node
+        d_stop = 1 ; % minimum distance required before terminating
     end
     methods
         %% constructor
@@ -18,6 +22,8 @@ classdef RRT_HLP  < high_level_planner
             
             % get agent's current position
             z = agent_info.position(:,end) ;
+            
+            % initialize tree
             
             % grow tree
             start_tic = tic ;

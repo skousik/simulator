@@ -508,27 +508,42 @@ classdef simulator < handle
     
     %% animate
     function animate(S,planner_index,world_index,save_animation_gif)
-    % method: animate(planner_index,world_index,save_gif)
+    % method: S.animate(planner_index,world_index,save_gif)
+    %         S.animate(save_gif)
     %
     % Animate the agent, world, and planner for the duration given by
     % A.time. The time between animated frames is given by the simulator's
     % animation_time_discretization property. The planner and world to
     % animate are given by the planner_index and world_index inputs, so the
     % simulator plots S.worlds{world_index} and S.planners{planner_index}.
-        if nargin < 4
-            save_animation_gif = false ;
-            start_animation_gif = false ;
+    %
+    % One can also call this as S.animate(true) to save a GIF for planner 1
+    % and world 1 (which is useful if there's only one planner and world
+    % currently set up in the simulator).
+    
+        % parse input arguments
+        if nargin == 2 && islogical(planner_index)
+            save_animation_gif = planner_index ;
+            planner_index = 1 ;
+            world_index = 1 ;
         else
+            if nargin < 4
+                save_animation_gif = false ;
+                start_animation_gif = false ;
+            end
+
+            if nargin < 3
+                world_index = 1 ;
+            end
+
+            if nargin < 2
+                planner_index = 1 ;
+            end
+        end
+        
+        if save_animation_gif
             start_animation_gif = true ;
             filename = S.animation_gif_setup() ;
-        end
-        
-        if nargin < 3
-            world_index = 1 ;
-        end
-        
-        if nargin < 2
-            planner_index = 1 ;
         end
         
         % get agent
