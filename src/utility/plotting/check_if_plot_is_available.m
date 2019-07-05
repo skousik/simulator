@@ -14,7 +14,7 @@ function out = check_if_plot_is_available(simulator_object,fieldname)
     try
         fh = get(groot,'CurrentFigure') ;
         h = simulator_object.plot_data.(fieldname) ;
-        out = ~(isempty(h) || ~isvalid(h) || isempty(fh)) ;
+        out = ~(isempty(h) || ~all(isvalid(h)) || isempty(fh)) ;
     catch
         out = false ;
     end
