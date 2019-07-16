@@ -13,14 +13,14 @@ methods
     end
     
 %% setup
-    function setup(LLC,A)
-        % method: setup(A)
+    function setup(LLC,agent)
+        % method: setup(agent)
         %
-        % Take in an agent file and set up the relevant parameters
+        % Take in an agent instance and set up the relevant parameters
         % necessary for the low-level controller to operate
         
-        LLC.n_agent_states = A.n_states ;
-        LLC.n_agent_inputs = A.n_inputs ;
+        LLC.n_agent_states = agent.n_states ;
+        LLC.n_agent_inputs = agent.n_inputs ;
     end
     
 %% get control inputs
