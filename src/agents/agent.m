@@ -90,6 +90,9 @@ classdef agent < handle
         animation_plot_buffer = 1 ; % meter
         animation_time_discretization  = 0.1 ;
         set_axes_when_animating = false ;
+        set_view_when_animating = false ;
+        animation_view = 2 ;
+        animation_default_filename = 'animation.gif' ;
     end
     
     methods
@@ -387,6 +390,10 @@ classdef agent < handle
                     axis equal
                     axis(lims)
                 end
+                
+                if A.set_view_when_animating
+                    view(A.animation_view)
+                end
 
                 % create gif
                 if save_gif
@@ -420,7 +427,7 @@ classdef agent < handle
         end
     
         function filename = gif_setup(A)       
-            filename = 'animation.gif' ;
+            filename = A.animation_default_filename ;
 
             dir_content = dir(pwd) ;
             filenames   = {dir_content.name} ;
