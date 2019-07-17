@@ -14,20 +14,17 @@ function [F,V] = make_cuboid_for_patch(L,W,H,C)
 
     if nargin < 4
         C = zeros(3,1) ;
+    end
 
-        if nargin == 1
-            dims = L ;
-            L = dims(1) ;
-            W = dims(2) ;
-            H = dims(3) ;
-
-        elseif nargin < 1
-            L = 1 ;
-            W = 1 ;
-            H = 1 ;
-        else
-            error('Incorrect number of input arguments!')
-        end
+    if nargin == 1
+        dims = L ;
+        L = dims(1) ;
+        W = dims(2) ;
+        H = dims(3) ;
+    elseif nargin < 1
+        L = 1 ;
+        W = 1 ;
+        H = 1 ;
     end
 
     % make vertices
