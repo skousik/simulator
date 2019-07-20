@@ -130,7 +130,6 @@ classdef world < handle
         % methods that, e.g., check which obstacles are within the robot's
         % sensor radius, or model occlusions.
             I.obstacles = W.obstacles ;
-            I.obstacle_type = W.obstacle_type ;
             I.start = W.start ;
             I.goal = W.goal ;
         end
