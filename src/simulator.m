@@ -230,12 +230,13 @@ classdef simulator < handle
                             A.move(t_move,T_nom,U_nom,Z_nom) ;
                         end
 
-                    %% Note (9 Nov 2018)
-                    % For now, dynamic obstacles are treated as follows:
-                    %   1) getNearbyObstacles should return a prediction
+                    %% Note (22 July 2019)
+                    % Dynamic obstacles are treated as follows:
+                    %   1) W.get_world_info should return a prediction
                     %   2) the agent is moved according to the prediction
-                    %   3) crashCheck moves the obstacles (according to the
-                    %      agent's movement data if needed)
+                    %   3) the world moves the obstacles (according to the
+                    %      agent's movement data if needed) and then checks
+                    %      for collisions in W.collision_check
 
                     %% crash and goal check
                         % check if the agent is near the desired goal or if it
@@ -244,6 +245,11 @@ classdef simulator < handle
                         agent_info = A.get_agent_info() ;
                         goal_check = W.goal_check(agent_info) ;
                         collision_check = W.collision_check(agent_info,false) ;
+                        
+                        if isa(A,'multi_link_agent')
+                            S.vdisp('Checking for self-intersection.',2)
+                            collision_check = collision_check || A.self_intersection_flag ;
+                        end
 
                         if collision_check && S.stop_sim_when_crashed
                             S.vdisp('Crashed!',2) ;
