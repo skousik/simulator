@@ -16,6 +16,12 @@ properties
     plot_data     % a structure that stores the output of the plot or plot3
                   % functions in its "body" field, so that plots can update
                   % smoothly
+
+    % plotting parameters
+    plot_face_color = [1 0 0] ;
+    plot_edge_color = [0 0 0] ;
+    plot_face_opacity = 0.2 ;
+    plot_edge_opacity = 0.5 ;
 end
 
 methods

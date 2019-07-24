@@ -118,7 +118,8 @@ classdef simulator < handle
                 control_input = cell(1,L) ;
                 control_input_time = cell(1,L) ;
                 planner_timeout = cell(1,L) ;
-                obstacles = cell(1,L);
+                obstacles = cell(1,L) ;
+                
             %% planner loop
                 for pidx = planner_indices
                     S.vdisp(['Planner ',num2str(pidx)])
@@ -133,7 +134,6 @@ classdef simulator < handle
                     % get planner ready
                     agent_info = A.get_agent_info() ;
                     world_info = W.get_world_info(agent_info,P) ;
-
                     P.setup(agent_info,world_info) ;
 
                     % check to make sure gif start is ready

@@ -84,13 +84,10 @@ classdef world < handle
         
     %% setup
         function setup(W)
-        % Method: setup()
+        % Method: W.setup()
         %
-        % Create a random start and goal point, and reset the agent's
-        % trajectory contour, which is used for obstacle checking. This
-        % is the most generic version of setup, and ignores the
-        % N_obstacles input. Subclasses should override this with a
-        % situation-specific setup function.
+        % Create a random start and goal point. Subclasses should override
+        % this with a situation-specific setup function.
 
             % get room bounds
             B = W.bounds ;
@@ -112,7 +109,7 @@ classdef world < handle
         
     %% reset
         function reset(W)
-        % Method: reset()
+        % Method: W.reset()
         %
         % Reset the world's current time index to 1. This is generic and
         % can be overwritten in a subclass. This allows a world to reset
