@@ -71,6 +71,7 @@ classdef world < handle
         bounds = Inf*[-1 1 -1 1] ;
         N_obstacles = [] ;
         obstacles = [] ;
+        collision_check_time_discretization = 0.005 ;
         current_time = 0 ;
         verbose = 0 ;
         plot_data
@@ -142,118 +143,68 @@ classdef world < handle
             out = min(vecnorm(dz,2)) <= W.goal_radius ;
         end
         
-    %% crash check
-        function out = collision_check(W,agent_info,check_full_traj_flag)
-        % Function: collision_check(agent,check_full_traj_flag)
+    %% collision check
+        function out = collision_check(W,agent_info,check_full_traj)
+        % out = W.collision_check(agent_info)
+        % out = W.collision_check(agent_info,check_full_traj)
         %
-        % Given an agent in the world, return true if it has crashed into
-        % any obstacles.
+        % Run a collision check given the agent's information object. The
+        % second input states whether or not to check the agent's entire
+        % trajectory; by default this is false, and the world only checks
+        % the duration of the trajectory that is new since the last
+        % collision check was run. The output is false if there are no
+        % collisions.
         
-        out = false ;
+            % whether or not to check full agent trajectory (default is no)
+            if nargin < 3
+                check_full_traj = false ;
+            end
+            
+            if check_full_traj
+                W.vdisp('Checking entire trajectory (this might take a while)',3)
+                t_start = 0 ;
+            else    
+                t_start = W.current_time ;
+            end
+            
+            % create time vector for checking
+            t_agent = agent_info.time(end) ;
+            t_check = t_start:W.collision_check_time_discretization:t_agent ;
+            
+            if isempty(t_check) || t_check(end) ~= t_agent
+                t_check = [t_check, t_agent] ;
+            end
+            
+            % get agent trajectory interpolated to time
+            z_agent = match_trajectories(t_check,t_agent,agent_info.state) ;
+            
+            % run collision check
+            W.vdisp('Running collision check!',3)
+            out = false ; % optimism!
+            t_idx = 1 ;
+            while ~out && t_idx <= length(t_check)
+                z = z_agent(:,t_idx) ;
+                out = W.collision_check_single_state(agent_info,z) ;
+                t_idx = t_idx + 1 ;
+            end
+            
+            if out
+                W.vdisp(['Collision detected at t = ',num2str(t_check(t_idx))],1)
+            else
+                W.vdisp('No collisions detected',3)
+            end
+            
+            % update world time
+            W.current_time = t_agent ;
+        end
         
-        % TO DO: fix this up for the new obstacle type
-%         
-%         % by default, don't check the full trajectory
-%             if nargin < 3
-%                 check_full_traj_flag = false ;
-%             end
-%         
-%         % initialize output (innocent until proven guilty)
-%             out = 0 ;
-%             
-%         % extract agent info
-%             xyidx = agent.xy_state_indices ;
-%             hidx = agent.heading_state_index ;
-%             tidx = W.current_time ;
-%             afc = agent.footprint_contour ;
-%             
-%         % set up obstacles
-%             O = [W.obstacles, nan(2,1), boundsToContour(W.bounds)] ;
-%             
-%         % if the agent has moved, we need to check if it crashed;
-%         % alternatively, we could check the entire trajectory for crashes;
-%         % finally, if it didn't move, then check the full trajectory
-%             if check_full_traj_flag || tidx == length(agent.time)
-%                 Z = agent.state ;
-%                 T = agent.time ;
-%             elseif tidx <= length(agent.time)
-%                 try
-%                     Z = agent.state(:,tidx-1:end) ; % the '-1' guarantees overlap
-%                                                     % with the old trajectory
-%                     T = agent.time(:,tidx-1:end) ;
-%                 catch
-%                     Z = agent.state(:,tidx:end) ; % in case tidx == 1
-%                     T = agent.time(:,tidx:end) ;
-%                 end
-%             else
-%                 error(['The world time index is incorrect! It should be ',...
-%                        'no greater than the length of time that the ',...
-%                        'agent has been active'])
-%             end
-%             
-%             % create the desired time vector; we check for collision every
-%             % 10ms by default, in 5s chunks of time
-%             dt = T(end) - T(1) ; % total time of traj
-%             Nchk = ceil(dt/5) ; % number of checks to make
-%             
-%             tidx = T(1) ; % start time of each check
-%             for chkidx = 1:Nchk
-%                 % get the time vector to check
-%                 tlog = T >= tidx ;
-%                 Tidx = T(tlog) ;
-%                 Zidx = Z(:,tlog) ;
-%                 
-%                 % create the time vector for interpolation
-%                 tchk = 0:0.01:5  + tidx ;
-%                 tchk = tchk(tchk <= Tidx(end)) ;
-%                 
-%                 % create the interpolated trajectory
-%                 try
-%                    Zchk = matchTrajectories(tchk,Tidx,Zidx) ;
-%                    
-%                    % create a copy of the agent footprint, rotated at each
-%                    % point of the trajectory
-%                    X = Zchk(xyidx,:) ; % xy positions of trajectory
-%                    N = size(X,2) ;
-%                    X = repmat(X(:),1,size(afc,2)) ;
-%                        % rep'd for each pt of agent
-%                        % footprint contour
-%                    
-%                    if ~isempty(hidx) && (length(agent.footprint) > 1)
-%                        % if there is a heading, and the agent is not a circle,
-%                        % then rotate each footprint contour
-%                        H = Zchk(hidx,:) ;
-%                        R = rotmat(H) ;
-%                        F = R*repmat(afc,N,1) + X ;
-%                    else
-%                        % otherwise, just place the footprint contour at each
-%                        % point of the trajectory
-%                        F = repmat(afc,N,1) + X ;
-%                    end
-%                    
-%                    Fx = [F(1:2:end,:)' ; nan(1,N)] ;
-%                    Fy = [F(2:2:end,:)' ; nan(1,N)] ;
-%                    F = [Fx(:)' ; Fy(:)'] ;
-%                    
-%                    % check if the resulting contour intersects the obstacles
-%                    [ci,~] = polyxpoly(F(1,:),F(2,:),O(1,:),O(2,:)) ;
-%                    
-%                    if ~isempty(ci)
-%                        out = 1 ;
-%                        break
-%                    end
-%                    
-%                    % increment the time index
-%                    tidx = tidx + 5 ;
-%                 catch
-%                    W.vdisp('Check failed, skipping to next portion!',2)
-%                    out = -1 ;
-%                 end
-%             end
-% 
-%             % update the world time index
-%             W.current_time = length(agent.time) ;
-        end 
+        function out = collision_check_single_state(W,agent_info,state)
+        % out = W.collision_check_single_state(agent_info,state)
+        %
+        % Perform a collision check for the provided state, and return true
+        % if it is in collision. By default, this just returns false.
+            out = false ;
+        end
        
     %% plotting
         function plot(W)
