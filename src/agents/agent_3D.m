@@ -2,7 +2,7 @@ classdef agent_3D < agent
 methods
     %% constructor
     function A = agent_3D(varargin)
-        A@agent(varargin{:}) ;
+        A@agent(varargin{:},'dimension',3) ;
         A.n_states = 3 ;
         A.position_indices = 1:3 ;
         A.plot_sensor_radius = false ;

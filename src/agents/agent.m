@@ -76,6 +76,7 @@ classdef agent < handle
         time = [] ;
         input = [] ;
         input_time = [] ;
+        dimension = 2 ;
         n_states = 2 ;
         n_inputs = 0 ;
         position_indices = [1 2] ;
