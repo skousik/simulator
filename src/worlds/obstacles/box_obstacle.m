@@ -4,7 +4,7 @@ classdef box_obstacle < obstacle
         side_lengths = [1;1] ;
         plot_patch_data
         collision_check_patch_data % structure with faces and vertices
-        plot_edge_width = 1.25 ;
+        plot_edge_width = 1.5 ;
     end
     
     methods

@@ -20,8 +20,8 @@ properties
     % plotting parameters
     plot_face_color = [1 0 0] ;
     plot_edge_color = [0 0 0] ;
-    plot_face_opacity = 0.2 ;
-    plot_edge_opacity = 0.5 ;
+    plot_face_opacity = 0.20 ;
+    plot_edge_opacity = 0.75 ;
 end
 
 methods
