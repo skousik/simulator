@@ -176,7 +176,7 @@ classdef world < handle
             end
             
             % get agent trajectory interpolated to time
-            z_agent = match_trajectories(t_check,t_agent,agent_info.state) ;
+            z_agent = match_trajectories(t_check,agent_info.time,agent_info.state) ;
             
             % run collision check
             W.vdisp('Running collision check!',3)
