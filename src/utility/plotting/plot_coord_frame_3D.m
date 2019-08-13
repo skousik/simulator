@@ -10,7 +10,7 @@ function plot_data = plot_coord_frame_3D(R,varargin)
 % USAGE:
 % Default usage assumes p = (0,0,0):
 %    plot_coord_frame_3D(R)
-% 
+%
 % Plot the coordinate frame centered at p:
 %    plot_coord_frame_3D(R,p)
 %
@@ -26,7 +26,7 @@ function plot_data = plot_coord_frame_3D(R,varargin)
 %
 % 'Colors' - takes a 3-by-3 matrix where each row specifies the color of a
 %            coordinate vector in the order x-y-z
-% 
+%
 % 'Scale'  - specifies the length of the plotted unit vectors
 %
 % 'Data'   - takes in the plot_data object output by this function; this
@@ -46,7 +46,7 @@ function plot_data = plot_coord_frame_3D(R,varargin)
                 p = zeros(3,1) ;
                 arg_in_idxs = 1:2:length(varargin) ;
             end
-            
+
             for idx = arg_in_idxs
                 switch varargin{idx}
                     case 'Colors'
@@ -60,12 +60,12 @@ function plot_data = plot_coord_frame_3D(R,varargin)
                 end
             end
     end
-    
+
     % set up default variables
     if ~exist('c','var')
         c = eye(3) ;
     end
-    
+
     if ~exist('s','var')
         s = 1 ;
     end
@@ -74,12 +74,12 @@ function plot_data = plot_coord_frame_3D(R,varargin)
     e1 = [p, s.*R(:,1) + p] ;
     e2 = [p, s.*R(:,2) + p] ;
     e3 = [p, s.*R(:,3) + p] ;
-    
+
     % start new plot if none is available
     if ~exist('plot_data','var')
-        
+
         hold_check = ishold ;
-        
+
         if ~hold_check
             hold on
         end
@@ -95,32 +95,32 @@ function plot_data = plot_coord_frame_3D(R,varargin)
 
         % create output
         if nargout > 0
-            plot_data.e1_data = e1_data ;
-            plot_data.e2_data = e2_data ;
-            plot_data.e3_data = e3_data ;
+            plot_data.e1 = e1_data ;
+            plot_data.e2 = e2_data ;
+            plot_data.e3 = e3_data ;
         end
     else
         % get data
-        e1_data = plot_data.e1_data ;
-        e2_data = plot_data.e2_data ;
-        e3_data = plot_data.e3_data ;
-        
+        e1_data = plot_data.e1 ;
+        e2_data = plot_data.e2 ;
+        e3_data = plot_data.e3 ;
+
         % update axes
         e1_data.XData = e1(1,:) ;
         e1_data.YData = e1(2,:) ;
         e1_data.ZData = e1(3,:) ;
-        
+
         e2_data.XData = e2(1,:) ;
         e2_data.YData = e2(2,:) ;
         e2_data.ZData = e2(3,:) ;
-        
+
         e3_data.XData = e3(1,:) ;
         e3_data.YData = e3(2,:) ;
         e3_data.ZData = e3(3,:) ;
-        
+
         % update plot_data
-        plot_data.e1_data = e1_data ;
-        plot_data.e2_data = e2_data ;
-        plot_data.e3_data = e3_data ;
+        plot_data.e1 = e1_data ;
+        plot_data.e2 = e2_data ;
+        plot_data.e3 = e3_data ;
     end
 end

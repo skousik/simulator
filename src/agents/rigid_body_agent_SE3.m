@@ -1,9 +1,9 @@
 classdef rigid_body_agent_SE3 < agent_3D
     properties
         % physical parameters
-        mass = 1 ;
-        inertia_matrix = eye(3) ;
-        inertia_matrix_inverse = eye(3) ;
+        body_mass = 1 ;
+        body_inertia_matrix = eye(3) ;
+        body_inertia_matrix_inverse = eye(3) ;
         gravity_acceleration = 9.81 ;
         gravity_on_flag = true ;
         
@@ -19,8 +19,8 @@ classdef rigid_body_agent_SE3 < agent_3D
         attitude = eye(3) ; % each slice in dim 3 is a rotation matrix
         
         % inputs
-        force_indices = 1:3 ;
-        moment_indices = 4:6 ;
+        input_force_indices = 1:3 ;
+        input_moment_indices = 4:6 ;
         
         % integration
         integrator_approximation_degree = 1 ; % choose 1 or 2
@@ -37,7 +37,7 @@ classdef rigid_body_agent_SE3 < agent_3D
         %% constructor
         function A = rigid_body_agent_SE3(varargin)
             A@agent_3D(varargin{:}) ;
-            A.inertia_matrix_inverse = inv(A.inertia_matrix) ;
+            A.body_inertia_matrix_inverse = inv(A.body_inertia_matrix) ;
             
             if A.n_states < 9
                 % This agent has states for position in R^3, velocity in R^3,
@@ -51,9 +51,9 @@ classdef rigid_body_agent_SE3 < agent_3D
             end
             
             % set up the additional plot data fields needed
-            A.plot_data.e1_data = [] ;
-            A.plot_data.e2_data = [] ;
-            A.plot_data.e3_data = [] ;
+            A.plot_data.e1 = [] ;
+            A.plot_data.e2 = [] ;
+            A.plot_data.e3 = [] ;
         end
         
         %% reset
@@ -140,23 +140,23 @@ classdef rigid_body_agent_SE3 < agent_3D
             
             % compute current force and moment inputs (zero order hold)
             U = match_trajectories(t,T_ref,U_ref,'previous') ;
-            F = U(A.force_indices) ;
-            M = U(A.moment_indices) ;
+            F = U(A.input_force_indices) ;
+            M = U(A.input_moment_indices) ;
             
             % add gravity to the input force
             if A.gravity_on_flag
-                F = F + A.mass*A.gravity_acceleration.*A.gravity_direction ;
+                F = F + A.body_mass*A.gravity_acceleration.*A.gravity_direction ;
             end
             
             % change in position
             xd = z(A.velocity_indices) ;
             
             % change in velocity
-            vd = (1/A.mass)*F ;
+            vd = (1/A.body_mass)*F ;
             
             % change in angular velocity
             O = z(A.angular_velocity_indices) ;
-            Od = A.inertia_matrix_inverse*(M - cross(O,A.inertia_matrix*O)) ;
+            Od = A.body_inertia_matrix_inverse*(M - cross(O,A.body_inertia_matrix*O)) ;
             
             % output dynamics
             zd = [xd ; vd ; Od] ;
@@ -180,41 +180,22 @@ classdef rigid_body_agent_SE3 < agent_3D
             end
         end
         
-        function [R_out,z_out] = plot_at_time(A,t)
-            % method [R_out,z_out] = plot_at_time(t)
+        function plot_at_time(A,t)
+            % A.plot_at_time(t)
             %
             % Plot the rigid body's coordinate frame at the specified time t,
             % which should be in the interval of [A.time(1),A.time(end)]. Note
             % that the attitude plotted is approximate, computed using an Euler
             % step on SO(3) relative to the closest time available in A.time.
             
-            % get state at time t
-            z_t = match_trajectories(t,A.time,A.state) ;
-            p_t = z_t(A.position_indices);
-            
-            % find the time closest to t in the saved time
-            [~,t_closest_idx] = min(abs(A.time - t)) ;
-            t_closest = A.time(t_closest_idx) ;
-            
-            % get rotation matrix at time closest to t, then perform an Euler
-            % step in SO(3) to get the rotation at t
-            R_t_closest = A.attitude(:,:,t_closest_idx) ;
-            dt = t - t_closest ;
-            O_t = z_t(A.angular_velocity_indices) ;
-            F = expm(dt.*skew(O_t)) ;
-            R_t = F*R_t_closest ;
-            
+            [R_t,z_t] = A.get_state_and_attitude_at_time(t) ;
+            p_t = z_t(A.position_indices) ;
             A.plot_frame(R_t,p_t) ;
-            
-            if nargout > 0
-                R_out = R_t ;
-                z_out = z_t ;
-            end
         end
         
         function plot_frame(A,R,p)
             % check whether or not to create new plot data
-            if check_if_plot_is_available(A,'e1_data')
+            if check_if_plot_is_available(A,'e1')
                 new_plot_data = plot_coord_frame_3D(R,p,...
                     'Data',A.plot_data,...
                     'Scale',A.plot_frame_scale,...
@@ -229,9 +210,27 @@ classdef rigid_body_agent_SE3 < agent_3D
             end
             
             % update A.plot_data
-            A.plot_data.e1_data = new_plot_data.e1_data ;
-            A.plot_data.e2_data = new_plot_data.e2_data ;
-            A.plot_data.e3_data = new_plot_data.e3_data ;
+            A.plot_data.e1 = new_plot_data.e1 ;
+            A.plot_data.e2 = new_plot_data.e2 ;
+            A.plot_data.e3 = new_plot_data.e3 ;
+        end
+        
+        %% utility
+        function [R_t,z_t] = get_state_and_attitude_at_time(A,t)
+            % get state at time t
+            z_t = match_trajectories(t,A.time,A.state) ;
+            
+            % find the time closest to t in the saved time
+            [~,t_closest_idx] = min(abs(A.time - t)) ;
+            t_closest = A.time(t_closest_idx) ;
+            
+            % get rotation matrix at time closest to t, then perform an Euler
+            % step in SO(3) to get the rotation at t
+            R_t_closest = A.attitude(:,:,t_closest_idx) ;
+            dt = t - t_closest ;
+            O_t = z_t(A.angular_velocity_indices) ;
+            F = expm(dt.*skew(O_t)) ;
+            R_t = F*R_t_closest ;
         end
     end
 end

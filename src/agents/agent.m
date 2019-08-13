@@ -3,75 +3,9 @@ classdef agent < handle
 %
 % Generic point-mass agent with zero dynamics as default. Other agents
 % should inherit this as a superclass.
-%
-% PROPERTIES:
-%   verbose              the verbosity level of the agent; 0 is silent,
-%                        1 is mildly talkative, 2 is very talkative, etc.
-%
-%   state                n_states-by-N vector of the states at each time
-%                        point indicated by the "time" property
-%
-%   time                 1-by-N vector indicating the time at which the
-%                        agent is at each state
-%
-%   input                n_inputs-by-M vector indicating the input applied
-%                        by the agent, assumed to be zero-order hold, with
-%                        input timing given by the A.input_time property
-%
-%   input_time           1-by-M vector indicating the timing of the input
-%
-%   n_states             the number of states the agent has; 2 by default
-%
-%   n_inputs             the number of inputs the agent has; 0 by default
-%
-%   position_indices     indices of the position coordinates as a 1-by-2
-%                        vector for 2-D or 1-by-3 for 3-D; by default, this
-%                        is [1,2]
-%
-%   orientation_indices  indices of yaw (for 2-D) and pitch and roll (3-D);
-%                        by default empty
-%
-%   sensor_radius        a scalar indicating the sensor radius of the
-%                        agent, which can be used by the world to determine
-%                        which obstacles and portions of the world to
-%                        reveal to the agent
-%
-%   plot_sensor_radius   a boolean that determines whether or not to plot
-%                        the sensor radius when plot_in_loop is called
-%
-% METHODS:
-%   agent                the constructor method, which establishes the
-%                        default properties
-%
-%   reset                by default, sets the agent's state to the provided
-%                        state and its inputs and time to zero
-%
-%   move                 takes in a control input and associated time, and
-%                        potentially a reference trajectory, and moves the
-%                        agent based on this information; updates the
-%                        agent's state, time, input, and input_time
-%
-%   stop                 by default, calls "move" with zero control inputs
-%                        for 1 second; should be replaced in a subclass
-%                        with a "braking" functionality, typically
-%                        implemented by calling A.move
-%
-%   dynamics             the differential equation describing the agent's
-%                        motion given an input, input timing, and
-%                        optionally a reference trajectory; by default
-%                        zero, and should be overwritten in a subclass
-%
-%   integrator           a solver used by the agent; by default ode45 is
-%                        used, and should be sufficient for most agents;
-%                        overwriting this in a subclass is useful for
-%                        implementing RK4 or some other fixed-step
-%                        integration method
-%
-%   plot                 plots the agent's trajectory and footprint; this
-%                        method is called once per iteration of the
-%                        simulator
 
     properties
+        % state space model properties
         state = [] ;
         time = [] ;
         input = [] ;
@@ -80,20 +14,30 @@ classdef agent < handle
         n_states = 2 ;
         n_inputs = 0 ;
         position_indices = [1 2] ;
+        
+        % sensing
         sensor_radius = 1 ;
-        verbose = 0 ;
-        plot_data = struct('trajectory',[],'sensor_radius',[]) ;
-        plot_sensor_radius = false
-        plot_time_step = false ;
-        LLC = [] ; % low-level controller
+        
+        % low-level controller
+        LLC = [] ;
+        
+        % collision-checking
+        collision_check_input_data
         
         % plotting
+        plot_data = struct('trajectory',[]) ;
+        plot_input_data
+        
+        % animation
         animation_plot_buffer = 1 ; % meter
         animation_time_discretization  = 0.1 ;
-        set_axes_when_animating = false ;
-        set_view_when_animating = false ;
+        animation_set_axes_flag = false ;
+        animation_set_view_flag = false ;
         animation_view = 2 ;
-        animation_default_filename = 'animation.gif' ;
+        animation_gif_filename = 'agent_animation.gif' ;
+        
+        % user-friendly properties
+        verbose = 0 ;
     end
     
     methods
@@ -285,12 +229,6 @@ classdef agent < handle
             % set up data to plot
             xy = A.state(A.position_indices,:) ;
             
-            if A.plot_sensor_radius
-                rsense = A.sensor_radius ;
-                xcirc = rsense*cos(linspace(0,2*pi)) + xy(1,end) ;
-                ycirc = rsense*sin(linspace(0,2*pi)) + xy(2,end) ;
-            end
-            
             hold_check = ~ishold ;
             if hold_check
                 hold on
@@ -303,25 +241,12 @@ classdef agent < handle
                 
                 A.plot_data.trajectory.XData = xy(1,:) ;
                 A.plot_data.trajectory.YData = xy(2,:) ;
-                
-                if A.plot_sensor_radius
-                    A.plot_data.sensor_radius.XData = xcirc ;
-                    A.plot_data.sensor_radius.YData = ycirc ;
-                end
             else
                 A.vdisp('Plotting new data',5)
                 
                 % plot trajectory
                 trajectory_data = plot(xy(1,:),xy(2,:),'Color',color) ;
                 A.plot_data.trajectory = trajectory_data ;
-
-                % plot sensor radius
-                if A.plot_sensor_radius
-                    hold on
-                    sensor_radius_data = plot(xcirc, ycirc,'--','Color',[0.5 0.5 1]) ;
-                    A.plot_data.sensor_radius = sensor_radius_data ;
-                    hold off
-                end
             end
             
             if hold_check
@@ -388,12 +313,12 @@ classdef agent < handle
                 % create plot
                 A.plot_at_time(t_idx)
 
-                if A.set_axes_when_animating
+                if A.animation_set_axes_flag
                     axis equal
                     axis(lims)
                 end
                 
-                if A.set_view_when_animating
+                if A.animation_set_view_flag
                     view(A.animation_view)
                 end
 
@@ -429,7 +354,7 @@ classdef agent < handle
         end
     
         function filename = gif_setup(A)       
-            filename = A.animation_default_filename ;
+            filename = A.animation_gif_filename ;
 
             dir_content = dir(pwd) ;
             filenames   = {dir_content.name} ;

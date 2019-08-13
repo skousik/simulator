@@ -5,7 +5,6 @@ methods
         A@agent(varargin{:},'dimension',3) ;
         A.n_states = 3 ;
         A.position_indices = 1:3 ;
-        A.plot_sensor_radius = false ;
         A.reset ;
     end
     
