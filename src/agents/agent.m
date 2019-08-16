@@ -43,7 +43,8 @@ classdef agent < handle
     methods
     %% constructor
         function A = agent(varargin)
-        % method: A = agent(verbose_level,'property',value,...)
+        % A = agent('property1',value1,'property2',value2,...)
+        % A = agent(verbose_level,'property1',value1,'property2',value2,...)
         %
         % This method creates an agent object. It takes in string/argument
         % pairs, where the strings are the names of the agent default
