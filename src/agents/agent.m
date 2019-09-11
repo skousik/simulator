@@ -112,6 +112,8 @@ classdef agent < handle
             % updated. Similarly, this method assumes that the nominal time
             % starts at 0.
             
+            A.vdisp('Moving!',5)
+            
             % set up default reference trajectory
             if nargin < 5
                 Z_ref = [] ;
