@@ -4,12 +4,12 @@ methods
         HLP@high_level_planner(varargin{:}) ;
     end
 
-    function waypoint = get_waypoint(HLP,agent_info,~,lookahead_distance)
+    function waypoint = get_waypoint(HLP,agent_info,world_info,lookahead_distance)
         if nargin < 4
             lookahead_distance = HLP.default_lookahead_distance ;
         end
 
-        g = HLP.goal ;
+        g = world_info.goal ;
         z = agent_info.position(:,end) ;
         dir_des = g - z ;
         dir_des = dir_des./norm(dir_des) ;
