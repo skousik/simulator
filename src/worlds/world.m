@@ -72,6 +72,7 @@ classdef world < handle
         N_obstacles = [] ;
         obstacles = [] ;
         collision_check_time_discretization = 0.005 ;
+        animation_time_discretization = 0.01 ;
         current_time = 0 ;
         verbose = 0 ;
         plot_data
@@ -230,6 +231,32 @@ classdef world < handle
             end
             
             W.vdisp('Plotting at a specific time is undefined.',1)
+        end
+        
+        function animate(W,time_interval_to_animate)
+            % W.animate()
+            % W.animate([t_start, t_finish])
+            %
+            % Animates the given world. By default, the animation is from
+            % duration t = 0 to t = W.current_time, and discretized by the
+            % animation_time_discretization property. If the second input
+            % is given as a time interval, then that time interval is
+            % animated.
+            
+            if nargin < 2
+                T = [0, W.current_time] ;
+            else
+                T = time_interval_to_animate ;
+            end
+            
+            if diff(T) > 0
+                for tidx = T(1):W.animation_time_discretization:T(end)
+                    W.plot_at_time(tidx)
+                    pause(W.animation_time_discretization) ;
+                end
+            else
+                plot(W)
+            end
         end
         
 %% utility
