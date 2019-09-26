@@ -6,7 +6,7 @@ function [d,pct] = dist_point_on_polyline(p,P)
 % total distance
 
     [~,~,p,pidx] = dist_point_to_polyline(p,P) ;
-    pct=[];
+    pct = [] ;
     
     % get distances along the polyline
     Pa = P(:,1:end-1) ; Pb = P(:,2:end) ;

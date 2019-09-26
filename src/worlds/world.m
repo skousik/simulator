@@ -131,6 +131,8 @@ classdef world < handle
             I.obstacles = W.obstacles ;
             I.start = W.start ;
             I.goal = W.goal ;
+            I.dimension = W.dimension ;
+            I.bounds = W.bounds ;
         end
         
     %% goal check

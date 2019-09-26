@@ -39,7 +39,7 @@ methods
     
 %% get waypoint
     function waypoint = get_waypoint(HLP,~,~,~)
-    % waypoint = get_waypoint(agent_info,obstacles,lookahead_distance)
+    % waypoint = get_waypoint(agent_info,world_info,lookahead_distance)
     %
     % This is the function to be called by the planner replan method. It
     % should return a waypoint, which is usually an (x,y) position or an

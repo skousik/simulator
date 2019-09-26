@@ -11,7 +11,11 @@ function [dmin,dout,pout,pidx] = dist_point_to_polyline(p,P)
 % points "Pa" to the second to mth points "Pb" so the output distances are
 % to these m-1 line segments and to the last point of Pb.
 %
+% Note this also works if the inputs are 3D.
+%
 % Modified from: http://www.alecjacobson.com/weblog/?p=1486
+
+    N = size(P,1) ;
 
     Pa = P(:,1:end-1) ;
     Pb = P(:,2:end) ;
@@ -26,7 +30,7 @@ function [dmin,dout,pout,pidx] = dist_point_to_polyline(p,P)
     tlog = t > 0 & t < 1 ;
 
     if any(tlog)
-        Pa(:,tlog) = Pa(:,tlog) + repmat(t(tlog),2,1).*dP(:,tlog) ;
+        Pa(:,tlog) = Pa(:,tlog) + repmat(t(tlog),N,1).*dP(:,tlog) ;
         Pall = [Pa,P(:,end)] ;
     else
         Pall = P ;
