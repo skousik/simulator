@@ -559,11 +559,9 @@ classdef simulator < handle
         t_vec = A.time(1):S.animation_time_discretization:A.time(end) ;
 
         % set hold
-        if ~ishold
+        hold_check = ~ishold ;
+        if hold_check
             hold on
-            hold_check = true ;
-        else
-            hold_check = false ;
         end
         
         for t_idx = t_vec
