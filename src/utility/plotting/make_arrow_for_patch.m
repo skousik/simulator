@@ -1,13 +1,27 @@
-function [F,V] = make_arrow_for_patch(p1,p2,varargin)
+function [F,V] = make_arrow_for_patch(p,varargin)   
+    if mod(length(varargin),2) == 1
+        p_start = p ;
+        p_end = varargin{1} ;
+        
+        if length(varargin) > 1
+            varargin = varargin(2:end) ;
+        else
+            varargin = {} ;
+        end
+    else
+        p_start = zeros(3,1) ;
+        p_end = p ;
+    end
+    
     % set default values based on how far apart p1 and p2 are
-    d = norm(p2 - p1) ;
+    d = norm(p_end - p_start) ;
     shaft_width = d/20 ;
     head_length = d/5 ;
     head_width = d/10 ;
     
     % iterate through varargin
     for idx = 1:2:length(varargin)
-        switch varargin{idx}
+        switch lower(varargin{idx})
             case 'shaft_width'
                 shaft_width = varargin{idx+1} ;
             case 'head_length'
@@ -35,7 +49,7 @@ function [F,V] = make_arrow_for_patch(p1,p2,varargin)
     
     % get the rotation matrix for the direction between p1 and p2
     n0 = [0;0;1] ;
-    n = (p2 - p1)./d ;
+    n = (p_end - p_start)./d ;
     v = cross(n0,n) ;
     v_hat = skew(v) ;
     s = norm(v) ;
@@ -43,5 +57,5 @@ function [F,V] = make_arrow_for_patch(p1,p2,varargin)
     R = eye(3) + v_hat + v_hat^2 .* ((1-c)./(s^2)) ;
     
     % rotate and translate the vertices
-    V = (R*V')' + repmat(p1(:)',size(V,1),1) ;
+    V = (R*V')' + repmat(p_start(:)',size(V,1),1) ;
 end

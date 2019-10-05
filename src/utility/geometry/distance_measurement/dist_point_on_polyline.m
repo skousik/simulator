@@ -18,7 +18,7 @@ function [d,pct] = dist_point_on_polyline(p,P)
     % get distance up to closest index and add distance from the point at
     % the closest index to the point itself
     d0 = Pdists(pidx) ;
-    d1 = distPointToPoints(p,P(:,pidx)) ;
+    d1 = dist_points_to_points(p,P(:,pidx)) ;
     d = d0 + d1 ;
     
     if nargout > 1
