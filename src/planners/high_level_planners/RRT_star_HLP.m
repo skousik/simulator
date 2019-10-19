@@ -1,4 +1,13 @@
 classdef RRT_star_HLP < high_level_planner
+% Class: RRT_star_HLP < high_level_planner
+%
+% This implements RRT* as a high-level planner for the simulator framework.
+% For now, it only works for 2D worlds/obstacles.
+%
+% Authors: Bohao Zhang and Shreyas Kousik
+% Created: 5 July 2019
+% Updated: 19 Oct 2019
+
     properties
         timeout = 0.4 ; % seconds
         final_goal_rate = 0.08;
@@ -56,7 +65,7 @@ classdef RRT_star_HLP < high_level_planner
                     end
                 end
                 
-                % grow the tree towards the direction of this new node
+                % grow the tree towards the direction new node
                 if nearest_node_distance <= lookahead_distance
                     new_node = rand_node;
                 else
@@ -123,6 +132,7 @@ classdef RRT_star_HLP < high_level_planner
                     backup_index = idx;
                 end
                 
+                % FOR DEBUGGING
                 % fprintf("%d. [%f %f], %d, %f\n",idx,nodes(1,idx),nodes(2,idx),nodes_father(idx),cost(idx));
             end
             
@@ -148,8 +158,7 @@ classdef RRT_star_HLP < high_level_planner
             z = agent_info.position(:,end) ;
             
             % call the RRT star algorithm
-            HLP.plan_path(agent_info, world_info.obstacles, lookahead_distance) 
-            
+            HLP.plan_path(agent_info, world_info.obstacles, lookahead_distance)
             
             if HLP.plan_index > 0
                 if norm(z-HLP.plan(:,HLP.plan_index)) > HLP.change_plan_distance
@@ -171,46 +180,18 @@ classdef RRT_star_HLP < high_level_planner
         
         %% node feasibility check
         function out = node_feasibility_check(HLP,node_A,node_B,obstacles)
-            out = true;
+            % this function should return TRUE if the node is feasible
             
-            N = size(obstacles,2)/6 ; % number of obstacles
+            % run polyline check for node feasiblity
+            X = [node_A, node_B] ;
+            O = obstacles ;
             
-            for idx = 1:6:(6*N-1)
-                % judge if the nodes of the line is inside the obstacles
-                if HLP.get_cross(obstacles(:,idx), obstacles(:,idx+1), node_A) * HLP.get_cross(obstacles(:,idx+2), obstacles(:,idx+3), node_A) >= 0 && HLP.get_cross(obstacles(:,idx+1), obstacles(:,idx+2), node_A) * HLP.get_cross(obstacles(:,idx+3), obstacles(:,idx), node_A) >= 0
-                    out = false;
-                    break;
-                end
-                
-                if HLP.get_cross(obstacles(:,idx), obstacles(:,idx+1), node_B) * HLP.get_cross(obstacles(:,idx+2), obstacles(:,idx+3), node_B) >= 0 && HLP.get_cross(obstacles(:,idx+1), obstacles(:,idx+2), node_B) * HLP.get_cross(obstacles(:,idx+3), obstacles(:,idx), node_B) >= 0
-                    out = false;
-                    break;
-                end
-                
-                % judge if the line is crossing the obstacles
-                for i = idx:1:(idx+3)
-                    if max(obstacles(1,i),obstacles(1,i+1))<min(node_A(1),node_B(1)) || max(obstacles(2,i),obstacles(2,i+1))<min(node_A(2),node_B(2)) || max(node_A(1),node_B(1))<min(obstacles(1,i),obstacles(1,i+1)) || max(node_A(2),node_B(2))<min(obstacles(2,i),obstacles(2,i+1))
-                        continue;
-                    else
-                        if HLP.vec_cross(obstacles(:,i)-node_B,node_A-node_B) * HLP.vec_cross(obstacles(:,i+1)-node_B,node_A-node_B) <= 0 && HLP.vec_cross(node_A-obstacles(:,i+1),obstacles(:,i)-obstacles(:,i+1)) * HLP.vec_cross(node_B-obstacles(:,i+1),obstacles(:,i)-obstacles(:,i+1)) <= 0
-                            out = false;
-                            break;
-                        end
-                    end
-                end
-                
-                if out == false
-                    break;
-                end
-            end 
-        end
-        
-        function out = get_cross(HLP, p1, p2, p) 
-            out = (p2(1) - p1(1)) * (p(2) - p1(2)) - (p(1) - p1(1)) * (p2(2) - p1(2));
-        end
-        
-        function out = vec_cross(HLP, p1, p2) 
-            out = p1(1) * p2(2) - p2(1) * p1(2);
+            if isempty(O)
+                out = true ;
+            else
+                [xi,~] = polyxpoly(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
+                out = isempty(xi) ;
+            end
         end
     end
 end
