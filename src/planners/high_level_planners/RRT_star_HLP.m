@@ -177,12 +177,12 @@ classdef RRT_star_HLP < high_level_planner
             
             for idx = 1:6:(6*N-1)
                 % judge if the nodes of the line is inside the obstacles
-                if HLP.GetCross(obstacles(:,idx), obstacles(:,idx+1), node_A) * HLP.GetCross(obstacles(:,idx+2), obstacles(:,idx+3), node_A) >= 0 && HLP.GetCross(obstacles(:,idx+1), obstacles(:,idx+2), node_A) * HLP.GetCross(obstacles(:,idx+3), obstacles(:,idx), node_A) >= 0
+                if HLP.get_cross(obstacles(:,idx), obstacles(:,idx+1), node_A) * HLP.get_cross(obstacles(:,idx+2), obstacles(:,idx+3), node_A) >= 0 && HLP.get_cross(obstacles(:,idx+1), obstacles(:,idx+2), node_A) * HLP.get_cross(obstacles(:,idx+3), obstacles(:,idx), node_A) >= 0
                     out = false;
                     break;
                 end
                 
-                if HLP.GetCross(obstacles(:,idx), obstacles(:,idx+1), node_B) * HLP.GetCross(obstacles(:,idx+2), obstacles(:,idx+3), node_B) >= 0 && HLP.GetCross(obstacles(:,idx+1), obstacles(:,idx+2), node_B) * HLP.GetCross(obstacles(:,idx+3), obstacles(:,idx), node_B) >= 0
+                if HLP.get_cross(obstacles(:,idx), obstacles(:,idx+1), node_B) * HLP.get_cross(obstacles(:,idx+2), obstacles(:,idx+3), node_B) >= 0 && HLP.get_cross(obstacles(:,idx+1), obstacles(:,idx+2), node_B) * HLP.get_cross(obstacles(:,idx+3), obstacles(:,idx), node_B) >= 0
                     out = false;
                     break;
                 end
@@ -192,7 +192,7 @@ classdef RRT_star_HLP < high_level_planner
                     if max(obstacles(1,i),obstacles(1,i+1))<min(node_A(1),node_B(1)) || max(obstacles(2,i),obstacles(2,i+1))<min(node_A(2),node_B(2)) || max(node_A(1),node_B(1))<min(obstacles(1,i),obstacles(1,i+1)) || max(node_A(2),node_B(2))<min(obstacles(2,i),obstacles(2,i+1))
                         continue;
                     else
-                        if HLP.VecCross(obstacles(:,i)-node_B,node_A-node_B) * HLP.VecCross(obstacles(:,i+1)-node_B,node_A-node_B) <= 0 && HLP.VecCross(node_A-obstacles(:,i+1),obstacles(:,i)-obstacles(:,i+1)) * HLP.VecCross(node_B-obstacles(:,i+1),obstacles(:,i)-obstacles(:,i+1)) <= 0
+                        if HLP.vec_cross(obstacles(:,i)-node_B,node_A-node_B) * HLP.vec_cross(obstacles(:,i+1)-node_B,node_A-node_B) <= 0 && HLP.vec_cross(node_A-obstacles(:,i+1),obstacles(:,i)-obstacles(:,i+1)) * HLP.vec_cross(node_B-obstacles(:,i+1),obstacles(:,i)-obstacles(:,i+1)) <= 0
                             out = false;
                             break;
                         end
@@ -205,11 +205,11 @@ classdef RRT_star_HLP < high_level_planner
             end 
         end
         
-        function out = GetCross(HLP, p1, p2, p) 
+        function out = get_cross(HLP, p1, p2, p) 
             out = (p2(1) - p1(1)) * (p(2) - p1(2)) - (p(1) - p1(1)) * (p2(2) - p1(2));
         end
         
-        function out = VecCross(HLP, p1, p2) 
+        function out = vec_cross(HLP, p1, p2) 
             out = p1(1) * p2(2) - p2(1) * p1(2);
         end
     end

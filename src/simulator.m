@@ -578,11 +578,11 @@ classdef simulator < handle
                 
                 if start_animation_gif
                     imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
-                        'DelayTime',A.animation_time_discretization) ;
+                        'DelayTime',S.animation_time_discretization) ;
                     start_animation_gif = false ;
                 else
                     imwrite(imind,cm,filename,'gif','WriteMode','append',...
-                        'DelayTime',A.animation_time_discretization) ;
+                        'DelayTime',S.animation_time_discretization) ;
                 end
             else
                 pause(S.animation_time_discretization)
