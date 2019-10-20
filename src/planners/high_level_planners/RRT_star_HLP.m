@@ -16,11 +16,15 @@ classdef RRT_star_HLP < high_level_planner
         plan = [];
         plan_index = 0;
         bounds
+        
+        current_nodes
+        current_nodes_father
     end
     methods
         %% constructor
         function HLP = RRT_star_HLP(varargin)
             HLP@high_level_planner(varargin{:}) ;
+            HLP.plot_data.nodes = [] ;
         end
         
         %% plan a path
@@ -150,6 +154,9 @@ classdef RRT_star_HLP < high_level_planner
             end
 
             HLP.plan_index = size(HLP.plan,2);
+            
+            HLP.current_nodes = nodes ;
+            HLP.current_nodes_father = nodes_father ;
         end
         
         %% get waypoint
@@ -191,6 +198,19 @@ classdef RRT_star_HLP < high_level_planner
             else
                 [xi,~] = polyxpoly(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
                 out = isempty(xi) ;
+            end
+        end
+        
+        %% plotting
+        function plot(HLP)
+            N = HLP.current_nodes ;
+            if check_if_plot_is_available(HLP,'nodes')
+                HLP.plot_data.nodes.XData = N(1,:) ;
+                HLP.plot_data.nodes.YData = N(2,:) ;
+            else
+                if ~isempty(N)
+                    HLP.plot_data.nodes = plot(N(1,:),N(2,:),'b.') ;
+                end
             end
         end
     end
