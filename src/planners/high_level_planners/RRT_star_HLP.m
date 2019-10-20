@@ -189,15 +189,15 @@ classdef RRT_star_HLP < high_level_planner
         function out = node_feasibility_check(HLP,node_A,node_B,obstacles)
             % this function should return TRUE if the node is feasible
             
-            % run polyline check for node feasiblity
             X = [node_A, node_B] ;
             O = obstacles ;
             
             if isempty(O)
                 out = true ;
             else
-                [xi,~] = polyxpoly(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
-                out = isempty(xi) ;
+                [check_inside,~] = inpolygon(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
+                [check_boundary,~] = polyxpoly(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
+                out = isempty(check_boundary) & ~any(check_inside) ;
             end
         end
         

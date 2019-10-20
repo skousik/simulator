@@ -127,7 +127,7 @@ classdef agent < handle
             zcur = A.state(:,end) ;
             
             % call the ode solver to simulate agent
-            [tout,zout] = A.integrator(@(t,z) A.dynamics(t,z,T_used,U_used,Z_used),...
+            [tout,zout] = A.integrator(@(t,z) A.dynamics(t,z,T_ref,U_ref,Z_ref),...
                                        [0 t_move], zcur) ;
             
             A.commit_move_data(tout,zout,T_used,U_used,Z_used) ;
@@ -143,10 +143,8 @@ classdef agent < handle
             % timing setup
             if T_ref(end) < t_move
                 A.vdisp(['Provided input time vector is shorter than the ',...
-                        'desired motion time! The agent will only be ',...
-                        'moved until the largest available time in the ',...
-                        'input time vector.'])
-                t_move = T_ref(end) ;
+                        'desired motion time! The agent will still be ',...
+                        'moved for the duration t_move.'])
             end
 
             T_ref = T_ref(:)' ;
