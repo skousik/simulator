@@ -12,4 +12,8 @@ function h = plot_path(P,varargin)
         case 3
             h = plot3(P(1,:),P(2,:),P(3,:),varargin{:}) ;
     end
+    
+    if nargout < 1
+        clear h
+    end
 end
