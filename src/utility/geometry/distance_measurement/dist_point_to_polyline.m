@@ -1,5 +1,5 @@
-function [dmin,dout,pout,pidx] = dist_point_to_polyline(p,P)
-% Function: [dmin,dout,pout,pidx] = dist_point_to_polyline(p,P)
+function [d_min,d_out,p_out,p_idx] = dist_point_to_polyline(p,P)
+% [d_min,d_out,p_out,p_idx] = dist_point_to_polyline(p,P)
 %
 % Given a point p (2-by-1) and a polyline (2-by-m), return a 1-by-m vector
 % of the closest distances from the point to the polyline and (optionally)
@@ -36,10 +36,10 @@ function [dmin,dout,pout,pidx] = dist_point_to_polyline(p,P)
         Pall = P ;
     end
     
-    dout = dist_point_to_points(p,Pall) ;
-    [dmin,pidx] = min(dout) ;
+    d_out = dist_point_to_points(p,Pall) ;
+    [d_min,p_idx] = min(d_out) ;
     
     if nargout > 2
-        pout = Pall(:,pidx) ;
+        p_out = Pall(:,p_idx) ;
     end
 end

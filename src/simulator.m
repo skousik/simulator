@@ -1,14 +1,20 @@
 classdef simulator < handle
 % Class: simulator
 %
-% S = simulator(agent, worlds, planners, varargin)
+% S = simulator(agents, worlds, planners, varargin)
 
 %% properties
     properties (Access = public)
         % basic properties
-        agent = agent() ;
+        agents = {agent()} ;
         worlds = {world()} ;
         planners = {planner()} ;
+        
+        N_agents = 1 ;
+        N_worlds = 1 ;
+        N_planners = 1 ;
+        
+        % user-friendly properties
         verbose = 1 ;
 
         % simulation
@@ -40,27 +46,39 @@ classdef simulator < handle
 %% methods
     methods
     %% constructor
-        function S = simulator(agent, worlds, planners, varargin)
+        function S = simulator(agents, worlds, planners, varargin)
             % Constructor function: simulator
             %
-            % Usage: S = simulator(agent, world, planners, varargin)
+            % Usage: S = simulator(agents, world, planners, varargin)
             %
-            % This constructor takes in an agent, which obeys some physical
-            % dynamics; a world object, which contains obstacles and goals;
-            % and one or more planners for the agent to perform path
-            % planning and obstacle avoidance in the world. The constructor
-            % then sets up internal variables needed to simulate the agent
-            % in the provided world using each of the provided planners.
+            % This constructor takes in agents, which obey some physical
+            % dynamics; world objects, which contains obstacles and goals;
+            % and planners for the agent to perform receding-horizon traj.
+            % planning in the worlds.
 
             % parse inputs
             S = parse_args(S,varargin{:}) ;
+            
+            % get number of agents, worlds, and planners
+            S.N_agents = length(agents) ;
+            S.N_worlds = length(worlds) ;
+            S.N_planners = length(planners) ;
+            
+            % error if N_agents > 1 and N_agents ~= N_planners
+            if S.N_agents > 1 && S.N_agents ~= S.N_planners
+                error('Please provide either one agent, or one agent per planner')
+            end
 
-            % if world or planner is alone, wrap it in a cell
-            if length(worlds) == 1 && ~iscell(worlds)
+            % if the agent, world, or planner are alone, wrap them in cells
+            if S.N_agents == 1 && ~iscell(agents)
+                agents = {agents} ;
+            end
+            
+            if S.N_worlds == 1 && ~iscell(worlds)
                 worlds = {worlds} ;
             end
 
-            if length(planners) == 1 && ~iscell(planners)
+            if S.N_planners == 1 && ~iscell(planners)
                 planners = {planners} ;
             end
 
@@ -70,7 +88,7 @@ classdef simulator < handle
             end
 
             % wrap up construction
-            S.agent = agent ;
+            S.agents = agents ;
             S.worlds = worlds ;
             S.planners = planners ;
         end
@@ -92,19 +110,17 @@ classdef simulator < handle
             world_indices = 1:length(S.worlds) ;
             planner_indices = 1:length(S.planners) ;
 
-            % get agent
-            A = S.agent ;
-
             % set up summaries
             LW = length(world_indices) ;
             summary = cell(1,LW) ;
 
         %% world loop
             for widx = world_indices
-                W = S.worlds{widx} ;
+                W = S.get_world(widx) ;
 
                 % set up summary objects
                 L = length(planner_indices) ;
+                agent_name = cell(1,L) ;
                 planner_name = cell(1,L) ;
                 planner_info_cell = cell(1,L) ;
                 agent_info_cell = cell(1,L) ;
@@ -124,8 +140,9 @@ classdef simulator < handle
                 for pidx = planner_indices
                     S.vdisp(['Planner ',num2str(pidx)])
 
-                    % get the planner
-                    P = S.planners{pidx} ;
+                    % get agent and planner
+                    A = S.get_agent(pidx) ;
+                    P = S.get_planner(pidx) ;
 
                     % get agent and world ready
                     W.reset() ;
@@ -322,6 +339,7 @@ classdef simulator < handle
                     end
 
                     % fill in the results for the current planner
+                    agent_name{pidx} = A.name ;
                     planner_name{pidx} = P.name ;
                     trajectory{pidx} = Z ;
                     sim_time{pidx} = T_nom ;
@@ -342,7 +360,8 @@ classdef simulator < handle
                     end
                 end
                 S.vdisp(['World ',num2str(widx),' complete! Generating summary.'])
-                summary{widx} = struct('planner_name',planner_name,...
+                summary{widx} = struct('agent_name',agent_name,...
+                                 'planner_name',planner_name,...
                                  'trajectory',trajectory,...
                                  'total_real_time',total_real_time,...
                                  'total_iterations',icur,...
@@ -395,9 +414,9 @@ classdef simulator < handle
         cla ; hold on ; axis equal ;
 
         % get agent, world, and planner
-        A = S.agent ;
-        W = S.worlds{world_index} ;
-        P = S.planners{planner_index} ;
+        A = S.get_agent(planner_index) ;
+        W = S.get_world(world_index) ;
+        P = S.get_planner(planner_index) ;
 
         if ~any(isinf(S.worlds{world_index}.bounds))
             axis(W.bounds)
@@ -478,9 +497,9 @@ classdef simulator < handle
         end
         
         % get agent, world, and planner
-        A = S.agent ;
-        W = S.worlds{world_index} ;
-        P = S.planners{planner_index} ;
+        A = S.get_agent(planner_index) ;
+        W = S.get_world(world_index) ;
+        P = S.get_planner(planner_index) ;
         
         % set up hold
         if ~ishold
@@ -553,7 +572,7 @@ classdef simulator < handle
         end
         
         % get agent
-        A = S.agent ;
+        A = S.get_agent(planner_index) ;
         
         % get time
         t_vec = A.time(1):S.animation_time_discretization:A.time(end) ;
@@ -612,7 +631,23 @@ classdef simulator < handle
         filename = filename_new ;
     end
 
-    %% verbose text output
+    %% utility
+    function A = get_agent(S,idx)
+        if nargin < 2 || S.N_agents == 1
+            A = S.agents{1} ;
+        else
+            A = S.agents{idx} ;
+        end
+    end
+    
+    function W = get_world(S,idx)
+        W = S.worlds{idx} ;
+    end
+    
+    function P = get_planner(S,idx)
+        P = S.planners{idx} ;
+    end
+    
     function vdisp(S,s,l,use_header)
     % Display a string 's' if the verbosity is greater than or equal to
     % the level 'l'; by default, the level is set to 0 and the default

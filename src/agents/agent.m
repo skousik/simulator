@@ -37,6 +37,7 @@ classdef agent < handle
         animation_gif_filename = 'agent_animation.gif' ;
         
         % user-friendly properties
+        name = 'agent' ;
         verbose = 0 ;
     end
     
