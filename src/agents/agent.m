@@ -148,15 +148,24 @@ classdef agent < handle
                         'moved for the duration t_move.'])
             end
 
+            % make sure the reference time is a row vector
             T_ref = T_ref(:)' ;
             
+            % make sure the reference time is unique, and only get those
+            % rows of U_ref and Z_ref
+            [T_ref,unique_idxs,~] = unique(T_ref,'stable') ;
+            U_ref = U_ref(:,unique_idxs) ;
+            Z_ref = Z_ref(:,Z_idxs) ;
+            
+            % get the amount of time to actually move the agent
             tlog = T_ref <= t_move ;
             T = T_ref(tlog) ;
             if T(end) < t_move
                 T = [T, t_move] ;
             end
             
-            % input and reference traj setup
+            % interpolate the reference input and trajectory to pass to the
+            % agent's move method
             if nargin < 5 || isempty(Z_ref)
                 U = match_trajectories(T,T_ref,U_ref) ;
                 Z = [] ;

@@ -31,17 +31,19 @@ function simulator_object = clear_plot_data(simulator_object,fieldname)
     % if the object is a world, also try to clear the obstacles' plot data
     if world_check
         O = simulator_object.obstacles ;
-
-        for idx = 1:length(O)
-            o = O{idx} ;
-            try
-                o = clear_plot_data(o) ;
-                O{idx} = o ;
-            catch
-                warning('Unable to clear obstacle plot data!')
+        
+        if iscell(O)
+            for idx = 1:length(O)
+                o = O{idx} ;
+                try
+                    o = clear_plot_data(o) ;
+                    O{idx} = o ;
+                catch
+                    warning('Unable to clear obstacle plot data!')
+                end
             end
-        end
 
-        W.obstacles = O ;
+            W.obstacles = O ;
+        end
     end
 end
