@@ -26,7 +26,9 @@ classdef simulator < handle
         allow_replan_errors = false ;
         save_planner_info = false ;
         manual_iteration = false ;
-        run_full_collision_check_at_end = false ;
+        collision_check_full_traj_after_sim_flag = false ;
+        simulation_summary = [] ;
+        
 
         % plotting
         figure_number = 1 ;
@@ -323,7 +325,7 @@ classdef simulator < handle
                     TU = A.input_time ;
                     agent_info = A.get_agent_info() ;
                     
-                    if S.run_full_collision_check_at_end
+                    if S.collision_check_full_traj_after_sim_flag
                         S.vdisp('Running final collision check.',4)
                         collision_check = W.collision_check(agent_info) ;
                     end
@@ -391,10 +393,10 @@ classdef simulator < handle
             if LW == 1
                 summary = summary{1} ;
             end
+            
+            S.simulation_summary = summary ;
 
             S.vdisp('Simulation complete!')
-
-
         end
 
     %% plotting
