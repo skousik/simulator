@@ -3,7 +3,8 @@ function h = plot_path(P,varargin)
 % handle = plot_path(...)
 %
 % Plot a 2-by-N or 3-by-N array P, where each column of P is a point on a
-% path.
+% path. If the input has more than 3 rows, it is assumed that the first two
+% rows contain the path, and the resulting plot is 2-D
 
     d = size(P,1) ;
     switch d
@@ -12,7 +13,7 @@ function h = plot_path(P,varargin)
         case 3
             h = plot3(P(1,:),P(2,:),P(3,:),varargin{:}) ;
         otherwise
-            error('The input path must be 2D or 3D, as a 2- or 3-by-N array!')
+            h = plot(P(1,:),P(2,:),varargin{:}) ;
     end
     
     if nargout < 1
