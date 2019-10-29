@@ -6,19 +6,23 @@ classdef RRT_star_HLP < high_level_planner
 %
 % Authors: Bohao Zhang and Shreyas Kousik
 % Created: 5 July 2019
-% Updated: 19 Oct 2019
+% Updated: 28 Oct 2019
 
     properties
-        timeout = 0.4 ; % seconds
+        timeout = 0.25 ; % seconds
         final_goal_rate = 0.08;
+        new_node_growth_distance = 0.1 ; % m
         near_distance_rate = 6;
         change_plan_distance = 0.6;
         plan = [];
         plan_index = 0;
         bounds
         
+        grow_new_tree_every_iteration_flag = true ;
+        
         current_nodes
-        current_nodes_father
+        current_nodes_parent
+        current_cost
     end
     methods
         %% constructor
@@ -28,22 +32,24 @@ classdef RRT_star_HLP < high_level_planner
         end
         
         %% plan a path
-        function out = plan_path(HLP,agent_info,obstacles,lookahead_distance)
-            % get agent's current position
-            z = agent_info.position(:,end) ;
-        
+        function out = grow_tree(HLP,agent_info,obstacles)
             % grow tree
             start_tic = tic ;
             t_cur = toc(start_tic) ;
-            nodes = [z];
-            nodes_father = [0];
-            cost = [0];
-            B = HLP.bounds;
-            for idx = 1:HLP.dimension
-                width = B(2*idx) - B(2*idx-1);
-                B(2*idx-1) = B(2*idx-1) + width * 0.04;
-                B(2*idx) = B(2*idx) - width * 0.04;
+            
+            if HLP.grow_new_tree_every_iteration_flag
+                z = agent_info.position(:,end) ;
+                nodes = [z] ;
+                nodes_parent = [0] ;
+                cost = [0] ;
+            else
+                nodes = HLP.current_nodes ;
+                nodes_parent = HLP.current_nodes_parent ;
+                cost = HLP.current_cost ;
             end
+            
+            B = HLP.bounds ;
+            NNGD = HLP.new_node_growth_distance ;
             
             while t_cur < HLP.timeout
                 if rand < HLP.final_goal_rate
@@ -52,28 +58,22 @@ classdef RRT_star_HLP < high_level_planner
                     rand_node = HLP.goal;
                 else
                     % generate a random node to explore
-                    rand_node = rand(HLP.dimension, 1);
-                    for idx = 1:HLP.dimension
-                        rand_node(idx) = rand_node(idx) * (B(2*idx) - B(2*idx-1)) + B(2*idx-1);
-                    end
+                    rand_node = rand_range(B(1:2:end),B(2:2:end)) ;
+                    rand_node = rand_node(:) ;
                 end
                 
                 % find the nearest node in the tree
-                nearest_node_index = 1;
-                nearest_node_distance = inf;
-                for idx = 1:size(nodes,2)
-                    node_distance = norm(rand_node - nodes(:,idx));
-                    if(node_distance < nearest_node_distance)
-                        nearest_node_index = idx;
-                        nearest_node_distance = node_distance;
-                    end
-                end
+                node_distances = vecnorm(rand_node - nodes) ;
+                [nearest_node_distance,nearest_node_index] = min(node_distances) ;
                 
                 % grow the tree towards the direction new node
-                if nearest_node_distance <= lookahead_distance
+                if nearest_node_distance <= NNGD
                     new_node = rand_node;
                 else
-                    new_node = nodes(:,nearest_node_index) + lookahead_distance .* (rand_node - nodes(:,nearest_node_index)) ./ nearest_node_distance;
+                    nearest_node = nodes(:,nearest_node_index) ;
+                    new_node_direction = rand_node - nearest_node ;
+                    new_node_direction = new_node_direction / norm(new_node_direction) ;
+                    new_node = nearest_node + NNGD.*new_node_direction ;
                 end
                 
                 if HLP.node_feasibility_check(new_node,nodes(:,nearest_node_index),obstacles) == true
@@ -101,7 +101,7 @@ classdef RRT_star_HLP < high_level_planner
                     end
                     
                     nodes = [nodes,new_node];
-                    nodes_father = [nodes_father,min_node];
+                    nodes_parent = [nodes_parent,min_node];
                     
                     cost = [cost,min_cost];
                     new_node_index = size(nodes,2);
@@ -110,7 +110,7 @@ classdef RRT_star_HLP < high_level_planner
                     for idx = 1:size(near_nodes,2)
                         near_node = near_nodes(idx);
                         if cost(new_node_index)+near_nodes_distance(idx)<cost(near_node)
-                            nodes_father(near_node) = new_node_index;
+                            nodes_parent(near_node) = new_node_index;
                         end
                     end
                 end
@@ -124,7 +124,7 @@ classdef RRT_star_HLP < high_level_planner
             min_goal_distance = inf;
             for idx = 1:size(nodes,2)
                 node_distance = norm(nodes(:,idx)-HLP.goal);
-                if node_distance < lookahead_distance 
+                if node_distance < NNGD 
                     if cost(idx) < min_goal_cost
                         min_goal_cost = cost(idx);
                         traverse_index = idx;
@@ -137,7 +137,7 @@ classdef RRT_star_HLP < high_level_planner
                 end
                 
                 % FOR DEBUGGING
-                % fprintf("%d. [%f %f], %d, %f\n",idx,nodes(1,idx),nodes(2,idx),nodes_father(idx),cost(idx));
+                % fprintf("%d. [%f %f], %d, %f\n",idx,nodes(1,idx),nodes(2,idx),nodes_parent(idx),cost(idx));
             end
             
             if traverse_index == -1
@@ -150,13 +150,14 @@ classdef RRT_star_HLP < high_level_planner
             HLP.plan = [HLP.goal];
             while traverse_index > 0
                 HLP.plan = [HLP.plan, nodes(:,traverse_index)];
-                traverse_index = nodes_father(traverse_index);
+                traverse_index = nodes_parent(traverse_index);
             end
 
             HLP.plan_index = size(HLP.plan,2);
             
             HLP.current_nodes = nodes ;
-            HLP.current_nodes_father = nodes_father ;
+            HLP.current_nodes_parent = nodes_parent ;
+            HLP.current_cost = cost ;
         end
         
         %% get waypoint
@@ -165,7 +166,7 @@ classdef RRT_star_HLP < high_level_planner
             z = agent_info.position(:,end) ;
             
             % call the RRT star algorithm
-            HLP.plan_path(agent_info, world_info.obstacles, lookahead_distance)
+            HLP.grow_tree(agent_info, world_info.obstacles)
             
             if HLP.plan_index > 0
                 if norm(z-HLP.plan(:,HLP.plan_index)) > HLP.change_plan_distance
@@ -187,7 +188,7 @@ classdef RRT_star_HLP < high_level_planner
         
         %% node feasibility check
         function out = node_feasibility_check(HLP,node_A,node_B,obstacles)
-            % this function should return TRUE if the node is feasible
+            % this method should return TRUE if the node is feasible
             
             X = [node_A, node_B] ;
             O = obstacles ;
