@@ -20,7 +20,7 @@ classdef RRT_star_HLP < high_level_planner
         bounds
         N_nodes_max = 40000 ;
         N_near_goal = 50 ;
-        grow_new_tree_every_iteration_flag = false ;
+        grow_new_tree_every_iteration_flag = true ;
         
         % tree data structures
         nodes
@@ -107,15 +107,17 @@ classdef RRT_star_HLP < high_level_planner
                     near_nodes = HLP.nodes(:,near_dist_log) ;
                     near_node_indices = node_indices(near_dist_log) ;
                     
+                    % check the feasibility to all neighbors
+                    near_feasibility = HLP.node_feasibility_check(new_node,near_nodes,obstacles) ;
+                    near_nodes = near_nodes(:,near_feasibility) ;
+                    near_node_indices = near_node_indices(near_feasibility) ;
+                    near_dist_log = near_dist_log(near_node_indices) ;
                     
-                    % check the cost of all the neighbors
+                    % check the cost of all feasible neighbors
                     near_cost = HLP.cost(near_dist_log) ;
                     [min_cost,min_cost_index] = min(near_cost) ;
                     cheapest_node = near_nodes(:,min_cost_index) ;
                     cheapest_node_index = near_node_indices(min_cost_index) ;
-                    
-                    % check the feasibility to all neighbors
-                    near_feasibility = HLP.node_feasibility_check(new_node,near_nodes,obstacles) ;
                     
                     % check if connecting to the cheapest neighbor is
                     % feasible
@@ -126,21 +128,23 @@ classdef RRT_star_HLP < high_level_planner
                         % connect to the cheapest neighbor
                         HLP.nodes_parent = [HLP.nodes_parent,cheapest_node_index] ;
                         new_cost = min_cost + vecnorm(new_node - cheapest_node) ;
+                        % connect_node_index = cheapest_node_index ;
                     else
                         % connect to the previous nearest node
                         HLP.nodes_parent = [HLP.nodes_parent,nearest_node_index] ;
                         new_cost = HLP.cost(nearest_node_index) + NNGD ;
+                        % connect_node_index = nearest_node_index ;
                     end
                     HLP.cost = [HLP.cost, new_cost] ;
-                    
-                    % rewire tree by examining all nearby nodes to see if
-                    % connecting them to the new node reduces their cost
-                    near_costs_old = HLP.cost(near_dist_log) ;
-                    near_costs_new = new_cost + near_distances(near_dist_log) ;
-                    near_costs_log = near_costs_new < near_costs_old ;
-                    rewire_indices = near_node_indices(near_costs_log) ;
-                    HLP.nodes_parent(rewire_indices) = N_nodes ;
-                    HLP.cost(rewire_indices) = near_costs_new(near_costs_log) ;
+
+%                     % rewire tree by examining all nearby nodes to see if
+%                     % connecting them to the new node reduces their cost
+%                     near_costs_old = HLP.cost(near_dist_log) ;
+%                     near_costs_new = new_cost + near_distances(near_dist_log) ;
+%                     near_costs_log = near_costs_new < near_costs_old ;
+%                     rewire_indices = near_node_indices(near_costs_log) ;
+%                     HLP.nodes_parent(rewire_indices) = N_nodes ;
+%                     HLP.cost(rewire_indices) = near_costs_new(near_costs_log) ;
                     
                     % % FOR DEBUGGING:
                     % rewired_nodes = near_nodes(:,near_costs_log) ;
@@ -157,20 +161,50 @@ classdef RRT_star_HLP < high_level_planner
             distances_to_goal = vecnorm(HLP.nodes - repmat(HLP.goal,1,N_nodes)) ;
             [~,best_node_index] = min(distances_to_goal) ;
             
-            % traverse from the closest node to the tree root
-            HLP.best_path_indices = best_node_index ;
-            current_index = best_node_index ;
+            % get best path
+            if best_node_index > 1
+                HLP.best_path_indices = HLP.tree_path_root_to_node(best_node_index) ;
+            else
+                HLP.best_path_indices = 1 ;
+            end
+            
+            % get best path and distance along it
+            HLP.best_path = HLP.nodes(:,HLP.best_path_indices) ;
+            HLP.best_path_distance = dist_polyline_cumulative(HLP.best_path) ;
+        end
+        
+        function path_indices = tree_path_root_to_node(HLP,destination_index)
+            % initialize
+            path_indices = destination_index ;
+            current_index = destination_index ;
             
             while current_index > 0
                 current_parent_index = HLP.nodes_parent(current_index) ;
-                HLP.best_path_indices = [HLP.best_path_indices, current_parent_index] ;
+                path_indices = [path_indices, current_parent_index] ;
                 current_index = current_parent_index ;
             end
             
-            % switch path to go from start to goal
-            HLP.best_path_indices = HLP.best_path_indices(end-1:-1:1) ;
-            HLP.best_path = HLP.nodes(:,HLP.best_path_indices) ;
-            HLP.best_path_distance = dist_polyline_cumulative(HLP.best_path) ;
+            % flip direction
+            path_indices = path_indices(end-1:-1:1) ;
+        end
+        
+        function path_indices = tree_path_node_to_node(HLP,source_index,destination_index)
+            warning('The tree_path_node_to_node method doesn''t work right yet!')
+            
+            % get paths from root to source and destination
+            path_root_to_source = HLP.tree_path_root_to_node(source_index) ;
+            path_root_to_destination = HLP.tree_path_root_to_node(destination_index) ;
+            
+            % find the last node along both paths
+            N_R2S = length(path_root_to_source) ;
+            N_R2D = length(path_root_to_destination) ;
+            comparison_array = repmat(path_root_to_source(:),1,N_R2D) == ...
+                repmat(path_root_to_destination,N_R2S,1) ;
+            join_index_R2D = find(any(comparison_array,1),1,'last') ;
+            join_index_R2S = find(any(comparison_array,2),1,'last') ;
+            
+            path_indices = unique([path_root_to_source(end:join_index_R2S), ...
+                path_root_to_destination(join_index_R2D:end)],'stable') ;
         end
         
         %% get waypoint
@@ -231,7 +265,7 @@ classdef RRT_star_HLP < high_level_planner
                     HLP.plot_data.nodes.XData = N(1,:) ;
                     HLP.plot_data.nodes.YData = N(2,:) ;
                 else
-                    HLP.plot_data.nodes = plot_path(N,'b-') ;
+                    HLP.plot_data.nodes = plot_path(N,'-','Color',[0.5 0.5 1]) ;
                 end
             end
             
@@ -242,7 +276,8 @@ classdef RRT_star_HLP < high_level_planner
                     HLP.plot_data.best_path.XData = BP(1,:) ;
                     HLP.plot_data.best_path.YData = BP(2,:) ;
                 else
-                    HLP.plot_data.best_path = plot_path(BP,'g-','LineWidth',1.5) ;
+                    HLP.plot_data.best_path = plot_path(BP,'--',...
+                        'Color',[0.9 0.7 0.1],'LineWidth',1.5) ;
                 end
             end
             

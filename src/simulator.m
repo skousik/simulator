@@ -101,6 +101,7 @@ classdef simulator < handle
             %
             % This function simulates the agent in the provided world as it
             % attempts to reach the goal from its provided start position.
+            
             S.vdisp('Running simulation')
 
             % get simulation info
@@ -122,21 +123,23 @@ classdef simulator < handle
 
                 % set up summary objects
                 L = length(planner_indices) ;
-                agent_name = cell(1,L) ;
-                planner_name = cell(1,L) ;
+                agent_name_cell = cell(1,L) ;
+                planner_name_cell = cell(1,L) ;
                 planner_info_cell = cell(1,L) ;
                 agent_info_cell = cell(1,L) ;
-                trajectory = cell(1,L) ;
-                total_real_time = cell(1,L) ;
+                trajectory_cell = cell(1,L) ;
+                total_real_time_cell = cell(1,L) ;
+                total_iterations_cell = cell(1,L) ;
                 planning_times_cell = cell(1,L) ;
                 collision_check_cell = cell(1,L) ;
                 goal_check_cell = cell(1,L) ;
                 stop_check_cell = cell(1,L) ;
-                sim_time = cell(1,L) ;
-                control_input = cell(1,L) ;
-                control_input_time = cell(1,L) ;
-                planner_timeout = cell(1,L) ;
-                obstacles = cell(1,L) ;
+                total_simulated_time_cell = cell(1,L) ;
+                control_input_cell = cell(1,L) ;
+                control_input_time_cell = cell(1,L) ;
+                t_plan_cell = cell(1,L) ;
+                t_move_cell = cell(1,L) ;
+                obstacles_cell = cell(1,L) ;
                 
             %% planner loop
                 for pidx = planner_indices
@@ -160,7 +163,7 @@ classdef simulator < handle
                         S.start_gif = true ;
                     end
 
-                    % initial plot
+                    % initialize plot
                     if plot_in_loop_flag
                         S.plot(widx,pidx)
                     end
@@ -171,6 +174,10 @@ classdef simulator < handle
                     % reset the stop counter
                     S.stop_count = 0 ;
                     stop_check_vec = false(1,iter_max) ;
+                    
+                    % reset the crash and goal checks just in case
+                    collision_check = false ;
+                    goal_check = false ;
 
                     % start timing
                     icur = 1 ;
@@ -341,52 +348,56 @@ classdef simulator < handle
                     end
 
                     % fill in the results for the current planner
-                    agent_name{pidx} = A.name ;
-                    planner_name{pidx} = P.name ;
-                    trajectory{pidx} = Z ;
-                    sim_time{pidx} = T_nom ;
-                    control_input{pidx} = U_nom ;
-                    control_input_time{pidx} = TU ;
-                    total_real_time{pidx} = runtime ;
+                    agent_name_cell{pidx} = A.name ;
+                    planner_name_cell{pidx} = P.name ;
+                    trajectory_cell{pidx} = Z ;
+                    total_simulated_time_cell{pidx} = T_nom ;
+                    control_input_cell{pidx} = U_nom ;
+                    control_input_time_cell{pidx} = TU ;
+                    total_real_time_cell{pidx} = runtime ;
+                    total_iterations_cell{pidx} = icur ;
                     planning_times_cell{pidx} = planning_time_vec ;
                     collision_check_cell{pidx} = collision_check ;
                     goal_check_cell{pidx} = goal_check ;
                     stop_check_cell{pidx} = stop_check_vec ;
-                    planner_timeout{pidx} = P.timeout ;
-                    obstacles{pidx} = W.obstacles;
+                    t_plan_cell{pidx} = P.t_plan ;
+                    t_move_cell{pidx} = P.t_move ;
+                    obstacles_cell{pidx} = W.obstacles;
+                    
                     if goal_check
                         S.vdisp('In final check, agent reached goal!')
                     end
+                    
                     if collision_check
                         S.vdisp('In final check, agent crashed!')
                     end
                 end
                 S.vdisp(['World ',num2str(widx),' complete! Generating summary.'])
-                summary{widx} = struct('agent_name',agent_name,...
-                                 'planner_name',planner_name,...
-                                 'trajectory',trajectory,...
-                                 'total_real_time',total_real_time,...
-                                 'total_iterations',icur,...
+                summary{widx} = struct('agent_name',agent_name_cell,...
+                                 'planner_name',planner_name_cell,...
+                                 'trajectory',trajectory_cell,...
+                                 'total_real_time',total_real_time_cell,...
+                                 'total_iterations',total_iterations_cell,...
                                  'planning_time',planning_times_cell,...
-                                 'crash_check',collision_check,...
+                                 'collision_check',collision_check_cell,...
                                  'goal_check',goal_check_cell,...
                                  'stop_check',stop_check_cell,...
-                                 'sim_time_vector',sim_time,...
-                                 'control_input',control_input,...
-                                 'control_input_time',control_input_time,...
+                                 'total_simulated_time',total_simulated_time_cell,...
+                                 'control_input',control_input_cell,...
+                                 'control_input_time',control_input_time_cell,...
+                                 'agent_info',agent_info_cell,...    
+                                 'planner_info',planner_info_cell,...
+                                 'obstacles',obstacles_cell,...
                                  'planner_indices',planner_indices,...
-                                 'obstacles',obstacles,...
                                  'N_obstacles',W.N_obstacles,...
+                                 't_plan',t_plan_cell,...
+                                 't_move',t_move_cell,...
                                  't_max',t_max,...
-                                 'planner_timeout',planner_timeout,...
-                                 't_move',P.t_move,...
                                  'iter_max',iter_max,...
                                  'start',W.start,...
                                  'goal',W.goal,...
                                  'bounds',W.bounds,...
-                                 'notes','',...
-                                 'agent_info',agent_info_cell,...    
-                                 'planner_info',planner_info_cell) ;
+                                 'notes','') ;
             end
 
             % clean up summary if only one world was run
@@ -396,6 +407,11 @@ classdef simulator < handle
             
             S.simulation_summary = summary ;
 
+            if nargout < 1
+                clear summary ;
+                S.vdisp('Simulation summary stored in simulator_obj.simulation_summary.',1)
+            end
+            
             S.vdisp('Simulation complete!')
         end
 
