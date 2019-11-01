@@ -106,6 +106,14 @@ methods
         end
     end
     
+    function plot_at_time(HLP,t)
+    % plot_at_time(HLP,t)
+    %
+    % Plot the HLP at the given time t. By default, this is just the same
+    % as the HLP.plot method.
+        plot(HLP) ;
+    end
+    
 %% display info
     function vdisp(HLP,s,l)
     % Display a string s if the message's verbose level l is greater

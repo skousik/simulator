@@ -43,6 +43,10 @@ classdef simulator < handle
         start_gif = true ;
         manually_resize_gif = true ;
         animation_time_discretization = 0.1 ; % s
+        animation_linewidths = 1 ;
+        clear_plot_before_animating_flag = false ; 
+        set_plot_linewidths_flag = false ;
+        set_axes_while_animating_flag = false ;
     end
 
 %% methods
@@ -96,7 +100,7 @@ classdef simulator < handle
         end
 
     %% run simulation
-        function summary = run(S)
+        function summary = run(S,planner_indices)
             % Method: run
             %
             % This function simulates the agent in the provided world as it
@@ -111,7 +115,10 @@ classdef simulator < handle
 
             % get world and planner indices
             world_indices = 1:length(S.worlds) ;
-            planner_indices = 1:length(S.planners) ;
+            
+            if nargin < 2
+                planner_indices = 1:length(S.planners) ;
+            end
 
             % set up summaries
             LW = length(world_indices) ;
@@ -592,9 +599,17 @@ classdef simulator < handle
         % get agent
         A = S.get_agent(planner_index) ;
         
+        % get world
+        W = S.get_world(world_index) ;
+        
         % get time
         t_vec = A.time(1):S.animation_time_discretization:A.time(end) ;
 
+        % clear the active figure before animating
+        if S.clear_plot_before_animating_flag
+            clf ;
+        end
+        
         % set hold
         hold_check = ~ishold ;
         if hold_check
@@ -604,6 +619,14 @@ classdef simulator < handle
         for t_idx = t_vec
             % create plot
             S.plot_at_time(t_idx,planner_index,world_index)
+            
+            if S.set_plot_linewidths_flag
+                set_plot_linewidths(S.animation_linewidths) ;
+            end
+            
+            if S.set_axes_while_animating_flag
+                axis(W.bounds)
+            end
             
             % create gif
             if save_animation_gif

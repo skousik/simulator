@@ -65,8 +65,8 @@ classdef world < handle
 
     properties (Access = public)
         dimension = 2 ;
-        start = [0;0] ;
-        goal = [0;0] ;
+        start = [] ;
+        goal = [] ;
         goal_radius = 1 ;
         bounds = Inf*[-1 1 -1 1] ;
         N_obstacles = [] ;
@@ -95,14 +95,12 @@ classdef world < handle
             B = W.bounds ;
             
             % generate default start and goal locations
-            W.start = zeros(W.dimension,1) ;
+            if isempty(W.start)
+                W.start = zeros(W.dimension,1) ;
+            end
             
-            if W.dimension == 2
-                W.goal = B([2 4]) ;
-            elseif W.dimension == 3
-                W.goal = B([2 4 6]) ;
-            else
-                error('World dimension is incorrect! Must be 2 or 3.')
+            if isempty(W.goal)
+                W.goal = zeros(W.dimension,1) ;
             end
             
             % reset world time index
