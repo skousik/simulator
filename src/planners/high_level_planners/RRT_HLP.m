@@ -1,13 +1,13 @@
 classdef RRT_HLP < high_level_planner
-% Class: RRT_HLP < high_level_planner
-%
-% This implements RRT as a high-level planner for the simulator framework.
-% For now, it only works for 2D worlds/obstacles.
-%
-% Authors: Shreyas Kousik and Bohao Zhang
-% Created: 31 July 2019
-% Updated: 31 Oct 2019
-
+    % Class: RRT_HLP < high_level_planner
+    %
+    % This implements RRT as a high-level planner for the simulator framework.
+    % For now, it only works for 2D worlds/obstacles.
+    %
+    % Authors: Shreyas Kousik and Bohao Zhang
+    % Created: 31 July 2019
+    % Updated: 3 Nov 2019
+    
     properties
         % timing and tree growth limits
         timeout = 0.25 ; % seconds
@@ -18,6 +18,7 @@ classdef RRT_HLP < high_level_planner
         best_path_indices = 0;
         best_path_distance
         bounds
+        N_nodes ;
         N_nodes_max = 40000 ;
         N_near_goal = 50 ;
         
@@ -47,7 +48,14 @@ classdef RRT_HLP < high_level_planner
             HLP.plot_data.waypoint = [] ;
         end
         
-        %% plan a path
+        function setup(HLP,agent_info,world_info)
+            HLP.initialize_tree(agent_info) ;
+            HLP.dimension = world_info.dimension ;
+            HLP.goal = world_info.goal ;
+            HLP.bounds = world_info.bounds ;
+        end
+        
+        %% tree growth
         function exit_flag = grow_tree(HLP,agent_info,obstacles)
             % grow tree
             start_tic = tic ;
@@ -55,17 +63,48 @@ classdef RRT_HLP < high_level_planner
             
             % get agent info
             z = agent_info.position(:,end) ;
-            R = agent_info.sensor_radius ;
             
+            % initialize tree
+            HLP.initialize_tree(agent_info) ;
+            
+            % grow tree until timeout or node limit is reached
+            while t_cur < HLP.timeout && (HLP.N_nodes < HLP.N_nodes_max)
+                [new_node,nearest_node,nearest_node_index] = HLP.make_new_node(agent_info) ;
+                
+                % make sure the new node and nearest node are not the same
+                % (this can happen when the RRT is growing near the
+                % boundaries of the workspace)
+                if vecnorm(new_node - nearest_node) == 0
+                    % dbstop in RRT_HLP at 94
+                    continue
+                end
+                
+                % if the new node is feasible, add it to the tree
+                if HLP.node_feasibility_check(new_node,nearest_node,obstacles)
+                    HLP.nodes = [HLP.nodes, new_node] ;
+                    HLP.nodes_parent = [HLP.nodes_parent, nearest_node_index] ;
+                    HLP.N_nodes = HLP.N_nodes + 1 ;
+                end
+                
+                t_cur = toc(start_tic) ;
+            end
+            
+            % after growing the tree, get the path that ends closest to the
+            % goal
+            exit_flag = HLP.find_best_path() ;
+        end
+        
+        function initialize_tree(HLP,agent_info)
+            z = agent_info.position(:,end) ;
             switch HLP.grow_tree_mode
                 case 'new'
                     HLP.vdisp('Growing new tree!',8)
                     HLP.nodes = z ;
                     HLP.nodes_parent = 0 ;
                 case 'seed'
-                    HLP.vdisp('Seeding from best path!',8)
+                    HLP.vdisp('Seeding from previous best path!',8)
                     HLP.nodes = HLP.best_path ;
-                    HLP.nodes_parent = 0:(length(HLP.nodes)-1) ;
+                    HLP.nodes_parent = 0:(length(HLP.nodes) - 1) ;
                 case 'keep'
                     HLP.vdisp('Keeping previous tree!',8)
                 otherwise
@@ -77,55 +116,63 @@ classdef RRT_HLP < high_level_planner
                 HLP.nodes_parent = 0 ;
             end
             
-            B = HLP.bounds ;
+            HLP.N_nodes = size(HLP.nodes,2) ;
+        end
+        
+        function [new_node,nearest_node,nearest_node_index] = make_new_node(HLP,agent_info)
+            % get useful info
             NNGD = HLP.new_node_growth_distance ;
-            N_nodes = size(HLP.nodes,2) ;
-            node_indices = 1:N_nodes ;
             
-            while t_cur < HLP.timeout && (length(HLP.nodes) < HLP.N_nodes_max)
-                % generate a random node to explore by picking the
-                % agent's location plus a random distance in a random
-                % direction, which keeps the tree growing within the sensor
-                % radius of the agent
-                
-                if rand < HLP.final_goal_rate
-                    % choose the final goal as the new node direction with
-                    % some probability
-                    rand_dir = HLP.goal - z ;
-                    rand_dist = R ;
-                else
-                    rand_dir = rand_range(-1,1,[],[],2,1) ;
-                    rand_dist = rand_range(0,R) ;
-                end
-                rand_node = z + rand_dist.*make_unit_length(rand_dir) ;
-                rand_node = bound_array_elementwise(rand_node(:)',B(1:2:end),B(2:2:end))' ;
-
-                % find the nearest node in the tree
-                node_distances = vecnorm(HLP.nodes - repmat(rand_node,1,N_nodes)) ;
-                [nearest_node_distance,nearest_node_index] = min(node_distances) ;
-                nearest_node = HLP.nodes(:,nearest_node_index) ;
-                
-                % grow the tree towards the direction new node
-                if nearest_node_distance <= NNGD
-                    new_node = rand_node;
-                else
-                    new_node_direction = rand_node - nearest_node ;
-                    new_node_direction = new_node_direction / norm(new_node_direction) ;
-                    new_node = nearest_node + NNGD.*new_node_direction ;
-                end
-                
-                % if the new node is feasible, add it to the tree
-                if HLP.node_feasibility_check(new_node,nearest_node,obstacles)
-                    N_nodes = N_nodes + 1 ;
-                    HLP.nodes = [HLP.nodes, new_node] ;
-                    HLP.nodes_parent = [HLP.nodes_parent, nearest_node_index] ;
-                end
-                
-                t_cur = toc(start_tic) ;
+            % generate a random node
+            rand_node = HLP.make_random_node(agent_info) ;
+            
+            % get the nearest node
+            [nearest_node,nearest_node_distance,nearest_node_index] = HLP.find_nearest_node(rand_node) ;
+            
+            % grow the tree towards the direction new node
+            if nearest_node_distance <= NNGD
+                new_node = rand_node;
+            else
+                new_node_direction = rand_node - nearest_node ;
+                new_node_direction = new_node_direction / norm(new_node_direction) ;
+                new_node = nearest_node + NNGD.*new_node_direction ;
             end
+        end
+        
+        function rand_node = make_random_node(HLP,agent_info)
+            % generate a random node to explore by picking the
+            % agent's location plus a random distance in a random
+            % direction, which keeps the tree growing within the sensor
+            % radius of the agent
             
+            z = agent_info.position(:,end) ;
+            R = agent_info.sensor_radius ;
+            B = HLP.bounds ;
+            
+            if rand < HLP.final_goal_rate
+                % choose the final goal as the new node direction with
+                % some probability
+                rand_dir = HLP.goal - z ;
+                rand_dist = R ;
+            else
+                rand_dir = rand_range(-1,1,[],[],HLP.dimension,1) ;
+                rand_dist = rand_range(0,R) ;
+            end
+            rand_node = z + rand_dist.*make_unit_length(rand_dir) ;
+            rand_node = bound_array_elementwise(rand_node(:)',B(1:2:end),B(2:2:end))' ;
+        end
+        
+        function [node,node_dist,node_idx] = find_nearest_node(HLP,node_in)
+            % find the nearest node in the tree
+            node_distances = vecnorm(HLP.nodes - repmat(node_in,1,HLP.N_nodes)) ;
+            [node_dist,node_idx] = min(node_distances) ;
+            node = HLP.nodes(:,node_idx) ;
+        end
+        
+        %% path planning
+        function exit_flag = find_best_path(HLP)
             % find the node closest to the goal
-            distances_to_goal = vecnorm(HLP.nodes - repmat(HLP.goal,1,N_nodes)) ;
+            distances_to_goal = vecnorm(HLP.nodes - repmat(HLP.goal,1,HLP.N_nodes)) ;
             [~,best_node_index] = min(distances_to_goal) ;
             
             % get best path
@@ -231,51 +278,34 @@ classdef RRT_HLP < high_level_planner
         
         %% plotting
         function plot(HLP)
+            hc = hold_switch() ;
+            
             if HLP.plot_tree_flag
-                N = HLP.get_points_for_plot(HLP.make_polyline_tree()) ;
-                
-                if isempty(N)
-                    N = nan(2,1) ;
-                end
-                
-                if check_if_plot_is_available(HLP,'tree')
-                    HLP.plot_data.nodes.XData = N(1,:) ;
-                    HLP.plot_data.nodes.YData = N(2,:) ;
-                else
-                    HLP.plot_data.nodes = plot_path(N,'-','Color',[0.5 0.5 1]) ;
-                end
+                T = HLP.get_points_for_plot(HLP.make_polyline_tree()) ;
+                plot_object(HLP,T,'tree','-','Color',[0.5 0.5 1]) ;
             end
             
             if HLP.plot_best_path_flag
                 BP = HLP.get_points_for_plot(HLP.best_path) ;
-                
-                if check_if_plot_is_available(HLP,'best_path')
-                    HLP.plot_data.best_path.XData = BP(1,:) ;
-                    HLP.plot_data.best_path.YData = BP(2,:) ;
-                else
-                    HLP.plot_data.best_path = plot_path(BP,'--',...
-                        'Color',[0.9 0.7 0.1],'LineWidth',1.5) ;
-                end
+                plot_object(HLP,BP,'best_path','--',...
+                        'Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
             end
             
             if HLP.plot_waypoint_flag
                 wp = HLP.get_points_for_plot(HLP.current_waypoint) ;
-                
-                if check_if_plot_is_available(HLP,'waypoint')
-                    HLP.plot_data.waypoint.XData = wp(1,:) ;
-                    HLP.plot_data.waypoint.YData = wp(2,:) ;
-                else
-                    HLP.plot_data.waypoint = plot_path(wp,'k*','LineWidth',1.5) ;
-                end
+                plot_object(HLP,wp,'waypoint','k*','LineWidth',1.5) ;
             end
+            
+            hold_switch(hc) ;
         end
         
         function P = make_polyline_tree(HLP)
             N = HLP.nodes ;
             NP = HLP.nodes_parent ;
+            d = HLP.dimension ;
             
-            P = [N(:,NP(2:end)) ; N(:,2:end) ; nan(2,size(N,2)-1)] ;
-            P = reshape(P,2,[]) ;
+            P = [N(:,NP(2:end)) ; N(:,2:end) ; nan(d,size(N,2)-1)] ;
+            P = reshape(P,d,[]) ;
         end
         
         function p = get_points_for_plot(HLP,p_in)
