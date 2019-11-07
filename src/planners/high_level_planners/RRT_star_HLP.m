@@ -100,7 +100,7 @@ classdef RRT_star_HLP < RRT_HLP
             
             if ~isempty(candidate_indices)
                 % if there are candidate indices, connect to cheapest
-                [~,cheapest_parent_index] = min(candidate_indices) ;
+                [~,cheapest_parent_index] = min(candidate_costs) ;
                 parent_index = candidate_indices(cheapest_parent_index) ;
                 
                 % get the cost of the new node

@@ -112,10 +112,11 @@ classdef RRT_HLP < high_level_planner
                 % plot
                 if HLP.plot_while_growing_tree_flag && extend_success_flag
                     T = HLP.make_polyline_tree() ;
-                    HLP.plot_data.tree = plot_path(T,'-','Color',[0.5 0.5 1]) ;
+                    %HLP.plot_data.tree = plot_path(T,'-','Color',[0.5 0.5 1]) ;
+                    plot_object(HLP,T,'tree','Color',[0.5 0.5 1]) ;
                     
-                    %HLP.find_best_path();
-                    %HLP.plot_data.best_path = plot_path(HLP.best_path,'--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
+                    HLP.find_best_path();
+                    plot_object(HLP,HLP.best_path,'best_path','--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
                     
                     drawnow()
                 end
@@ -146,7 +147,7 @@ classdef RRT_HLP < high_level_planner
             
             % make sure the new node is within the agent's sensor horizon
             x_cur = agent_info.position(:,end) ;
-            dir_to_node = x_cur - rand_node ;
+            dir_to_node = rand_node - x_cur ;
             dist_to_node = vecnorm(dir_to_node) ;
             R = agent_info.sensor_radius ;
             if dist_to_node > R
