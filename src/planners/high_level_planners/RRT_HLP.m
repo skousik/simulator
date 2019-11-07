@@ -166,7 +166,7 @@ classdef RRT_HLP < high_level_planner
             
             % check that the new edge is feasible
             if new_node_not_duplicate
-                extend_success_flag = HLP.edge_feasibility_check(new_node,nearest_node,world_info) ;
+                extend_success_flag = HLP.edge_feasibility_check(nearest_node,new_node,world_info) ;
             else
                 extend_success_flag = false ;
             end

@@ -1,50 +1,28 @@
-classdef RRT_star_HLP < RRT_HLP
-% Class: RRT_star_HLP < RRT_HLP
+classdef RRT_star_connect_HLP < RRT_star_HLP
+% Class: RRT_star_connect_HLP < RRT_HLP
 %
 % This implements RRT* as a high-level planner for the simulator framework.
-% For now, it only works for 2D worlds/obstacles.
+% For now, it only works for 2D worlds/obstacles. It also does the
+% RRT-connect style thing where it goes in one line for as far as possible.
 %
-% The algorithm follows this paper:
-% http://roboticsproceedings.org/rss06/p34.pdf
-%
-% Authors: Shreyas Kousik and Bohao Zhang
-% Created: Nov 2019
-% Updated: 6 Nov 2019
-    
-    properties
-        costs
-        rewire_distance = 1 ; % nodes within this distance of a new node
-                              % candidates for rewiring
-        best_path_cost ;
-    end
-    
+% Authors: Shreyas Kousik
+% Created: 6 Nov 2019
+% Updated: -
+
     methods
         %% constructor
-        function HLP = RRT_star_HLP(varargin)
+        function HLP = RRT_star_connect_HLP(varargin)
             goal_as_new_node_rate = 0.1 ; % different from default RRT
-            HLP@RRT_HLP('goal_as_new_node_rate',goal_as_new_node_rate,...
+            HLP@RRT_star_HLP('goal_as_new_node_rate',goal_as_new_node_rate,...
                 varargin{:}) ;
-        end
-        
-        %% tree growth
-        function initialize_tree(HLP,agent_info)
-            initialize_tree@RRT_HLP(HLP,agent_info)
             
-            % initialize cost
-            switch HLP.grow_tree_mode
-                case 'new'
-                    HLP.costs = 0 ;
-                case 'seed'
-                    HLP.nodes = HLP.best_path_cost ;
-                case 'keep'
-                    HLP.vdisp('Keeping previous cost!',10)
-                otherwise
-                    error('Please pick a valid tree growth mode!')
+            % fix the new-node growth distance to be larger than the rewire
+            % distance in this case
+            if HLP.new_node_growth_distance < HLP.rewire_distance
+                HLP.new_node_growth_distance = 2*HLP.rewire_distance ;
             end
             
-            if isempty(HLP.costs)
-                HLP.costs = 0 ;
-            end
+            HLP.plot_data.latest_edge = [] ;
         end
         
         %% extend
@@ -52,6 +30,36 @@ classdef RRT_star_HLP < RRT_HLP
             % get new node
             [nearest_node,nearest_node_distance,nearest_node_index] = HLP.find_nearest_node(rand_node) ;
             new_node = HLP.steer(rand_node,nearest_node,nearest_node_distance) ;
+            new_dir = (nearest_node - new_node)./nearest_node_distance ;
+            NNGD = HLP.new_node_growth_distance ;
+
+            % pessimism
+            extend_success_flag = true ;
+            
+            % try RRT-connect style
+            while true
+                % make sure new node is in bounds
+                if ~check_point_in_bounds(new_node,HLP.bounds)
+                    break
+                end
+                
+                % extend to new node
+                extend_success_flag = extend_helper(HLP,agent_info,world_info,...
+                    new_node,nearest_node,nearest_node_distance,nearest_node_index) ;
+                
+                if ~extend_success_flag
+                    break
+                end
+                
+                % generate new node
+                nearest_node = new_node ;
+                new_node = new_node + NNGD.*new_dir ;
+                nearest_node_index = HLP.N_nodes ;
+            end
+        end
+      
+        function extend_success_flag = extend_helper(HLP,agent_info,world_info,...
+                new_node,nearest_node,~,nearest_node_index)
             
             % make sure the new node and nearest node are not the same
             new_node_not_duplicate = ~(vecnorm(new_node - nearest_node) == 0) ;
@@ -118,6 +126,12 @@ classdef RRT_star_HLP < RRT_HLP
                 % add the node to the tree
                 HLP.add_node_to_tree(new_node,parent_index) ;
                 
+                
+                if HLP.plot_while_growing_tree_flag
+                    plot_object(HLP,[new_node, HLP.nodes(:,parent_index)],'latest_edge','b')
+                    drawnow()
+                end
+                
                 % update the cost
                 HLP.costs = [HLP.costs, new_cost] ;
                 
@@ -142,59 +156,5 @@ classdef RRT_star_HLP < RRT_HLP
                 HLP.nodes_parent(rewire_indices) = HLP.N_nodes ;
             end
         end
-        
-        %% add node        
-%         function [near_distances,near_indices] = find_nearest_nodes(HLP)
-%             % get indices of all nodes that are candidates for rewiring
-%             indices = 1:(HLP.N_nodes-1) ; % ignore the latest node
-%             indices(indices == HLP.nodes_parent(end)) = [] ; % ignore the latest parent
-%             
-%             % find all nodes within rewire distance of new node
-%             near_distances = vecnorm(HLP.nodes(:,indices) - repmat(HLP.nodes(:,end),1,HLP.N_nodes - 2)) ;
-%             near_distances_log = near_distances <= HLP.rewire_distance ;
-%             near_indices = indices(near_distances_log) ;
-%             near_distances = near_distances(near_distances_log) ;
-%         end
-%         
-%         function rewire(HLP,world_info)
-%             % get the newest node
-%             new_node = HLP.nodes(:,end) ;
-%             
-%             % get nearby node indices
-%             [~,~,near_indices] = HLP.find_nearest_nodes(new_node) ;
-%             
-%             % for each near node, check if its edge is feasible and its
-%             % cost is lower by attaching to the new node
-%             obstacles = world_info.obstacles ;
-%             for idx = near_indices
-%                 near_node = HLP.nodes(:,idx) ;
-%                 new_edge_feasible = HLP.edge_feasibility_check(new_node,near_node,obstacles) ;
-%                 
-%                 % if HLP.plot_while_growing_tree_flag
-%                 %     plot_path(near_node,'r.')
-%                 %     drawnow()
-%                 % end
-%                 
-%                 if new_edge_feasible
-%                     new_cost = HLP.cost(end) + vecnorm(new_node - near_node) ;
-%                     if new_cost < HLP.cost(idx)
-%                         HLP.nodes_parent(idx) = HLP.N_nodes ;
-%                         
-%                         % if HLP.plot_while_growing_tree_flag
-%                         %     plot_path(near_node,'ro')
-%                         %     drawnow()
-%                         % end
-%                     end
-%                 end
-%             end
-%         end
-        
-    %% path planning
-    function exit_flag = find_best_path(HLP)
-        exit_flag = find_best_path@RRT_HLP(HLP) ;
-        
-        % get best path cost
-        HLP.best_path_cost = HLP.costs(HLP.best_path_indices) ;
-    end
     end
 end
