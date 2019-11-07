@@ -4,6 +4,8 @@ function [d,pct,d_along] = dist_point_on_polyline(p,P)
 % Given a point p (2-by-1) on a polyline P (2-by-n), return the distance of
 % the point along the polyline, and (optionally) the percentage of the
 % total distance and the distances along the polyline
+%
+% See also: dist_point_to_polyline, dist_point_to_points
 
     [~,~,p,p_idx] = dist_point_to_polyline(p,P) ;
     pct = [] ;

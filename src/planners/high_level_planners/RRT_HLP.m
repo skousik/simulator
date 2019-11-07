@@ -1,22 +1,22 @@
 classdef RRT_HLP < high_level_planner
-    % Class: RRT_HLP < high_level_planner
-    %
-    % This implements RRT as a high-level planner for the simulator framework.
-    % For now, it only works for 2D worlds/obstacles.
-    %
-    % The algorithm is written to follow Alg. 1 of this paper:
-    % http://roboticsproceedings.org/rss06/p34.pdf
-    %
-    % Authors: Shreyas Kousik and Bohao Zhang
-    % Created: 31 July 2019
-    % Updated: 4 Nov 2019
+% Class: RRT_HLP < high_level_planner
+%
+% This implements RRT as a high-level planner for the simulator framework.
+% For now, it only works for 2D worlds/obstacles.
+%
+% The algorithm follows Alg. 1 of this paper:
+% http://roboticsproceedings.org/rss06/p34.pdf
+%
+% Authors: Shreyas Kousik and Bohao Zhang
+% Created: 31 July 2019
+% Updated: 6 Nov 2019
     
     properties
         % timing and tree growth limits
         timeout = 0.25 ; % seconds
-        goal_as_new_node_rate = 0.08;
-        new_node_growth_distance = 0.25 ; % m
-        near_distance_max = 2 ;
+        goal_as_new_node_rate = 0.08 ;
+        new_node_growth_distance = 0.5 ; % m
+        new_node_max_distance_from_agent = 2 ;
         best_path = [];
         best_path_indices = 0;
         best_path_distance
@@ -89,7 +89,10 @@ classdef RRT_HLP < high_level_planner
         function exit_flag = grow_tree(HLP,agent_info,world_info)
             % exit_flag = grow_tree(HLP,agent_info,world_info)
             %
-            % Grow the RRT given the current agent and world info
+            % Grow the RRT given the current agent and world info. The
+            % output exit_flag is 1 if the tree grew at all, and 0
+            % otherwise (this happens, for example, if the tree's initial
+            % node lies within an obstacle).
             
             % start timing
             start_tic = tic ;
@@ -98,21 +101,22 @@ classdef RRT_HLP < high_level_planner
             % initialize tree
             HLP.initialize_tree(agent_info) ;
             
-            % get obstacles
-            obstacles = world_info.obstacles ;
-            
             % grow tree until timeout or node limit is reached
             while t_cur < HLP.timeout && (HLP.N_nodes < HLP.N_nodes_max)
                 % sample
                 rand_node = HLP.sample(agent_info) ;
                 
                 % extend
-                extend_success_flag = HLP.extend(rand_node,obstacles) ;
+                extend_success_flag = HLP.extend(agent_info,world_info,rand_node) ;
                 
                 % plot
                 if HLP.plot_while_growing_tree_flag && extend_success_flag
                     T = HLP.make_polyline_tree() ;
                     HLP.plot_data.tree = plot_path(T,'-','Color',[0.5 0.5 1]) ;
+                    
+                    %HLP.find_best_path();
+                    %HLP.plot_data.best_path = plot_path(HLP.best_path,'--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
+                    
                     drawnow()
                 end
                 
@@ -125,31 +129,34 @@ classdef RRT_HLP < high_level_planner
         end
         
         function rand_node = sample(HLP,agent_info)
-            % generate a random node to explore by picking the
-            % agent's location plus a random distance in a random
-            % direction, which keeps the tree growing within the sensor
-            % radius of the agent
-            
-            z = agent_info.position(:,end) ;
-            R = agent_info.sensor_radius ;
-            B = HLP.bounds ;
-            
+            % generate a random node within the bounds of the workspace
             if rand < HLP.goal_as_new_node_rate
-                % choose the final goal as the new node direction with
-                % some probability
-                rand_dir = HLP.goal - z ;
-                rand_dist = R ;
+                rand_node = HLP.goal ;
             else
-                rand_dir = rand_range(-1,1,[],[],HLP.dimension,1) ;
-                rand_dist = rand_range(0,R) ;
+                B = HLP.bounds ;
+                switch HLP.dimension
+                    case 2
+                        rand_node = rand_range(B([1 3]),B([2 4]))' ;
+                    case 3
+                        rand_node = rand_range(B([1 3 5]),B([2 4 6]))' ;
+                    otherwise
+                        error('The HLP''s dimension must be 2 or 3!')
+                end
             end
-            rand_node = z + rand_dist.*make_unit_length(rand_dir) ;
-            rand_node = bound_array_elementwise(rand_node(:)',B(1:2:end),B(2:2:end))' ;
+            
+            % make sure the new node is within the agent's sensor horizon
+            x_cur = agent_info.position(:,end) ;
+            dir_to_node = x_cur - rand_node ;
+            dist_to_node = vecnorm(dir_to_node) ;
+            R = agent_info.sensor_radius ;
+            if dist_to_node > R
+                rand_node = x_cur + R.*(dir_to_node ./ dist_to_node) ;
+            end
         end
         
-        function extend_success_flag = extend(HLP,rand_node,obstacles)
+        function extend_success_flag = extend(HLP,agent_info,world_info,rand_node)
             [nearest_node,nearest_node_distance,nearest_node_index] = HLP.find_nearest_node(rand_node) ;
-            [new_node] = HLP.steer(rand_node,nearest_node,nearest_node_distance) ;
+            new_node = HLP.steer(rand_node,nearest_node,nearest_node_distance) ;
             
             % make sure the new node and nearest node are not the same
             % (this can happen when the RRT is growing near the
@@ -157,10 +164,13 @@ classdef RRT_HLP < high_level_planner
             new_node_not_duplicate = ~(vecnorm(new_node - nearest_node) == 0) ;
             
             % check that the new edge is feasible
-            new_edge_is_feasible = HLP.edge_feasibility_check(new_node,nearest_node,obstacles) ;
+            if new_node_not_duplicate
+                extend_success_flag = HLP.edge_feasibility_check(new_node,nearest_node,world_info) ;
+            else
+                extend_success_flag = false ;
+            end
             
             % add the new node to the tree
-            extend_success_flag = new_edge_is_feasible && new_node_not_duplicate ;
             if extend_success_flag
                 HLP.add_node_to_tree(new_node,nearest_node_index) ;
             end
@@ -279,16 +289,16 @@ classdef RRT_HLP < high_level_planner
         end
         
         %% node feasibility check
-        function out = edge_feasibility_check(HLP,node_source,node_target,obstacles)
+        function out = edge_feasibility_check(HLP,node_source,node_target,world_info)
             % this method should return TRUE if the edge is feasible
-            O = obstacles ;
+            O = world_info.obstacles ;
             out = true ; % optimism!
             
             if ~isempty(O)
-                X = [node_source, node_target(:,index)] ;
+                X = [node_source, node_target] ;
                 [check_inside,~] = inpolygon(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
                 [check_through,~] = polyxpoly(X(1,:)',X(2,:)',O(1,:)',O(2,:)') ;
-                out(index) = isempty(check_through) & ~any(check_inside) ;
+                out = isempty(check_through) & ~any(check_inside) ;
             end
         end
         
