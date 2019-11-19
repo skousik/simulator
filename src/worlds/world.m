@@ -90,9 +90,6 @@ classdef world < handle
         %
         % Create a random start and goal point. Subclasses should override
         % this with a situation-specific setup function.
-
-            % get room bounds
-            B = W.bounds ;
             
             % generate default start and goal locations
             if isempty(W.start)

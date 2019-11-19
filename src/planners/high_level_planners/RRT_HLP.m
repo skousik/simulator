@@ -113,7 +113,7 @@ classdef RRT_HLP < high_level_planner
                 if HLP.plot_while_growing_tree_flag && extend_success_flag
                     T = HLP.make_polyline_tree() ;
                     %HLP.plot_data.tree = plot_path(T,'-','Color',[0.5 0.5 1]) ;
-                    plot_object(HLP,T,'tree','Color',[0.5 0.5 1]) ;
+                    plot_object(HLP,T,'tree','Color',[0.7 0.7 1]) ;
                     
                     HLP.find_best_path();
                     plot_object(HLP,HLP.best_path,'best_path','--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
@@ -309,7 +309,7 @@ classdef RRT_HLP < high_level_planner
             
             if HLP.plot_tree_flag
                 T = HLP.get_points_for_plot(HLP.make_polyline_tree()) ;
-                plot_object(HLP,T,'tree','-','Color',[0.5 0.5 1]) ;
+                plot_object(HLP,T,'tree','-','Color',[0.7 0.7 1]) ;
             end
             
             if HLP.plot_best_path_flag
