@@ -20,7 +20,6 @@ classdef RRT_HLP < high_level_planner
         best_path = [];
         best_path_indices = 0;
         best_path_distance
-        bounds
         N_nodes ;
         N_nodes_max = 40000 ;
         N_near_goal = 50 ;
@@ -53,10 +52,8 @@ classdef RRT_HLP < high_level_planner
         end
         
         function setup(HLP,agent_info,world_info)
+            setup@high_level_planner(HLP,agent_info,world_info) ;
             HLP.initialize_tree(agent_info) ;
-            HLP.dimension = world_info.dimension ;
-            HLP.goal = world_info.goal ;
-            HLP.bounds = world_info.bounds ;
         end
         
         function initialize_tree(HLP,agent_info)

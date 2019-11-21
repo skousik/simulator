@@ -35,7 +35,7 @@ classdef RRT_star_HLP < RRT_HLP
                 case 'new'
                     HLP.costs = 0 ;
                 case 'seed'
-                    HLP.nodes = HLP.best_path_cost ;
+                    HLP.costs = HLP.best_path_cost ;
                 case 'keep'
                     HLP.vdisp('Keeping previous cost!',10)
                 otherwise

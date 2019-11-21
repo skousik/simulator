@@ -556,6 +556,22 @@ classdef simulator < handle
         end
     end
     
+    function clear_plot_data(S)
+        % iterate through each agent, world, and planner, and clear the
+        % plot data for each one
+        for idx = 1:length(S.agents)
+            clear_plot_data(S.agents{idx}) ;
+        end
+        
+        for idx = 1:length(S.planners)
+            clear_plot_data(S.planners{idx}) ;
+        end
+        
+        for idx = 1:length(S.worlds)
+            clear_plot_data(S.worlds{idx}) ;
+        end
+    end
+    
     %% animate
     function animate(S,planner_index,world_index,save_animation_gif)
     % method: S.animate(planner_index,world_index,save_gif)
