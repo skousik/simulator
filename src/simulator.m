@@ -33,7 +33,6 @@ classdef simulator < handle
         % plotting
         figure_number = 1 ;
         figure_handle = [] ;
-        planner_colors = [] ;
         plot_while_running = true ;
         plotting_pause_time = 0.1 ; % s
         plot_order = 'WAP' ;
@@ -86,11 +85,6 @@ classdef simulator < handle
 
             if S.N_planners == 1 && ~iscell(planners)
                 planners = {planners} ;
-            end
-
-            % check for planner colors
-            if isempty(S.planner_colors)
-                S.planner_colors = repmat([0 0 1],length(planners),1) ;
             end
 
             % wrap up construction
@@ -447,16 +441,14 @@ classdef simulator < handle
             axis(W.bounds)
         end
 
-        color = S.planner_colors(planner_index,:) ;
-
         for plot_idx = S.plot_order
             switch plot_idx
                 case 'A'
-                    A.plot(color)
+                    A.plot()
                 case 'W'
                     W.plot()
                 case 'P'
-                    P.plot(color)
+                    P.plot()
                 otherwise
                     error(['Simulator plot order is broken! Make sure ',...
                           'it is a string containing the characters ',...

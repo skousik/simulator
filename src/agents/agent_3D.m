@@ -2,10 +2,12 @@ classdef agent_3D < agent
 methods
     %% constructor
     function A = agent_3D(varargin)
-        A@agent(varargin{:},'dimension',3) ;
-        A.n_states = 3 ;
-        A.position_indices = 1:3 ;
-        A.reset ;
+        n_states = 3 ;
+        position_indices = 1:3 ;
+        A@agent('n_states',n_states,...
+            'position_indices',position_indices,...
+            varargin{:},'dimension',3) ;
+        A.reset() ;
     end
     
     %% reset
