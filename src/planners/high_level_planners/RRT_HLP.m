@@ -159,7 +159,7 @@ classdef RRT_HLP < high_level_planner
             % make sure the new node and nearest node are not the same
             % (this can happen when the RRT is growing near the
             % boundaries of the workspace or near the goal)
-            new_node_not_duplicate = vecnorm(new_node - nearest_node) == 0 && ...
+            new_node_not_duplicate = (vecnorm(new_node - nearest_node) > 0) && ...
                 nearest_node_distance > 0 ;
             
             % check that the new edge is feasible

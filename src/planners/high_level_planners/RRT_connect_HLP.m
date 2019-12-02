@@ -34,8 +34,10 @@ classdef RRT_connect_HLP < RRT_HLP
                 NNGD = HLP.new_node_growth_distance ;
                 new_node = nearest_node + NNGD.*dir_new ;
                 
-                % make sure the new node is in bounds 
-                if ~check_point_in_bounds(new_node,HLP.bounds) ;
+                % make sure the new node is in bounds and within the sensor
+                % radius of the agent
+                if ~check_point_in_bounds(new_node,HLP.bounds) || ...
+                        (vecnorm(new_node - agent_info.position(:,end)) > agent_info.sensor_radius) ;
                     break
                 end
                 
