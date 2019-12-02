@@ -158,8 +158,9 @@ classdef RRT_HLP < high_level_planner
             
             % make sure the new node and nearest node are not the same
             % (this can happen when the RRT is growing near the
-            % boundaries of the workspace)
-            new_node_not_duplicate = ~(vecnorm(new_node - nearest_node) == 0) ;
+            % boundaries of the workspace or near the goal)
+            new_node_not_duplicate = vecnorm(new_node - nearest_node) == 0 && ...
+                nearest_node_distance > 0 ;
             
             % check that the new edge is feasible
             if new_node_not_duplicate
@@ -213,8 +214,15 @@ classdef RRT_HLP < high_level_planner
                 HLP.best_path_indices = 1 ;
             end
             
-            % get best path and distance along it
-            HLP.best_path = HLP.nodes(:,HLP.best_path_indices) ;
+            % get best path
+            BP = HLP.nodes(:,HLP.best_path_indices) ;
+            
+            % make sure it has only unique nodes (this is a sanity check,
+            % since sometimes the goal location can get duplicated in the
+            % best path)
+            HLP.best_path = unique(BP','rows','stable')' ;
+            
+            % get distance along best path
             HLP.best_path_distance = dist_polyline_cumulative(HLP.best_path) ;
             
             % set waypoints field in case a planner uses it

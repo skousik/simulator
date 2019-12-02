@@ -143,52 +143,6 @@ classdef RRT_star_HLP < RRT_HLP
             end
         end
         
-        %% add node        
-%         function [near_distances,near_indices] = find_nearest_nodes(HLP)
-%             % get indices of all nodes that are candidates for rewiring
-%             indices = 1:(HLP.N_nodes-1) ; % ignore the latest node
-%             indices(indices == HLP.nodes_parent(end)) = [] ; % ignore the latest parent
-%             
-%             % find all nodes within rewire distance of new node
-%             near_distances = vecnorm(HLP.nodes(:,indices) - repmat(HLP.nodes(:,end),1,HLP.N_nodes - 2)) ;
-%             near_distances_log = near_distances <= HLP.rewire_distance ;
-%             near_indices = indices(near_distances_log) ;
-%             near_distances = near_distances(near_distances_log) ;
-%         end
-%         
-%         function rewire(HLP,world_info)
-%             % get the newest node
-%             new_node = HLP.nodes(:,end) ;
-%             
-%             % get nearby node indices
-%             [~,~,near_indices] = HLP.find_nearest_nodes(new_node) ;
-%             
-%             % for each near node, check if its edge is feasible and its
-%             % cost is lower by attaching to the new node
-%             obstacles = world_info.obstacles ;
-%             for idx = near_indices
-%                 near_node = HLP.nodes(:,idx) ;
-%                 new_edge_feasible = HLP.edge_feasibility_check(new_node,near_node,obstacles) ;
-%                 
-%                 % if HLP.plot_while_growing_tree_flag
-%                 %     plot_path(near_node,'r.')
-%                 %     drawnow()
-%                 % end
-%                 
-%                 if new_edge_feasible
-%                     new_cost = HLP.cost(end) + vecnorm(new_node - near_node) ;
-%                     if new_cost < HLP.cost(idx)
-%                         HLP.nodes_parent(idx) = HLP.N_nodes ;
-%                         
-%                         % if HLP.plot_while_growing_tree_flag
-%                         %     plot_path(near_node,'ro')
-%                         %     drawnow()
-%                         % end
-%                     end
-%                 end
-%             end
-%         end
-        
     %% path planning
     function exit_flag = find_best_path(HLP)
         exit_flag = find_best_path@RRT_HLP(HLP) ;
