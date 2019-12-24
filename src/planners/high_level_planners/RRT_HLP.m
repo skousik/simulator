@@ -112,8 +112,8 @@ classdef RRT_HLP < high_level_planner
                     %HLP.plot_data.tree = plot_path(T,'-','Color',[0.5 0.5 1]) ;
                     plot_object(HLP,T,'tree','Color',[0.7 0.7 1]) ;
                     
-                    HLP.find_best_path();
-                    plot_object(HLP,HLP.best_path,'best_path','--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
+%                     HLP.find_best_path();
+%                     plot_object(HLP,HLP.best_path,'best_path','--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
                     
                     drawnow()
                 end
@@ -291,7 +291,7 @@ classdef RRT_HLP < high_level_planner
                 wp = z ;
             end
             
-            HLP.current_waypoint = wp;
+            HLP.current_waypoint = wp ;
         end
         
         %% node feasibility check

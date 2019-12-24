@@ -6,6 +6,10 @@ function [d,pct,d_along] = dist_point_on_polyline(p,P)
 % total distance and the distances along the polyline
 %
 % See also: dist_point_to_polyline, dist_point_to_points
+%
+% Author: Shreyas Kousik
+% Created: shrug
+% Updated: 23 Dec 2019
 
     [~,~,p,p_idx] = dist_point_to_polyline(p,P) ;
     pct = [] ;
