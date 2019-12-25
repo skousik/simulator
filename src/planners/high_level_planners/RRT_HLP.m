@@ -57,7 +57,7 @@ classdef RRT_HLP < high_level_planner
         end
         
         function initialize_tree(HLP,agent_info)
-            z = agent_info.position(:,end) ;
+            z = HLP.get_agent_position(agent_info) ;
             
             switch HLP.grow_tree_mode
                 case 'new'
@@ -80,6 +80,10 @@ classdef RRT_HLP < high_level_planner
             end
             
             HLP.N_nodes = size(HLP.nodes,2) ;
+        end
+        
+        function z = get_agent_position(HLP,agent_info)
+            z = agent_info.position(:,end) ;
         end
         
         %% tree growth
@@ -273,7 +277,7 @@ classdef RRT_HLP < high_level_planner
         %% get waypoint
         function wp = get_waypoint(HLP, agent_info, world_info, lookahead_distance)
             % get the agent pose
-            z = agent_info.position(:,end) ;
+            z = HLP.get_agent_position(agent_info) ;
             
             % call the RRT star algorithm
             exit_flag = HLP.grow_tree(agent_info, world_info) ;
