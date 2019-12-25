@@ -13,13 +13,15 @@ classdef planner < handle
         t_move = 1 ;% amount of time the planner expects the agent to move
         info % information structure to keep a log when planning
         plot_data % data for current plot
-        plot_waypoints_flag = false ;
+        plot_HLP_flag = false ;
     end
     
     methods
         %% constructor
         function P = planner(varargin)
             P = parse_args(P,varargin{:}) ;
+            
+            P.plot_data.current_plan = [] ;
         end
         
         %% setup
@@ -74,7 +76,7 @@ classdef planner < handle
             end
             
             % plot waypoints
-            if P.plot_waypoints_flag
+            if P.plot_HLP_flag
                 P.HLP.plot() ;
             end
             
