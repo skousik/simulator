@@ -9,7 +9,7 @@ classdef RRT_star_HLP < RRT_HLP
 %
 % Authors: Shreyas Kousik and Bohao Zhang
 % Created: Nov 2019
-% Updated: 6 Nov 2019
+% Updated: 25 Dec 2019 (ah jeez i'm working on christmas!)
     
     properties
         costs
