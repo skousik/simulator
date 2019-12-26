@@ -329,7 +329,7 @@ classdef RRT_HLP < high_level_planner
             
             if HLP.plot_waypoint_flag
                 wp = HLP.get_points_for_plot(HLP.current_waypoint) ;
-                plot_object(HLP,wp,'waypoint','k*','LineWidth',1.5) ;
+                plot_object(HLP,wp,'waypoint','kp','LineWidth',1.5) ;
             end
             
             hold_switch(hc) ;
