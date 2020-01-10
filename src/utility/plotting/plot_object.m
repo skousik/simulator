@@ -43,7 +43,7 @@ function plot_object(obj,data,plot_data_fieldname,varargin)
             obj.plot_data.(plot_data_fieldname).YData = data(2,:) ;
 
             if r == 3
-                obj.plot_data.(plot_data_fieldname).YData = data(3,:) ;
+                obj.plot_data.(plot_data_fieldname).ZData = data(3,:) ;
             end
         else
             obj.plot_data.(plot_data_fieldname) = plot_path(data,varargin{:}) ;
