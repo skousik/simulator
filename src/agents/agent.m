@@ -31,6 +31,7 @@ classdef agent < handle
         % animation
         animation_plot_buffer = 1 ; % meter
         animation_time_discretization  = 0.1 ;
+        animation_playback_rate = 1 ;
         animation_set_axes_flag = false ;
         animation_set_view_flag = false ;
         animation_view = 2 ;
@@ -299,7 +300,7 @@ classdef agent < handle
             end
         end
         
-        function animate(A,save_gif)
+        function animate(A,save_gif,time_interval)
         % method: animate(save_gif)
         %
         % Given the agent's executed trajectory, animate it for the
@@ -313,9 +314,14 @@ classdef agent < handle
                 start_gif = true ;
                 filename = A.gif_setup() ;
             end
+            
+            if nargin < 3
+                time_interval = [A.time(1), A.time(end)] ;
+            end
 
-            % get time
-            t_vec = A.time(1):A.animation_time_discretization:A.time(end) ;
+            % get timing info
+            t_vec = time_interval(1):A.animation_time_discretization:time_interval(end) ;
+            frame_rate = A.animation_time_discretization / A.animation_playback_rate ;
 
             % get axis limits
             lims = A.get_axis_lims() ;
@@ -343,14 +349,14 @@ classdef agent < handle
 
                     if start_gif
                         imwrite(imind,cm,filename,'gif', 'Loopcount',inf,...
-                                'DelayTime',A.animation_time_discretization) ; 
+                                'DelayTime',frame_rate) ;
                         start_gif = false ;
                     else 
                         imwrite(imind,cm,filename,'gif','WriteMode','append',...
-                                'DelayTime',A.animation_time_discretization) ; 
+                                'DelayTime',frame_rate) ;
                     end
                 else
-                    pause(A.animation_time_discretization)
+                    pause(frame_rate)
                 end
             end
         end
