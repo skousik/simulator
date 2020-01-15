@@ -33,9 +33,10 @@ function [F,V] = make_arrow_for_patch(p,varargin)
         end
     end
 
-    % make the shaft
+    % make the shaft and shift it up
     shaft_length = d - head_length ;
     [F_shaft,V_shaft] = make_cylinder_for_patch(shaft_width/2,shaft_length) ;
+    V_shaft(:,3) = V_shaft(:,3) + shaft_length/2 ;
     
     % make the head and shift it up
     [F_head,V_head] = make_cone_for_patch(head_length,head_width/2) ;
