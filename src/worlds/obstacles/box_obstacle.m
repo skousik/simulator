@@ -5,6 +5,7 @@ classdef box_obstacle < obstacle
         plot_patch_data
         collision_check_patch_data % structure with faces and vertices
         plot_edge_width = 1.5 ;
+        bounds = [] ;
     end
     
     methods
@@ -20,6 +21,12 @@ classdef box_obstacle < obstacle
             O.create_plot_patch_data ;
             O.create_collision_check_patch_data ;
             O.plot_data.body = [] ;
+            
+            % create bounds
+            O.bounds = nan(1,2*O.dimension) ;
+            lo = min(O.collision_check_patch_data.vertices,[],1) ;
+            hi = max(O.collision_check_patch_data.vertices,[],1) ;
+            O.bounds = reshape([lo(:)' ; hi(:)'],1,6) ;
         end
         
         %% plot and collision check setup
