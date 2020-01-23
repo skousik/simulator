@@ -26,7 +26,27 @@ classdef box_obstacle < obstacle
             O.bounds = nan(1,2*O.dimension) ;
             lo = min(O.collision_check_patch_data.vertices,[],1) ;
             hi = max(O.collision_check_patch_data.vertices,[],1) ;
-            O.bounds = reshape([lo(:)' ; hi(:)'],1,6) ;
+            O.bounds = reshape([lo(:)' ; hi(:)'],1,[]) ;
+        end
+        
+        function change_center(O,new_center)
+            O.center = new_center ;
+            
+            % fix plot data
+            V = O.plot_patch_data.vertices ;
+            V = V - mean(V,1) + repmat(new_center(:)',8,1) ;
+            O.plot_patch_data.vertices = V ;
+            
+            % fix collision check data
+            V = O.collision_check_patch_data.vertices ;
+            V = V - mean(V,1) + repmat(new_center(:)',8,1) ;
+            O.collision_check_patch_data.vertices = V ;
+        end
+        
+        function shift_center(O,shift_center_vector)
+            new_center = O.center + shift_center_vector ;
+            
+            O.change_center(new_center) ;
         end
         
         %% plot and collision check setup
