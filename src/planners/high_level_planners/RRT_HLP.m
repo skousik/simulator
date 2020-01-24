@@ -16,7 +16,8 @@ classdef RRT_HLP < high_level_planner
         timeout = 0.25 ; % seconds
         goal_as_new_node_rate = 0.08 ;
         new_node_growth_distance = 0.5 ; % m
-        new_node_max_distance_from_agent = 2 ;
+        new_node_heading_change_limit = Inf ; % rad
+        new_node_max_distance_from_agent = 2 ; % unused
         best_path = [];
         best_path_indices = 0;
         best_path_distance
@@ -158,7 +159,7 @@ classdef RRT_HLP < high_level_planner
         
         function extend_success_flag = extend(HLP,agent_info,world_info,rand_node)
             [nearest_node,nearest_node_distance,nearest_node_index] = HLP.find_nearest_node(rand_node) ;
-            new_node = HLP.steer(rand_node,nearest_node,nearest_node_distance) ;
+            new_node = HLP.steer(rand_node,nearest_node,nearest_node_distance,nearest_node_index) ;
             
             % make sure the new node and nearest node are not the same
             % (this can happen when the RRT is growing near the
@@ -179,9 +180,33 @@ classdef RRT_HLP < high_level_planner
             end
         end
         
-        function new_node = steer(HLP,rand_node,nearest_node,nearest_node_distance)
+        function new_node = steer(HLP,rand_node,nearest_node,nearest_node_distance,nearest_node_index)
             % grow the tree towards the direction new node
             NNGD = HLP.new_node_growth_distance ;
+            
+            % project the random node onto the range of headings allowed
+            % from the nearest node
+            if (HLP.new_node_heading_change_limit < Inf) && (HLP.dimension == 2) && ...
+                    (nearest_node_index > 1)
+                % get the parent of the nearest node
+                parent_index = HLP.nodes_parent(nearest_node_index) ;
+                parent_node = HLP.nodes(:,parent_index) ;
+                
+                % get the heading to the parent node and to the random node
+                node_diff = [nearest_node - parent_node, rand_node - nearest_node] ;
+                node_headings = atan2(node_diff(2,:),node_diff(1,:)) ;
+                
+                % get the change in heading to the random node
+                dh = node_headings(1) - node_headings(2) ;
+                
+                if abs(dh) > HLP.new_node_heading_change_limit
+                    % rotate the random node about the nearest node by the
+                    % heading delta
+                    R = [cos(dh) -sin(dh) ; sin(dh) cos(dh)] ;
+                    rand_node = R*(rand_node - nearest_node) + nearest_node ;
+                end
+            end
+            
             
             if nearest_node_distance <= NNGD
                 new_node = rand_node ;
