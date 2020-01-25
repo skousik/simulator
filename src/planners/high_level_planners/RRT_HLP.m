@@ -117,9 +117,6 @@ classdef RRT_HLP < high_level_planner
                     %HLP.plot_data.tree = plot_path(T,'-','Color',[0.5 0.5 1]) ;
                     plot_object(HLP,T,'tree','Color',[0.7 0.7 1]) ;
                     
-%                     HLP.find_best_path();
-%                     plot_object(HLP,HLP.best_path,'best_path','--','Color',[0.7 0.5 0.2],'LineWidth',1.5) ;
-                    
                     drawnow()
                 end
                 
@@ -272,6 +269,11 @@ classdef RRT_HLP < high_level_planner
             
             while current_index > 0
                 current_parent_index = HLP.nodes_parent(current_index) ;
+                if any(path_indices == current_parent_index)
+                    HLP.vdisp('Warning! The RRT has a loop in it by accident!',1)
+                    break
+                end
+                
                 path_indices = [path_indices, current_parent_index] ;
                 current_index = current_parent_index ;
             end
