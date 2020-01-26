@@ -131,10 +131,18 @@ classdef static_box_world < world
         
         %% get obstacles
         function world_info = get_world_info(W,agent_info,~)
-            zcur = agent_info.state(agent_info.position_indices,end)' ;
-            zcur = round(zcur,6) ;
-            z = unique(zcur,'rows')' ;
-            r = agent_info.sensor_radius ;
+            W.vdisp('Getting world info!',3)
+            
+            if nargin > 1
+                zcur = agent_info.state(agent_info.position_indices,end)' ;
+                zcur = round(zcur,6) ;
+                z = unique(zcur,'rows')' ;
+                r = agent_info.sensor_radius ;
+            else
+                W.vdisp('No agent info provided!',2)
+                z = W.start ;
+                r = 1 ;
+            end
             
             O = W.obstacles_unseen ;
             

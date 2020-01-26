@@ -30,7 +30,7 @@ classdef agent < handle
         
         % animation
         animation_plot_buffer = 1 ; % meter
-        animation_time_discretization  = 0.1 ;
+        animation_time_discretization  = 0.05 ;
         animation_playback_rate = 1 ;
         animation_set_axes_flag = false ;
         animation_set_view_flag = false ;

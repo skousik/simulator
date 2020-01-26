@@ -56,14 +56,18 @@ classdef RRT_star_HLP < RRT_HLP
             % make sure the new node and nearest node are not the same
             new_node_not_duplicate = ~(vecnorm(new_node - nearest_node) == 0) ;
             
-            % check that we can connect to the nearest node
+            % check if the new node is the goal
+            new_node_not_goal = (vecnorm(new_node - HLP.goal) ~= 0) ;
+            
+            % check if we can connect to the nearest node
             if new_node_not_duplicate
                 nearest_node_connect_flag = HLP.edge_feasibility_check(new_node,nearest_node,world_info) ;
             else
                 nearest_node_connect_flag = false ;
             end
             
-            % preallocate candidate parent indices and costs
+            % preallocate candidate parent indices and costs; we'll try to
+            % connect to all nodes within the rewire distance
             candidate_indices = [] ;
             candidate_costs = [] ;
             
@@ -121,25 +125,28 @@ classdef RRT_star_HLP < RRT_HLP
                 % update the cost
                 HLP.costs = [HLP.costs, new_cost] ;
                 
-                % REWIRE THE TREE
-                % first, get the indices and distances for all the nearby
-                % nodes that are NOT the new parent node
-                candidate_indices(cheapest_parent_index) = [] ;
-                candidate_distances(cheapest_parent_index) = [] ;
-                candidate_costs(cheapest_parent_index) = [] ;
+                % if the new node isn't the goal, rewire the tree
                 
-                % get the new costs of connecting the candidate indices to
-                % the new node
-                new_costs = candidate_distances + new_cost ;
-                
-                % compare the new costs to the original costs
-                rewire_log = new_costs < candidate_costs ;
-                
-                % get the node indices to rewire
-                rewire_indices = candidate_indices(rewire_log) ;
-                
-                % rewire the tree
-                HLP.nodes_parent(rewire_indices) = HLP.N_nodes ;
+                if new_node_not_goal
+                    % first, get the indices and distances for all the nearby
+                    % nodes that are NOT the new parent node
+                    candidate_indices(cheapest_parent_index) = [] ;
+                    candidate_distances(cheapest_parent_index) = [] ;
+                    candidate_costs(cheapest_parent_index) = [] ;
+
+                    % get the new costs of connecting the candidate indices to
+                    % the new node
+                    new_costs = candidate_distances + new_cost ;
+
+                    % compare the new costs to the original costs
+                    rewire_log = new_costs < candidate_costs ;
+
+                    % get the node indices to rewire
+                    rewire_indices = candidate_indices(rewire_log) ;
+
+                    % rewire the tree
+                    HLP.nodes_parent(rewire_indices) = HLP.N_nodes ;
+                end
             end
         end
         
