@@ -156,7 +156,7 @@ classdef agent < handle
             % rows of U_ref and Z_ref
             [T_ref,unique_idxs,~] = unique(T_ref,'stable') ;
             U_ref = U_ref(:,unique_idxs) ;
-            Z_ref = Z_ref(:,unique_idxs) ;
+            
             
             % get the amount of time to actually move the agent
             tlog = T_ref <= t_move ;
@@ -171,6 +171,7 @@ classdef agent < handle
                 U = match_trajectories(T,T_ref,U_ref) ;
                 Z = [] ;
             else
+                Z_ref = Z_ref(:,unique_idxs) ;
                 [U,Z] = match_trajectories(T,T_ref,U_ref,T_ref,Z_ref) ;
             end
         end
