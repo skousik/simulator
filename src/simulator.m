@@ -152,7 +152,13 @@ classdef simulator < handle
 
                     % get agent and world ready
                     W.reset() ;
-                    A.reset(W.start) ;
+                    
+                    if isprop(A,'desired_initial_condition')
+                        A.reset([W.start; A.desired_initial_condition]) ;
+                    else 
+                        A.reset(W.start) ; 
+                    end
+                    
 
                     % get planner ready
                     agent_info = A.get_agent_info() ;
