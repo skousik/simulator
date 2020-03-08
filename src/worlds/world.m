@@ -75,6 +75,7 @@ classdef world < handle
         animation_time_discretization = 0.01 ;
         current_time = 0 ;
         verbose = 0 ;
+        name = 'world' ;
         plot_data
     end
     

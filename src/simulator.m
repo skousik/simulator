@@ -2,6 +2,10 @@ classdef simulator < handle
 % Class: simulator
 %
 % S = simulator(agents, worlds, planners, varargin)
+%
+% Authors: Shreyas Kousik, Sean Vaskov, and Hannah Larson
+% Created: a long, long time ago, on a laptop far, far away
+% Updated: 8 Mar 2020
 
 %% properties
     properties (Access = public)
@@ -584,6 +588,8 @@ classdef simulator < handle
     % One can also call this as S.animate(true) to save a GIF for planner 1
     % and world 1 (which is useful if there's only one planner and world
     % currently set up in the simulator).
+    
+        S.vdisp('Animating the previous simulation',2)
     
         % parse input arguments
         if nargin == 2 && islogical(planner_index)
