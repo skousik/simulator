@@ -7,6 +7,9 @@ classdef static_box_world < world
         obstacle_rotation_bounds = [-pi,pi] ;
         bounds_as_polyline
         
+        fixed_goal = [] ; 
+        fixed_start = [] ;
+        
         % plotting
         obstacle_seen_color = [1 0 0] ;
         obstacle_unseen_color = [1 0.6 0.6] ;
@@ -59,13 +62,31 @@ classdef static_box_world < world
                     rand_range(ylo, yhi) ;
                     0 ] ;
                 W.start = s ;
+ 
+                 %HANNAH ADDED 
+                 if ~isempty(W.fixed_start)
+                     W.start = [xlo + W.fixed_start(1) ; 0 + W.fixed_start(2) ; 0 + W.fixed_start(3) ] ; 
+                 end
+                 %HANNAH ADDED 
+                 
+                        
             end
             
             % generate goal position on right side of room
             if isempty(W.goal)
+                
                 g = [xhi ;
                     rand_range(ylo, yhi)] ;
                 W.goal = g ;
+                
+                %HANNAH ADDED 
+                if ~isempty(W.fixed_goal)
+                    W.goal = [ xhi + W.fixed_goal(1) ; 0 + W.fixed_goal(2) ] ; 
+                end
+                %HANNAH ADDED 
+
+                
+                
             end
             
             % generate obstacles around room

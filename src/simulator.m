@@ -157,11 +157,14 @@ classdef simulator < handle
                     % get agent and world ready
                     W.reset() ;
                     
+                    %HANNAH ADDED 
                     if isprop(A,'desired_initial_condition')
-                        A.reset([W.start; A.desired_initial_condition]) ;
+                        A.reset([W.start; A.desired_initial_condition ]) ;
                     else 
                         A.reset(W.start) ; 
                     end
+                    %HANNAH ADDED 
+                    
                     
 
                     % get planner ready
