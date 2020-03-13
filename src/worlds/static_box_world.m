@@ -273,7 +273,7 @@ classdef static_box_world < world
                             % if there is a heading, and the agent is not a circle,
                             % then rotate each footprint contour
                             H = Z_chk(h_idx,:) ;
-                            R = rotmat(H) ;
+                            R = rotation_matrix_2D(H) ;
                             F = R*repmat(fp,N,1) + X ;
                         else
                             % otherwise, just place the footprint contour at each
