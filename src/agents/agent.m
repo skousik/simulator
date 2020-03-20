@@ -142,13 +142,6 @@ classdef agent < handle
             % reference time vector, output a time vector to actually use
             % during the call to move the agent.
             
-            % timing setup
-            if T_ref(end) < t_move
-                A.vdisp(['Provided input time vector is shorter than the ',...
-                        'desired motion time! The agent will still be ',...
-                        'moved for the duration t_move.'])
-            end
-
             % make sure the reference time is a row vector
             T_ref = T_ref(:)' ;
             
@@ -157,13 +150,31 @@ classdef agent < handle
             [T_ref,unique_idxs,~] = unique(T_ref,'stable') ;
             U_ref = U_ref(:,unique_idxs) ;
             
+            % sanity check the timing
+            if T_ref(1) > 0
+                warning(['Provided reference time does not start from 0! ',...
+                    'The reference trajectory will be padded with the ',...
+                    'first reference input and reference state at time 0'])
+                T_ref = [0, T_ref(:)'] ;
+                U_ref = [U_ref(:,1), U_ref] ;
+                Z_ref = [Z_ref(:,1), Z_ref] ;
+            end
+            
+            if T_ref(end) < t_move
+                warning(['Provided input time vector is shorter than the ',...
+                    'desired motion time! The agent will still be ',...
+                    'moved for the duration t_move. The reference ',...
+                    'time, input, and trajectory will be padded ',...
+                    'to be of duration t_move.'])
+                
+                T_ref = [T_ref(:)', t_move] ;
+                U_ref = [U_ref, U_ref(:,end)] ;
+                Z_ref = [Z_ref, Z_ref(:,end)] ;
+            end
             
             % get the amount of time to actually move the agent
             tlog = T_ref <= t_move ;
             T = T_ref(tlog) ;
-            if T(end) < t_move
-                T = [T, t_move] ;
-            end
             
             % interpolate the reference input and trajectory to pass to the
             % agent's move method

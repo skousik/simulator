@@ -382,13 +382,9 @@ classdef static_box_world < world
         
         function plot_at_time(W,~)
             % set up hold if needed
-            hold_check = false ;
-            if ~ishold
-                hold_check = true ;
-                hold on
-            end
+            hold_check = hold_switch() ;
             
-            % plot ass obstacles
+            % plot obstacles
             O = W.obstacles ;
             
             if isempty(O)
@@ -433,12 +429,10 @@ classdef static_box_world < world
                 W.plot_data.bounds = bounds_data ;
             end
             
-            if hold_check
-                hold off ;
-            end
-            
             % set axes
             axis equal
+            
+            hold_switch(hold_check) ;
         end
     end
 end
