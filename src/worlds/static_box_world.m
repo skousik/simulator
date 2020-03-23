@@ -7,9 +7,6 @@ classdef static_box_world < world
         obstacle_rotation_bounds = [-pi,pi] ;
         bounds_as_polyline
         
-        fixed_goal = [] ; 
-        fixed_start = [] ;
-        
         % plotting
         obstacle_seen_color = [1 0 0] ;
         obstacle_unseen_color = [1 0.6 0.6] ;
@@ -39,6 +36,8 @@ classdef static_box_world < world
         
         %% setup
         function setup(W)
+            W.vdisp('Setting up world',3)
+            
             % get room bounds
             B = W.bounds ;
             xlo = B(1) ; xhi = B(2) ; ylo = B(3) ; yhi = B(4) ;
@@ -58,41 +57,26 @@ classdef static_box_world < world
             yhi = yhi - 2*b ;
             
             if isempty(W.start)
+                W.vdisp('Generating random start pose',5)
                 s = [xlo ;
                     rand_range(ylo, yhi) ;
                     0 ] ;
-                W.start = s ;
- 
-                 %HANNAH ADDED 
-                 if ~isempty(W.fixed_start)
-                     W.start = [xlo + W.fixed_start(1) ; 0 + W.fixed_start(2) ; 0 + W.fixed_start(3) ] ; 
-                 end
-                 %HANNAH ADDED 
-                 
-                        
+                W.start = s ;   
             end
             
             % generate goal position on right side of room
             if isempty(W.goal)
-                
+                W.vdisp('Generating random goal location',5)
                 g = [xhi ;
                     rand_range(ylo, yhi)] ;
                 W.goal = g ;
-                
-                %HANNAH ADDED 
-                if ~isempty(W.fixed_goal)
-                    W.goal = [ xhi + W.fixed_goal(1) ; 0 + W.fixed_goal(2) ] ; 
-                end
-                %HANNAH ADDED 
-
-                
-                
             end
             
             % generate obstacles around room
             N_obs = W.N_obstacles ;
             
             if N_obs > 0 && isempty(W.obstacles)
+                W.vdisp('Generating obstacles',4)
                 O = nan(2, 6*N_obs) ; % preallocate obstacle matrix
                 
                 llo = obs_size(1) ; lhi = obs_size(2) ;

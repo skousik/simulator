@@ -59,7 +59,7 @@ classdef RRT_HLP < high_level_planner
         
         function initialize_tree(HLP,agent_info)
             z = HLP.get_agent_position(agent_info) ;
-            
+
             switch HLP.grow_tree_mode
                 case 'new'
                     HLP.vdisp('Growing new tree!',8)

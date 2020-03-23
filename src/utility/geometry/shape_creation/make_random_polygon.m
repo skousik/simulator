@@ -8,9 +8,13 @@ function P = make_random_polygon(N_vertices,offset,scale)
 % If the inputs N_vertices, offset, and scale are vectors, then the output
 % is a 2-by-N polyline with as many polygons are the length of N_vertices,
 % with each polygon separated by a column of NaNs.
+%
+% Author: Shreyas Kousik
+% Created: who knows!
+% Updated: 20 Mar 2020
 
     if nargin < 1
-            N_vertices = round(randRange(3,9)) ;
+            N_vertices = round(rand_range(3,9)) ;
     end
     
     Npolygons = size(N_vertices,2) ;
