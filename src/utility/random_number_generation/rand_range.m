@@ -36,17 +36,17 @@ function n = rand_range(lo,hi,m,s,r,c)
     if nargin == 2
         n = (hi-lo).*rand(size(hi)) + lo ;
     elseif nargin == 4
-        n = trandn((lo-m)/s,(hi-m)/s)*s + m ;
+        n = trandn((lo-m)./s,(hi-m)./s).*s + m ;
     elseif nargin == 6
         if isempty(m) && isempty(s)
             n = (hi-lo).*rand(r,c) + lo ;
         elseif ~isempty(m) && ~isempty(s)
-            n = trandn(((lo-m)/s).*ones(r*c,1),((hi-m)/s).*ones(r*c,1))*s + m ;
+            n = trandn(((lo-m)./s).*ones(r*c,1),((hi-m)./s).*ones(r*c,1)).*s + m ;
             n = reshape(n,r,c) ;
         else
             error(['Either the mean and standard deviation must both be ',...
-                   'empty, or must both be scalars. They are the third ',...
-                   'and fourth arguments to this function.'])
+                   'empty, scalars, or vectors the same size as lo and hi.',....
+                   'They are the third and fourth arguments to this function.'])
         end
     else
         error(['Input must either be an interval (2 inputs); or ',...

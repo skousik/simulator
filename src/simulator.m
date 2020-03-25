@@ -193,7 +193,7 @@ classdef simulator < handle
                 %% simulation loop
                     while icur < (iter_max+1) && tcur < t_max
                         S.vdisp('--------------------------------',3,false)
-                        S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end)),')'],2,false)
+                        S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end),'%0.2f'),')'],2,false)
 
                     %% get agent info
                         agent_info = A.get_agent_info() ;
@@ -403,6 +403,7 @@ classdef simulator < handle
                                  'goal',W.goal,...
                                  'bounds',W.bounds,...
                                  'notes','') ;
+                             
             end
 
             % clean up summary if only one world was run

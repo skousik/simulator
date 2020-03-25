@@ -238,7 +238,7 @@ classdef static_box_world < world
                     Z_idx = Z(:,t_log_idx) ;
                     
                     % create the time vector for interpolation
-                    t_chk = 0:0.01:5  + t_world ;
+                    t_chk = (0:0.01:5) + t_world ;
                     t_chk = t_chk(t_chk <= T_idx(end)) ;
                     
                     % create the interpolated trajectory

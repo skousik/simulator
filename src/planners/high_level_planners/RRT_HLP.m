@@ -9,7 +9,7 @@ classdef RRT_HLP < high_level_planner
 %
 % Authors: Shreyas Kousik and Bohao Zhang
 % Created: 31 July 2019
-% Updated: 6 Nov 2019
+% Updated: 24 Mar 2020
     
     properties
         % timing and tree growth limits
@@ -17,13 +17,21 @@ classdef RRT_HLP < high_level_planner
         goal_as_new_node_rate = 0.08 ;
         new_node_growth_distance = 0.5 ; % m
         new_node_heading_change_limit = Inf ; % rad
-        new_node_max_distance_from_agent = 2 ; % unused
+        new_node_max_distance_from_agent = 2 ; % m
         best_path = [];
         best_path_indices = 0;
         best_path_distance
         N_nodes ;
         N_nodes_max = 40000 ;
         N_near_goal = 50 ;
+        
+        % method for initializing the RRT:
+        % 'tree' uses the closest point to the agent on the current tree
+        % 'agent' uses the agent's latest location
+        %
+        % it is recommended to use 'tree' mode unless you really need to
+        % grow the tree from exactly where the agent is
+        initialize_tree_mode = 'tree' ;
         
         % method for growing the RRT:
         % 'new' means grow a new tree every planning iteration
@@ -54,11 +62,39 @@ classdef RRT_HLP < high_level_planner
         
         function setup(HLP,agent_info,world_info)
             setup@high_level_planner(HLP,agent_info,world_info) ;
+            
+            % clear the tree
+            HLP.reset_tree() ;
+            
+            % initialize the tree
             HLP.initialize_tree(agent_info) ;
+            if isempty(HLP.new_node_max_distance_from_agent)
+                HLP.new_node_max_distance_from_agent = agent_info.sensor_radius ;
+            end
+        end
+        
+        function reset_tree(HLP)
+            HLP.nodes = [] ;
+            HLP.nodes_parent = [] ;
+            HLP.best_path = [] ;
+            HLP.best_path_indices = 0 ;
+            HLP.best_path_distance = [] ;
         end
         
         function initialize_tree(HLP,agent_info)
-            z = HLP.get_agent_position(agent_info) ;
+            z_agent = HLP.get_agent_position(agent_info) ;
+            switch HLP.initialize_tree_mode
+                case 'tree'
+                    if ~isempty(HLP.best_path)
+                        [~,~,z,~] = dist_point_to_polyline(z_agent,HLP.best_path) ;
+                    else
+                        z = z_agent ;
+                    end
+                case 'agent'
+                    z = z_agent ;
+                otherwise
+                    error('Please pick a valid tree initialization mode!')
+            end
 
             switch HLP.grow_tree_mode
                 case 'new'
@@ -104,7 +140,7 @@ classdef RRT_HLP < high_level_planner
             HLP.initialize_tree(agent_info) ;
             
             % grow tree until timeout or node limit is reached
-            while t_cur < HLP.timeout && (HLP.N_nodes < HLP.N_nodes_max)
+            while t_cur < HLP.timeout && (HLP.N_nodes <= HLP.N_nodes_max)
                 % sample
                 rand_node = HLP.sample(agent_info) ;
                 
@@ -148,7 +184,7 @@ classdef RRT_HLP < high_level_planner
             x_cur = agent_info.position(:,end) ;
             dir_to_node = rand_node - x_cur ;
             dist_to_node = vecnorm(dir_to_node) ;
-            R = agent_info.sensor_radius ;
+            R = HLP.new_node_max_distance_from_agent ;
             if dist_to_node > R
                 rand_node = x_cur + R.*(dir_to_node ./ dist_to_node) ;
             end

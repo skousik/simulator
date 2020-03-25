@@ -37,7 +37,7 @@ classdef lazy_dijkstra_HLP < high_level_planner
             HLP.nodes(:,1) = agent_info.state(HLP.agent_position_indices) ;
         end
         
-        function get_waypoint(HLP,agent_info,world_info,lookahead_distance)
+        function waypoint = get_waypoint(HLP,agent_info,world_info,lookahead_distance)
             
             % get the agent's current location
             z = agent_info.state(HLP.agent_position_indices) ;

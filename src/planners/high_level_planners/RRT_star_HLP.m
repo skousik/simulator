@@ -27,6 +27,11 @@ classdef RRT_star_HLP < RRT_HLP
         end
         
         %% tree growth
+        function reset_tree(HLP)
+            reset_tree@RRT_HLP(HLP) ;
+            HLP.costs = 0 ;
+        end
+        
         function initialize_tree(HLP,agent_info)
             initialize_tree@RRT_HLP(HLP,agent_info)
             
