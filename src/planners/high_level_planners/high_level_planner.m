@@ -21,7 +21,7 @@ classdef high_level_planner < handle
         verbose = 0 ;
         plot_data = [] ;
         waypoint_color = [1 0.5 0] ;
-        waypoint_marker = '^' ;
+        waypoint_marker = 'p' ;
         waypoint_line_style = '--' ;
         goal = [1;0] ;
         bounds ;
@@ -64,6 +64,8 @@ classdef high_level_planner < handle
             % with a marker (default is a triangle). This method plots in 2D or 3D
             % as appropriate. Note, this plot method should be called by the
             % planner in its plot method, since it is not called by simulator.
+            
+            hold_check = hold_switch() ;
             
             plot_format = HLP.waypoint_line_style ;
             wps = HLP.waypoints ;
@@ -112,6 +114,8 @@ classdef high_level_planner < handle
                     end
                 end
             end
+            
+            hold_switch(hold_check) ;
         end
         
         function plot_at_time(HLP,t)
