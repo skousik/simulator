@@ -1,4 +1,14 @@
 function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
+% [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
+%
+% This implements 2nd order RK integration with a rotation matrix state, so
+% we're integrating directly on SO(3). I'll add more details on how to use
+% it later! I promise!
+%
+% Author: Shreyas Kousik
+% Created: shrug
+% Updated: 10 Apr 2020
+
     %% parse inputs
     if nargin < 5
         % take ten time steps by default
@@ -65,6 +75,10 @@ function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
         yout(:,idx) = y1_idx + k2 ;
         Rout(:,:,idx) = F2_idx*R1_idx ;
     end
+    
+    %% fix output
+    tout = tout(:) ;
+    yout = yout' ;
 end
 
 %% helper functions

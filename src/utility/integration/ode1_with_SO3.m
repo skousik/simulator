@@ -1,4 +1,13 @@
 function [tout,yout,Rout] = ode1_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
+%  [tout,yout,Rout] = ode1_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
+%
+% This function runs Euler integration with a rotation matrix as an
+% additional state. I'll write how to use it more clearly later!
+%
+% Author: Shreyas Kousik
+% Created: shrug
+% Updated: 10 Apr 2020
+
     %% parse inputs
     if nargin < 5
         % take ten time steps by default
@@ -50,6 +59,10 @@ function [tout,yout,Rout] = ode1_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
         yout(:,idx) = y_idx + dt_idx.*y_dot ; % Euler step in state
         Rout(:,:,idx) = F_idx*R_idx ; % Euler step in rotation
     end
+    
+    %% fix output
+    tout = tout(:) ;
+    yout = yout' ;
 end
 
 %% helper functions
@@ -60,3 +73,19 @@ function S = skew(O)
         -O(2)  O(1)   0   ];
 end
 
+function R = expm_SO3(w)
+% R = expm_SO3(w)
+%
+% Computes the vectorized exponential map (at the identity) as defined in:
+% http://ethaneade.com/lie.pdf
+%
+% This version is from: https://github.com/RossHartley/lie, modified to
+% take in a skew-symmetric matrix.
+
+    theta = norm(w);
+    if theta == 0
+        R = eye(3);
+    else
+        R = eye(3) + (sin(theta)/theta)*w + ((1-cos(theta))/(theta^2))*w^2;
+    end
+end
