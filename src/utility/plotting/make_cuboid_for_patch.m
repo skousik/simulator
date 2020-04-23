@@ -1,7 +1,8 @@
-function [F,V] = make_cuboid_for_patch(L,W,H,C)
+function varargout = make_cuboid_for_patch(L,W,H,C)
 % [F,V] = make_cuboid_for_patch([L,W,H])
 % [F,V] = make_cuboid_for_patch(L,W,H)
 % [F,V] = make_cuboid_for_patch(L,W,H,C)
+% patch_data_struct = make_cuboid_for_patch(...)
 %
 % Generate 6 faces and 8 vertices of an axis-aligned cuboid (in 3-D) of
 % length L in x, width W in y, and depth D in Z. An optional fourth
@@ -11,6 +12,9 @@ function [F,V] = make_cuboid_for_patch(L,W,H,C)
 % function as faces and vertices, to plot a cuboid in 3-D.
 %
 % using https://www.mathworks.com/help/matlab/visualize/multifaceted-patches.html
+%
+% Author: Shreyas Kousik
+% Updated: 23 Apr 2020
 
     if nargin < 4
         C = zeros(3,1) ;
@@ -35,4 +39,16 @@ function [F,V] = make_cuboid_for_patch(L,W,H,C)
 
     % make faces
     F = [1 2 6 5 ; 2 3 7 6 ; 3 4 8 7 ; 4 1 5 8 ; 1 2 3 4 ; 5 6 7 8 ] ;
+    
+    switch nargout
+        case 1
+            patch_data_struct.faces = F ;
+            patch_data_struct.vertices = V ;
+            varargout = {patch_data_struct} ;
+        case 2
+            varargout = {F,V} ;
+        otherwise
+            error('This function returns either one or two outputs!')
+    end
+    
 end
