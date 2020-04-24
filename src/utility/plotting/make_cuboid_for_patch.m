@@ -1,12 +1,12 @@
-function varargout = make_cuboid_for_patch(L,W,H,C)
-% [F,V] = make_cuboid_for_patch([L,W,H])
-% [F,V] = make_cuboid_for_patch(L,W,H)
-% [F,V] = make_cuboid_for_patch(L,W,H,C)
+function varargout = make_cuboid_for_patch(l,w,h,c)
+% [F,V] = make_cuboid_for_patch([l,w,h])
+% [F,V] = make_cuboid_for_patch(l,w,h)
+% [F,V] = make_cuboid_for_patch(l,w,h,c)
 % patch_data_struct = make_cuboid_for_patch(...)
 %
 % Generate 6 faces and 8 vertices of an axis-aligned cuboid (in 3-D) of
-% length L in x, width W in y, and depth D in Z. An optional fourth
-% argument defining the center of the cuboid can also be passed in.
+% length l in x, width w in y, and height h in Z. An optional fourth
+% argument c defines the center of the cuboid, c \in \R^3/
 %
 % The output of this function can be passed directly into the patch
 % function as faces and vertices, to plot a cuboid in 3-D.
@@ -17,24 +17,24 @@ function varargout = make_cuboid_for_patch(L,W,H,C)
 % Updated: 23 Apr 2020
 
     if nargin < 4
-        C = zeros(3,1) ;
+        c = zeros(3,1) ;
     end
 
     if nargin == 1
-        dims = L ;
-        L = dims(1) ;
-        W = dims(2) ;
-        H = dims(3) ;
+        dims = l ;
+        l = dims(1) ;
+        w = dims(2) ;
+        h = dims(3) ;
     elseif nargin < 1
-        L = 1 ;
-        W = 1 ;
-        H = 1 ;
+        l = 1 ;
+        w = 1 ;
+        h = 1 ;
     end
 
     % make vertices
-    Vx = L.*[0 1 1 0 0 1 1 0]' - L/2 + C(1) ;
-    Vy = W.*[0 0 1 1 0 0 1 1]' - W/2 + C(2) ;
-    Vz = H.*[0 0 0 0 1 1 1 1]' - H/2 + C(3) ;
+    Vx = l.*[0 1 1 0 0 1 1 0]' - l/2 + c(1) ;
+    Vy = w.*[0 0 1 1 0 0 1 1]' - w/2 + c(2) ;
+    Vz = h.*[0 0 0 0 1 1 1 1]' - h/2 + c(3) ;
     V = [Vx Vy Vz] ;
 
     % make faces

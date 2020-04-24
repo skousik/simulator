@@ -125,6 +125,10 @@ classdef rigid_body_agent_SE3 < agent_3D
                 otherwise
                     error('Invalid integrator approximation choice! Pick 1 or 2')
             end
+            
+            % fix input rows/columns
+            tout = tout' ;
+            yout = yout' ;
         end
         
         %% dynamics
