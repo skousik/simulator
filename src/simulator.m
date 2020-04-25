@@ -105,6 +105,8 @@ classdef simulator < handle
             % attempts to reach the goal from its provided start position.
             
             S.vdisp('Running simulation')
+            
+            run_start_tic = tic ;
 
             % get simulation info
             t_max = S.max_sim_time ;
@@ -124,6 +126,9 @@ classdef simulator < handle
 
         %% world loop
             for widx = world_indices
+                S.vdisp('-------------------------------------------------',3,false)
+                S.vdisp('-------------------------------------------------',4,false)
+                S.vdisp(['Starting World ',num2str(widx)],1)
                 W = S.get_world(widx) ;
 
                 % set up summary objects
@@ -146,9 +151,12 @@ classdef simulator < handle
                 t_move_cell = cell(1,L) ;
                 obstacles_cell = cell(1,L) ;
                 
+                world_start_tic = tic ;
+                
             %% planner loop
                 for pidx = planner_indices
-                    S.vdisp(['Planner ',num2str(pidx)])
+                    S.vdisp('---------------------------------------------',3,false)
+                    S.vdisp(['Starting Planner ',num2str(pidx)],1)
 
                     % get agent and planner
                     A = S.get_agent(pidx) ;
@@ -185,15 +193,14 @@ classdef simulator < handle
                     goal_check = false ;
 
                     % start timing
-                    icur = 1 ;
-                    runtime = tic ;
-                    tstart = runtime ;
-                    tcur = toc(tstart);
+                    current_iteration = 1 ;
+                    planner_start_tic = tic ;
+                    t_cur = toc(planner_start_tic);
 
                 %% simulation loop
-                    while icur < (iter_max+1) && tcur < t_max
+                    while current_iteration < (iter_max+1) && t_cur < t_max
                         S.vdisp('--------------------------------',3,false)
-                        S.vdisp(['ITERATION ',num2str(icur),' (t = ',num2str(A.time(end),'%0.2f'),')'],2,false)
+                        S.vdisp(['ITERATION ',num2str(current_iteration),' (t = ',num2str(A.time(end),'%0.2f'),')'],2,false)
 
                     %% get agent info
                         agent_info = A.get_agent_info() ;
@@ -206,7 +213,7 @@ classdef simulator < handle
                     %% replan
                         % given the current state and obstacles, query the
                         % current planner to get a control input
-                        t_plan_spent = tic ;
+                        t_plan_start_tic = tic ;
                         if S.allow_replan_errors
                             [T_nom,U_nom,Z_nom] = P.replan(agent_info,world_info) ;
                         else
@@ -218,8 +225,8 @@ classdef simulator < handle
                                 T_nom = [] ; U_nom = [] ; Z_nom = [] ;
                             end
                         end
-                        t_plan_spent = toc(t_plan_spent) ;
-                        planning_time_vec(icur) = t_plan_spent ;
+                        t_plan_spent = toc(t_plan_start_tic) ;
+                        planning_time_vec(current_iteration) = t_plan_spent ;
                         S.vdisp(['Planning time: ',num2str(t_plan_spent),' s'],4)
 
                     %% move agent
@@ -230,7 +237,7 @@ classdef simulator < handle
                             S.vdisp('Stopping!',2)
                             A.stop(P.t_move) ;
 
-                            stop_check_vec(icur) = true ;
+                            stop_check_vec(current_iteration) = true ;
 
                             % give planner a chance to recover from a stop
                             S.stop_count = S.stop_count + 1 ;
@@ -296,7 +303,8 @@ classdef simulator < handle
                         if plot_in_loop_flag
                             S.plot(widx,pidx)
                             if S.save_gif
-                                error('Shreyas this is unfinished!')
+                                error(['Saving a GIF is not yet supported for the simulator! ',...
+                                    'Use the agent''s animate method instead.'])
                             else
                                 pause(S.plotting_pause_time) ;
                             end
@@ -313,12 +321,13 @@ classdef simulator < handle
                         end
 
                         % iterate and increment time
-                        S.vdisp(['END ITERATION ',num2str(icur)],4,false)
-                        icur = icur + 1 ;
-                        tcur = toc(tstart) - user_pause ;
+                        S.vdisp(['END ITERATION ',num2str(current_iteration)],4,false)
+                        current_iteration = current_iteration + 1 ;
+                        t_cur = toc(planner_start_tic) - user_pause ;
                     end
-                    runtime = toc(runtime) ;
-                    S.vdisp(['Planning time spent: ',num2str(runtime)],5)
+                    sim_loop_time_spent = toc(planner_start_tic) ;
+                    S.vdisp(['Total time spent for Planner ',...
+                        num2str(pidx),': ',num2str(sim_loop_time_spent)],5)
 
                     % plot the last portion of the agent's trajectory after the
                     % simulation ends
@@ -326,7 +335,7 @@ classdef simulator < handle
                         S.plot(widx,pidx)
                     end
 
-                    S.vdisp(['Planner ',num2str(pidx), ' simulation complete!'])
+                    S.vdisp(['Planner ',num2str(pidx), ' simulation complete!'],1)
 
                 %% create summary (for the current planner)
                     % get results at end of simulation
@@ -359,8 +368,8 @@ classdef simulator < handle
                     total_simulated_time_cell{pidx} = T_nom ;
                     control_input_cell{pidx} = U_nom ;
                     control_input_time_cell{pidx} = TU ;
-                    total_real_time_cell{pidx} = runtime ;
-                    total_iterations_cell{pidx} = icur ;
+                    total_real_time_cell{pidx} = sim_loop_time_spent ;
+                    total_iterations_cell{pidx} = current_iteration ;
                     planning_times_cell{pidx} = planning_time_vec ;
                     collision_check_cell{pidx} = collision_check ;
                     goal_check_cell{pidx} = goal_check ;
@@ -376,6 +385,9 @@ classdef simulator < handle
                     if collision_check
                         S.vdisp('In final check, agent crashed!')
                     end
+                    
+                    S.vdisp(['Finished Planner ',num2str(pidx)],1)
+                    S.vdisp('---------------------------------------------',3,false)
                 end
                 S.vdisp(['World ',num2str(widx),' complete! Generating summary.'])
                 summary{widx} = struct('agent_name',agent_name_cell,...
@@ -404,7 +416,14 @@ classdef simulator < handle
                                  'bounds',W.bounds,...
                                  'notes','') ;
                              
+                 S.vdisp(['Finished with World ',num2str(widx)],3)
+                 S.vdisp(['Total time spent for World ',num2str(widx),':',...
+                     num2str(toc(world_start_tic))],3) ;
+                 S.vdisp('------------------------------------------------',3,false)
+                 S.vdisp('------------------------------------------------',4,false)
             end
+            
+            S.vdisp(['Total time spent running simulator: ', num2str(toc(run_start_tic))],3) ;
 
             % clean up summary if only one world was run
             if LW == 1
