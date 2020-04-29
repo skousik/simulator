@@ -109,10 +109,10 @@ classdef world < handle
         function reset(W)
         % Method: W.reset()
         %
-        % Reset the world's current time index to 1. This is generic and
-        % can be overwritten in a subclass. This allows a world to reset
-        % its timing without creating new start/goal/obstacles, which is
-        % the point of the world.setup method.
+        % Reset the world's current time to 0. This is generic, and should
+        % be overwritten in a subclass. This allows a world to reset its
+        % timing without creating new start/goal/obstacles, which is the
+        % point of the world.setup method.
             W.current_time = 0 ;
         end
         

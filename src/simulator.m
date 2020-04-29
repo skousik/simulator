@@ -116,7 +116,7 @@ classdef simulator < handle
             % get world and planner indices
             world_indices = 1:length(S.worlds) ;
             
-            if nargin < 2
+            if nargin < 2 || isempty(planner_indices)
                 planner_indices = 1:length(S.planners) ;
             end
 
@@ -327,7 +327,7 @@ classdef simulator < handle
                     end
                     sim_loop_time_spent = toc(planner_start_tic) ;
                     S.vdisp(['Total time spent for Planner ',...
-                        num2str(pidx),': ',num2str(sim_loop_time_spent)],5)
+                        num2str(pidx,'%0.2f'),': ',num2str(sim_loop_time_spent), 's'],5)
 
                     % plot the last portion of the agent's trajectory after the
                     % simulation ends
@@ -417,13 +417,13 @@ classdef simulator < handle
                                  'notes','') ;
                              
                  S.vdisp(['Finished with World ',num2str(widx)],3)
-                 S.vdisp(['Total time spent for World ',num2str(widx),':',...
-                     num2str(toc(world_start_tic))],3) ;
+                 S.vdisp(['Total time spent for World ',num2str(widx),': ',...
+                     num2str(toc(world_start_tic),'%0.2f'),' s'],3) ;
                  S.vdisp('------------------------------------------------',3,false)
                  S.vdisp('------------------------------------------------',4,false)
             end
             
-            S.vdisp(['Total time spent running simulator: ', num2str(toc(run_start_tic))],3) ;
+            S.vdisp(['Total time spent running simulator: ', num2str(toc(run_start_tic),'%0.2f'),' s'],3) ;
 
             % clean up summary if only one world was run
             if LW == 1
