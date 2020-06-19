@@ -6,7 +6,7 @@ function [tout,yout,Rout] = ode1_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
 %
 % Author: Shreyas Kousik
 % Created: shrug
-% Updated: 10 Apr 2020
+% Updated: 4 May 2020
 
     %% parse inputs
     if nargin < 5
@@ -53,7 +53,7 @@ function [tout,yout,Rout] = ode1_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
         
         % compute rotation matrix dynamics
         O_idx = y_idx(O_idxs) ;
-        F_idx = expm_SO3(dt_idx.*skew(O_idx)) ;
+        F_idx = expm_SO3(dt_idx.*O_idx) ;
         
         % compute new state
         yout(:,idx) = y_idx + dt_idx.*y_dot ; % Euler step in state
@@ -79,13 +79,13 @@ function R = expm_SO3(w)
 % Computes the vectorized exponential map (at the identity) as defined in:
 % http://ethaneade.com/lie.pdf
 %
-% This version is from: https://github.com/RossHartley/lie, modified to
-% take in a skew-symmetric matrix.
+% This version is from: https://github.com/RossHartley/lie.
 
-    theta = norm(w);
+    theta = vecnorm(w);
     if theta == 0
         R = eye(3);
     else
+        w = skew(w) ;
         R = eye(3) + (sin(theta)/theta)*w + ((1-cos(theta))/(theta^2))*w^2;
     end
 end

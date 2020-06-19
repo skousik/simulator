@@ -7,7 +7,7 @@ function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
 %
 % Author: Shreyas Kousik
 % Created: shrug
-% Updated: 10 Apr 2020
+% Updated: 4 May 2020
 
     %% parse inputs
     if nargin < 5
@@ -55,7 +55,7 @@ function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
         y1_dot = dyn(t_idx,y1_idx,R1_idx) ;
         k1 = half_dt_idx*y1_dot ;
         O1_idx = y1_idx(O_idxs) ;
-        F1_idx = expm_SO3(half_dt_idx.*skew(O1_idx)) ;
+        F1_idx = expm_SO3(half_dt_idx.*O1_idx) ;
         R2_idx = F1_idx*R1_idx ;
 
         % get second time step
@@ -64,11 +64,11 @@ function [tout,yout,Rout] = ode2_with_SO3(dyn,tspan,y0,R0,dt,O_idxs)
             k2 = dt_idx*y2_dot ;
             y2_idx = y1_idx + k1 ;
             O2_idx = y2_idx(O_idxs) ;
-            F2_idx = expm_SO3(half_dt_idx.*skew(O1_idx + O2_idx)) ;
+            F2_idx = expm_SO3(half_dt_idx.*(O1_idx + O2_idx)) ;
         else
             warning('NaNs detected in dynamics! Attempting Euler step.')
             k2 = dt_idx*y1_dot ;
-            F2_idx = expm_SO3(dt_idx.*skew(O1_idx)) ;
+            F2_idx = expm_SO3(dt_idx.*O1_idx) ;
         end
 
         % compute new state
@@ -89,3 +89,20 @@ function S = skew(O)
         -O(2)  O(1)   0   ];
 end
 
+
+function R = expm_SO3(w)
+% R = expm_SO3(w)
+%
+% Computes the vectorized exponential map (at the identity) as defined in:
+% http://ethaneade.com/lie.pdf
+%
+% This version is from: https://github.com/RossHartley/lie.
+
+    theta = vecnorm(w);
+    if theta == 0
+        R = eye(3);
+    else
+        w = skew(w) ;
+        R = eye(3) + (sin(theta)/theta)*w + ((1-cos(theta))/(theta^2))*w^2;
+    end
+end

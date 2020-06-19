@@ -652,7 +652,12 @@ classdef simulator < handle
         
         for t_idx = t_vec
             % create plot
-            S.plot_at_time(t_idx,planner_index,world_index)
+            if isempty(planner_index) || isempty(S.planners)
+                A.plot_at_time(t_idx) ;
+                W.plot_at_time(t_idx) ;
+            else
+                S.plot_at_time(t_idx,planner_index,world_index)
+            end
             
             if S.set_plot_linewidths_flag
                 set_plot_linewidths(S.animation_linewidths) ;

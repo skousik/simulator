@@ -52,10 +52,14 @@ function [F,V] = make_arrow_for_patch(p,varargin)
     n0 = [0;0;1] ;
     n = (p_end - p_start)./d ;
     v = cross(n0,n) ;
-    v_hat = skew(v) ;
-    s = norm(v) ;
-    c = dot(n0,n) ;
-    R = eye(3) + v_hat + v_hat^2 .* ((1-c)./(s^2)) ;
+    if ~all(v == 0)
+        v_hat = skew(v) ;
+        s = norm(v) ;
+        c = dot(n0,n) ;
+        R = eye(3) + v_hat + v_hat^2 .* ((1-c)./(s^2)) ;
+    else
+        R = eye(3) ;
+    end
     
     % rotate and translate the vertices
     V = (R*V')' + repmat(p_start(:)',size(V,1),1) ;
