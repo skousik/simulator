@@ -99,8 +99,12 @@ classdef rigid_body_agent_SE3 < agent_3D
             z_cur = A.state(:,end) ; % (position, velocity, angular velocity) in R^9
             R_cur = A.attitude(:,:,end) ; % orientation in SO(3)
             
-            % call integrator to simulate agent's dynamics
-            [tout,zout,Rout] = A.integrator(@(t,y,R) A.dynamics(t,y,R,T_used,U_used,Z_used),...
+            % call integrator to simulate agent's dynamics; NOTE! it is
+            % very important that T_ref, U_ref, and Z_ref are passed in, as
+            % opposed to T_used, U_used, and Z_used (which are only of
+            % duration t_move, which can cause NaNs if the agent's dynamics
+            % try to interpolate past t_move in the reference time T_ref)
+            [tout,zout,Rout] = A.integrator(@(t,y,R) A.dynamics(t,y,R,T_ref,U_ref,Z_ref),...
                 [0, t_move], z_cur, R_cur) ;
             
             A.commit_move_data(tout,zout,Rout,T_used,U_used,Z_used) ;

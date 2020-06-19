@@ -176,8 +176,12 @@ classdef agent < handle
             end
             
             % get the amount of time to actually move the agent
-            tlog = T_ref <= t_move ;
-            T = T_ref(tlog) ;
+            T_log = T_ref < t_move ;
+            
+            % make sure t_move itself is included in the time vector (this
+            % solves a nasty bug that could introduce NaNs in the agent's
+            % state unintentionally!)
+            T = [T_ref(T_log), t_move] ;
             
             % interpolate the reference input and trajectory to pass to the
             % agent's move method
@@ -196,6 +200,7 @@ classdef agent < handle
             % trajectories, and associated time vectors, to the agent's
             % state, time, input, and input_time properties.
             
+            % update the state, time, input, and input time
             A.state = [A.state, Z_state(:,2:end)] ;
             A.time = [A.time, A.time(end) + T_state(2:end)] ;
             A.input_time = [A.input_time, A.input_time(end) + T_used(2:end)] ;
