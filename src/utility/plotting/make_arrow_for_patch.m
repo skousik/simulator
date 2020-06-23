@@ -1,4 +1,29 @@
 function [F,V] = make_arrow_for_patch(p,varargin)   
+% [faces,vertices] = make_arrow_for_patch(p_end)
+% [faces,vertices] = make_arrow_for_patch(p_start,p_end)
+% [faces,vertices] = make_arrow_for_patch(p_start,'property1',value1,'property2',value2,...)
+% [faces,vertices] = make_arrow_for_patch(p_start,p_end,'property1',value1,'property2',value2,...)
+%
+% This function generates faces and vertices that can be used with patch
+% to plot a 3-D arrow from the origin to p_end, or else from a point
+% p_start to the point p_end; all such points should be passed in as
+% 3-by-1 vectors (in \R^3).
+%
+% This function can also take in three different property/value pairs:
+%   'shaft_width'   the diameter of the cylindrical arrow shaft
+%   'head_length'   the length of the conical arrowhead
+%   'head_width'    the diameter of the conical arrowhead
+%
+% EXAMPLE USAGE:
+%   % make arrow from origin to (1,1,1)
+%   [F,V] = make_arrow_for_patch(ones(3,1))
+%
+%   % plot the arrow using patch
+%   figure(1) ; clf ; grid on ; hold on ; axis equal ; view(3)
+%   patch('faces',F,'vertices',V,'facealpha',0.1)
+%
+% See also: plot_arrow
+ 
     if mod(length(varargin),2) == 1
         p_start = p ;
         p_end = varargin{1} ;
