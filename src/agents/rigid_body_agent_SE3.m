@@ -23,7 +23,7 @@ classdef rigid_body_agent_SE3 < agent_3D
         input_moment_indices = 4:6 ;
         
         % integration
-        integrator_approximation_degree = 1 ; % choose 1 or 2
+        integrator_method = 'ode1' ; % choose 'ode1', 'ode2', or 'ode45'
         integrator_time_discretization = 0.005 ;
         
         % plotting
@@ -117,20 +117,24 @@ classdef rigid_body_agent_SE3 < agent_3D
         
         %% default integrator with SO(3)
         function [tout,yout,Rout] = integrator(A,fun,tspan,y0,R0)
-            switch A.integrator_approximation_degree
-                case 1
+            switch A.integrator_method
+                case 'ode1'
                     [tout,yout,Rout] = ode1_with_SO3(fun,tspan,y0,R0,...
-                        A.integrator_time_discretization,...
-                        A.angular_velocity_indices) ;
-                case 2
+                        A.angular_velocity_indices,...
+                        A.integrator_time_discretization) ;
+                case 'ode2'
                     [tout,yout,Rout] = ode2_with_SO3(fun,tspan,y0,R0,...
-                        A.integrator_time_discretization,...
+                        A.angular_velocity_indices,...
+                        A.integrator_time_discretization) ;
+                case 'ode45'
+                    [tout,yout,Rout] = ode45_with_SO3(fun,tspan,y0,R0,...
                         A.angular_velocity_indices) ;
                 otherwise
-                    error('Invalid integrator approximation choice! Pick 1 or 2')
+                    error(['Invalid integrator approximation choice! ',...
+                        'Pick ode1, ode2, or ode45!'])
             end
             
-            % fix input rows/columns
+            % fix output rows/columns
             tout = tout' ;
             yout = yout' ;
         end
