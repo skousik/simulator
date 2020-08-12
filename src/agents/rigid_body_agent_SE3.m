@@ -104,10 +104,10 @@ classdef rigid_body_agent_SE3 < agent_3D
             % opposed to T_used, U_used, and Z_used (which are only of
             % duration t_move, which can cause NaNs if the agent's dynamics
             % try to interpolate past t_move in the reference time T_ref)
-            [tout,zout,Rout] = A.integrator(@(t,y,R) A.dynamics(t,y,R,T_ref,U_ref,Z_ref),...
+            [t_out,z_out,R_out] = A.integrator(@(t,y,R) A.dynamics(t,y,R,T_ref,U_ref,Z_ref),...
                 [0, t_move], z_cur, R_cur) ;
             
-            A.commit_move_data(tout,zout,Rout,T_used,U_used,Z_used) ;
+            A.commit_move_data(t_out,z_out,R_out,T_used,U_used,Z_used) ;
         end
         
         function commit_move_data(A,tout,zout,Rout,T_used,U_used,~)
