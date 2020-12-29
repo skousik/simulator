@@ -10,7 +10,7 @@ function [l,w,h,c] = resize_box_for_world_bounds(l,w,h,c,B)
     %
     % Author: Shreyas Kousik
     % Created: ages ago!
-    % Updated: 7 Aug 2020
+    % Updated: 29 Oct 2020
     
     % get the bounds version of the input box
     b = box_to_bounds(l,w,h,c) ;
@@ -27,7 +27,7 @@ function [l,w,h,c] = resize_box_for_world_bounds(l,w,h,c,B)
         w = [] ;
         h = [] ;
         c = [] ;
-        warning('Box lies outside of world bounds!')
+        % warning('Box lies outside of world bounds!')
     else
         [l,w,h,c] = bounds_to_box(reshape([lo;hi],1,6)) ;
     end

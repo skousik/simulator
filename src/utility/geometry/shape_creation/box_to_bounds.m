@@ -1,5 +1,6 @@
 function B = box_to_bounds(l,w,h,c)
 % B = box_to_bounds(l,w,h,c)
+% B = box_to_bounds([l,w,h],c)
 %
 % Given a box length/width/height/center, make bounds as a vector
 %   [xmin xmax ymin ymax zmin zmax]
@@ -9,6 +10,13 @@ function B = box_to_bounds(l,w,h,c)
 % Author: Shreyas Kousik
 % Created: shrug
 % Updated: 23 Apr 2020
+
+    if nargin == 2
+        c = w ;
+        w = l(2) ; 
+        h = l(3) ;
+        l = l(1) ;
+    end
 
     xmin = c(1) - l/2 ;
     xmax = c(1) + l/2 ;

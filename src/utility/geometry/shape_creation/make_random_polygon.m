@@ -29,7 +29,7 @@ function P = make_random_polygon(N_vertices,offset,scale)
 
     if length(N_vertices) == 1
         vertices = rand(2,N_vertices) - 0.5 ;
-        P = scale*points_to_CCW(vertices, true) + offset ;
+        P = scale*points_to_CCW(vertices, true) + offset(:) ;
     else
         P = [] ;
         for idx = 1:length(N_vertices)
