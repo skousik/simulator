@@ -39,7 +39,7 @@ function n = rand_range(lo,hi,m,s,r,c)
         n = trandn((lo-m)./s,(hi-m)./s).*s + m ;
     elseif nargin == 6
         if isempty(m) && isempty(s)
-            n = (hi-lo).*rand(r,c) + lo ;
+            n = (hi-lo).*rand(r,c) + repmat(lo,1,c) ;
         elseif ~isempty(m) && ~isempty(s)
             n = trandn(((lo-m)./s).*ones(r*c,1),((hi-m)./s).*ones(r*c,1)).*s + m ;
             n = reshape(n,r,c) ;
