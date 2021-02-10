@@ -7,6 +7,9 @@ function out = rand_in_bounds(bounds,m,s,n)
 % passed in, this draws from a uniform distribution). The fourth argument
 % is the number of points to return.
 %
+% The input can also just be [xmax ymax] in which case the lower bounds are
+% assumed to be 0.
+%
 % To get n uniformly distributed points, set m = [] and s = [].
 %
 % The output random_point is either a 2-by-n or 3-by-n set of points in the
@@ -14,23 +17,29 @@ function out = rand_in_bounds(bounds,m,s,n)
 %
 % Author: Shreyas Kousik
 % Created: 27 Aug 2020
-% Updated: 6 Jan 2021
+% Updated: 4 Feb 2021
 
     if nargin < 4
         n = 1 ;
     end
 
-    if length(bounds) == 4
-        lo = bounds([1,3]) ;
-        hi = bounds([2,4]) ;
-        n_dim = 2 ;
-    elseif length(bounds) == 6
-        lo = bounds([1,3,5]) ;
-        hi = bounds([2,4,6]) ;
-        n_dim = 3 ;
-    else
-        error(['Please pass in bounds as either [xmin xmax ymin ymax],'...
-            ' or [xmin xmax ymin ymax zmin zmax]'])
+    switch length(bounds)
+        case 2
+            lo = [0, 0] ;
+            hi = bounds ;
+            n_dim = 2 ;
+        case 4
+            lo = bounds([1,3]) ;
+            hi = bounds([2,4]) ;
+            n_dim = 2 ;
+        case 6
+            lo = bounds([1,3,5]) ;
+            hi = bounds([2,4,6]) ;
+            n_dim = 3 ;
+        otherwise
+            error(['Please pass in bounds as either [xmax ymax], ',...
+                '[xmin xmax ymin ymax],'...
+                ' or [xmin xmax ymin ymax zmin zmax]'])
     end
     
     if nargin < 2

@@ -5,9 +5,11 @@ function X = make_grid_2D(bounds,n_1,n_2)
 % samples along the x_1 direction and n_2 samples along the x_2 direction.
 % The output X is a 2-by-(n_1*n_2) array of points.
 %
+% See also: make_grid
+%
 % Authors: Shreyas Kousik
 % Created: 2 Feb 2021 (tbh I made this function, like, eons ago)
-% Updated: nah
+% Updated: 9 Feb 2021
     if nargin < 2
         n_1 = 100 ;
     end
