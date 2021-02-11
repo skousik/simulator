@@ -1,9 +1,13 @@
-function C = make_circle(r,n,p)
+function [C,V] = make_circle(r,n,p)
 % C = make_circle(r,n,p)
+% [F,V] = make_circle(r,n,p)
 %
 % Make a circle of radius r, approximated as an n-sided polygon, centered
 % at p \in \R^2. By default, r = 1, n = 100, and p = zeros(2,1). The output
 % C is a 2-by-n array.
+%
+% The optional second output is a list of vertices so that you can plot the
+% circle with patch('faces',F,'vertices',V,other_patch_args)
 %
 % Authors: Shreyas Kousik
 % Created: who knows!
@@ -26,4 +30,9 @@ function C = make_circle(r,n,p)
     
     % make C
     C = [r*cos(a_vec) ; r*sin(a_vec) ] + repmat(p(:),1,n) ;
+    
+    if nargout > 1
+        V = C' ;
+        C = [1:n, 1] ;
+    end
 end
