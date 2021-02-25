@@ -7,6 +7,10 @@ function [F,V] = make_ellipsoid_for_patch(Rx,Ry,Rz,C,N)
 % it as faces F and vertices V to be used with the patch function. The
 % input "N" specifies the number of points per dimension to be generated
 % for the ellipsoid.
+%
+% Authors: Shreyas Kousik
+% Created: who knows!
+% Updated: 16 Feb 2021, to avoid overlap with CORA's ellipsoid.m
 
     if nargin < 5
         N = 20 ;
@@ -28,8 +32,15 @@ function [F,V] = make_ellipsoid_for_patch(Rx,Ry,Rz,C,N)
     end
 
     % make points of ellipsoid
-    [Vx,Vy,Vz] = ellipsoid(C(1),C(2),C(3),Rx,Ry,Rz,N) ;
+    [Vx,Vy,Vz] = ellipsoid_helper(C(1),C(2),C(3),Rx,Ry,Rz,N) ;
     
     % transform into patch features
     [F,V] = surf2patch(Vx,Vy,Vz) ;
+end
+
+function [Vx,Vy,Vz] = ellipsoid_helper(Cx,Cy,Cz,Rx,Ry,Rz,N)
+    [Vx,Vy,Vz] = sphere(N) ;
+    Vx = Cx + Rx.*Vx ;
+    Vy = Cy + Ry.*Vy ;
+    Vz = Cz + Rz.*Vz ;
 end
