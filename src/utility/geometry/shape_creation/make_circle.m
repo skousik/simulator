@@ -1,9 +1,9 @@
-function [C,V] = make_circle(r,n,p)
+function [C,V] = make_circle(r,n,c)
 % C = make_circle(r,n,p)
 % [F,V] = make_circle(r,n,p)
 %
 % Make a circle of radius r, approximated as an n-sided polygon, centered
-% at p \in \R^2. By default, r = 1, n = 100, and p = zeros(2,1). The output
+% at c \in \R^2. By default, r = 1, n = 100, and c = zeros(2,1). The output
 % C is a 2-by-n array.
 %
 % The optional second output is a list of vertices so that you can plot the
@@ -14,7 +14,7 @@ function [C,V] = make_circle(r,n,p)
 % Updated: 7 Jan 2021
 
     if nargin < 3
-        p = zeros(2,1) ;
+        c = zeros(2,1) ;
     end
 
     if nargin < 2
@@ -29,7 +29,7 @@ function [C,V] = make_circle(r,n,p)
     a_vec = linspace(0,2*pi,n) ;
     
     % make C
-    C = [r*cos(a_vec) ; r*sin(a_vec) ] + repmat(p(:),1,n) ;
+    C = [r*cos(a_vec) ; r*sin(a_vec) ] + repmat(c(:),1,n) ;
     
     if nargout > 1
         V = C' ;
