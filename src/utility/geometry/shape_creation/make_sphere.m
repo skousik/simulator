@@ -1,10 +1,10 @@
 function varargout = make_sphere(r,c,n)
 % S = make_sphere(r,c,n)
 % [F,V] = make_sphere(r,c,n)
-% [S1,S2,S3] = make_sphere(r,c,n)
 %
-% Make a 3-D sphere of radius r, centered at the point c, containing
-% approximately n points.
+% Make n points on a 3-D sphere of radius r centered at c \in \R^3. These
+% points are evenly distributed over the surface of the sphere using
+% Vogel's method as outlined in [1,2].
 %
 % All inputs are optional. The defaults are:
 %   r = 1, c = zeros(3,1), n = 100
@@ -12,11 +12,14 @@ function varargout = make_sphere(r,c,n)
 % The number of outputs is optional:
 %   S is a 3-by-n (approximately) array of points on the sphere
 %   [F,V] is a faces/vertices pair to be used with patch
-%   [S1,S2,S3] are matrices to be used with surf or mesh
+%
+% References:
+%   [1] https://bduvenhage.me/geometry/2019/07/31/generating-equidistant-vectors.html
+%   [2] http://blog.marmakoide.org/?p=1
 %
 % Authors: Shreyas Kousik
 % Created: 15 Mar 2021
-% Updated: not yet
+% Updated: 17 Mar 2021
 
 if nargin < 1
     r = 1 ;
@@ -27,28 +30,37 @@ if nargin < 2
 end
 
 if nargin < 3
-    n = 100 ;
+    n = 256 ;
 end
 
-% get n for sphere
-n_sphere = floor(sqrt(n-1)) ;
+% compute golden angle per http://blog.marmakoide.org/?p=1
+ga = pi*(3 - sqrt(5)) ;
 
-% create sphere
-[X_1,X_2,X_3] = sphere(n_sphere) ;
+% create theta angles
+T = ga * (0:(n-1)) ;
 
-% use radius and center
-X_1 = r.*X_1 + c(1) ;
-X_2 = r.*X_2 + c(2) ;
-X_3 = r.*X_3 + c(3) ;
+% create z values
+Z = linspace(1 - (1/n), (1/n) - 1, n) ;
+
+% create radii
+R = sqrt(1 - Z.^2) ;
+
+% create points at the given cylindrical coordinates
+S = [R.*cos(T) ;
+    R.*sin(T) ;
+    Z] ;
+
+% dilate points by r and shift to c
+S = r.*S + repmat(c,1,n) ;
 
 % create output
 switch nargout
     case 1
-        X = [X_1(:), X_2(:), X_3(:)]' ;
-        varargout = {X} ;
+        varargout = {S} ;
     case 2
-        [F,V] = surf2patch(X_1,X_2,X_3) ;
-        varargout = {F,V} ;
-    case 3
-        varargout = {X_1,X_2,X_3} ;
+        S_1 = S(1,:)' ;
+        S_2 = S(2,:)' ;
+        S_3 = S(3,:)' ;
+        F = convhull(S_1,S_2,S_3) ;
+        varargout = {F,S'} ;
 end
