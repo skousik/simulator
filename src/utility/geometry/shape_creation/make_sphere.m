@@ -37,10 +37,10 @@ end
 ga = pi*(3 - sqrt(5)) ;
 
 % create theta angles
-T = ga * (0:(n-1)) ;
+T = [0,0,ga * (0:(n-3))] ;
 
 % create z values
-Z = linspace(1 - (1/n), (1/n) - 1, n) ;
+Z = [-1,1,linspace(1 - (1/n), (1/n) - 1, n - 2)] ;
 
 % create radii
 R = sqrt(1 - Z.^2) ;
