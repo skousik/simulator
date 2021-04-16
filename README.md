@@ -16,7 +16,7 @@ To run this code, you'll need MATLAB. Additional necessary toolboxes will be lis
 
 Make sure the simulator repo and all subfolders are on your path, and you're ready to go!
 
-Some example code is available here: https://github.com/ramvasudevan/RTD
+A small and easy-to-understand example is available [here](https://github.com/ramvasudevan/RTD/blob/master/examples/online_trajectory_planning/segway/online_planning_example_1.m).
 
 
 
@@ -30,5 +30,5 @@ Sean Vaskov (https://github.com/skvaskov)
 
 This project is licensed under the MIT License.
 
-(Last updated: 02 Apr 2019)
+(Last updated: 16 Apr 2021)
 
