@@ -9,24 +9,29 @@ function X = make_grid(bounds,n_per_dim)
 %
 % Authors: Shreyas Kousik
 % Created: 9 Feb 2021
-% Updated: nah
+% Updated: 5 May 2021
 
 if nargin < 2
     n_per_dim = [100 100] ;
 end
 
 if nargin < 1
-    bounds = [-1 1 -1 1] ;e
+    bounds = [-1 1 -1 1] ;
 end
 
 % get number of generators
 n_dim = size(bounds,2)/2 ;
 
+% set the length per dim
+if length(n_per_dim) == 1
+    n_per_dim = n_per_dim*ones(1,n_dim);
+end
+
 % reshape the bounds
 bounds = reshape(bounds(:),2,n_dim) ;
 
 % generate grid of points
-x_vec_in = {} ;
+x_vec_in = cell(1,n_dim) ;
 for idx = 1:n_dim
     x_vec_in{idx} = linspace(bounds(1,idx),bounds(2,idx),n_per_dim(idx)) ;
 end
