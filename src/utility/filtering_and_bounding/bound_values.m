@@ -14,6 +14,10 @@ function vo = bound_values(vi,lo,hi)
 %   bound_values(Inf,0,[]) returns Inf
 %
 %   bound_values(1,[2,3]) returns 2
+%
+% Authors: Shreyas Kousik
+% Created: in days of yore
+% Updated: 5 May 2021
 
     if nargin == 2
         if length(lo) > 1
@@ -38,6 +42,8 @@ function vo = bound_values(vi,lo,hi)
     end
 
     vo = vi ;
-    vo(vi > hi) = hi ;
-    vo(vi < lo) = lo ;
+    log_hi = vi > hi ;
+    log_lo = vi < lo ;
+    vo(log_hi) = hi(log_hi) ;
+    vo(log_lo) = lo(log_lo) ;
 end
