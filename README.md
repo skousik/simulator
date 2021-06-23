@@ -10,7 +10,7 @@ This is a set of tools for simulating a rigid body robot in MATLAB. The three ke
 
 ## Prerequisites
 
-To run this code, you'll need MATLAB. Additional necessary toolboxes will be listed here soon.
+To run this code, you should just need MATLAB. Please let Shreyas know if there are any issues :)
 
 ## Getting Started
 
