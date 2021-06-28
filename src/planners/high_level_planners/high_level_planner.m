@@ -25,6 +25,7 @@ classdef high_level_planner < handle
         waypoint_line_style = '--' ;
         goal = [1;0] ;
         bounds ;
+        name = 'HLP';
     end
     
     methods
