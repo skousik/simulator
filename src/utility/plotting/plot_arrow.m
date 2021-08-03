@@ -29,6 +29,10 @@ function plot_data = plot_arrow(p,varargin)
 %              'facecolor','r','edgecolor','r','facealpha',0.1)
 %
 % See also: make_arrow_for_patch
+%
+% Authors: Shreyas Kousik
+% Created: who knows!
+% Updated: 21 May 2020 (handles 2-D now)
 
     if mod(length(varargin),2) == 1
         p_start = p ;
@@ -42,6 +46,14 @@ function plot_data = plot_arrow(p,varargin)
     else
         p_start = zeros(3,1) ;
         p_end = p ;
+    end
+    
+    % add zeros to 2-D points
+    if length(p_start) == 2
+        p_start = [p_start ; 0] ;
+    end
+    if length(p_end) == 2
+        p_end = [p_end ; 0] ;
     end
     
     % get the arrow-related keywords from varargin
