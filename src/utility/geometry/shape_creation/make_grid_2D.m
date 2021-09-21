@@ -8,8 +8,8 @@ function X = make_grid_2D(bounds,n_1,n_2)
 % See also: make_grid
 %
 % Authors: Shreyas Kousik
-% Created: 2 Feb 2021 (tbh I made this function, like, eons ago)
-% Updated: 9 Feb 2021
+% Created: 2 Feb 2021
+% Updated: 7 Sept 2021 (oh man I found a horrible bug)
     if nargin < 2
         n_1 = 100 ;
     end
@@ -23,7 +23,7 @@ function X = make_grid_2D(bounds,n_1,n_2)
     end
     
     x_1 = linspace(bounds(1),bounds(2),n_1) ;
-    x_2 = linspace(bounds(1),bounds(2),n_2) ;
+    x_2 = linspace(bounds(3),bounds(4),n_2) ;
     
     [X1,X2] = meshgrid(x_1,x_2) ;
     X = [X1(:), X2(:)]' ;
