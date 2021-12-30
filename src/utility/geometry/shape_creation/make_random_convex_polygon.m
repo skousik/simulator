@@ -15,7 +15,7 @@ function [P,n] = make_random_convex_polygon(n,c)
 %
 % Authors: Shreyas Kousik
 % Created: 8 Dec 2020
-% Updated: 1 Apr 2020
+% Updated: 29 Dec 2021
 
     if nargin < 2
         c = zeros(2,1) ;
@@ -23,9 +23,21 @@ function [P,n] = make_random_convex_polygon(n,c)
         n = 3 ;
     end
     
-    P = make_random_polygon(n,c(:)) ;
-    K = convhull(P') ;
-    P = P(:,K) ;
+    P = [] ;
+    t_max = 1 ; % [seconds]
+    t_start = tic ;
+    
+    while (size(P(:,1:end-1),2) < n) && (toc(t_start) <= t_max)
+        P = make_random_polygon(n,c(:)) ;
+        K = convhull(P') ;
+        P = P(:,K) ;
+    end
+    
+    if (size(P(:,1:end-1),2) < n)
+        warning(['Failed to create polygon with required number of sides! ',...
+            'Output has only ',num2str(size(P,2)),' sides, whereas ',...
+            num2str(n),' sides were requested.'])
+    end
     
     if nargout > 1
         n = size(P,2) - 1;
