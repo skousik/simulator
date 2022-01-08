@@ -1,5 +1,6 @@
-function X = make_grid(bounds,n_per_dim)
+function [X,varargout] = make_grid(bounds,n_per_dim)
 % X = make_grid(bounds,n_per_dim)
+% [X,X1,X2,...,Xn] = make_grid(bounds,n_per_dim)
 %
 % Make an m-D grid of points in the bounds [x_1_lo x_1_hi ... x_n_lo x_m_hi]
 % where there are n_per_dim = [n_1 n_2 ... n_m] points along each dim. The
@@ -9,7 +10,7 @@ function X = make_grid(bounds,n_per_dim)
 %
 % Authors: Shreyas Kousik
 % Created: 9 Feb 2021
-% Updated: 5 May 2021
+% Updated: 7 Jan 2022
 
 if nargin < 2
     n_per_dim = [100 100] ;
@@ -37,8 +38,18 @@ for idx = 1:n_dim
 end
 
 cell_out = cell(1,n_dim) ;
-[cell_out{:}] = ndgrid(x_vec_in{:}) ;
+if nargin <= 3
+    [cell_out{:}] = meshgrid(x_vec_in{:}) ;
+else
+    [cell_out{:}] = ndgrid(x_vec_in{:}) ;
+end
 X = [] ;
+if nargout > 1
+    varargout = cell(1,nargout) ;
+end
 for idx = 1:length(cell_out)
     X = [X ; cell_out{idx}(:)'] ;
+    if nargout > 1
+        varargout{idx} = cell_out{idx} ;
+    end
 end
