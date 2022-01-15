@@ -63,6 +63,10 @@ function plot_data = plot_arrow(p,varargin)
         switch lower(varargin{idx})
             case {'shaft_width','head_length','head_width'}
                 patch_args_in = [patch_args_in, varargin(idx:idx+1)] ;
+            case 'color'
+                plot_args_in = [plot_args_in,...
+                                {'facecolor'},varargin(idx+1),...
+                                {'edgecolor'},varargin(idx+1)] ;
             otherwise
                 plot_args_in = [plot_args_in, varargin(idx:idx+1)] ;
         end
