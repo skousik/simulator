@@ -1,7 +1,15 @@
 function P_out = points_to_CCW(P_in,close_loop)
+% P_out = points_to_CCW(P_in)
+% P_out = points_to_CCW(P_in,close_loop)
+%
 % Given a 2-by-n set of points where the first row is x coordinates and the
 % second row is y coordinates, rearrange the points in counter-clockwise
-% order. If the "close loop" flag is set to true
+% order. If the "close loop" flag is set to true, the last and first point
+% are the same.
+%
+% Authors: Shreyas Kousik
+% Created: shrug
+% Updated: 18 Jan 2022
 
     if nargin < 2
         close_loop = false ;
