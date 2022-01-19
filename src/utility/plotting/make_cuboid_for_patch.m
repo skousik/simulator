@@ -14,7 +14,7 @@ function varargout = make_cuboid_for_patch(l,w,h,c)
 % using https://www.mathworks.com/help/matlab/visualize/multifaceted-patches.html
 %
 % Author: Shreyas Kousik
-% Updated: 23 Apr 2020
+% Updated: 18 Jan 2022
 
     if nargin < 4
         c = zeros(3,1) ;
@@ -22,6 +22,7 @@ function varargout = make_cuboid_for_patch(l,w,h,c)
 
     if nargin == 1
         dims = l ;
+        dims = dims(:).*ones(3,1) ;
         l = dims(1) ;
         w = dims(2) ;
         h = dims(3) ;
