@@ -32,6 +32,13 @@ function plot_data = plot_coord_frame_3D(R,varargin)
 % 'Data'   - takes in the plot_data object output by this function; this
 %            is used to update the plots instead of completely refreshing
 %            the plot (which causes a jittery appearance)
+%
+% 'Arrows' - true/false, decides whether to plot 3D arrows using patch or
+%            not (default is false)
+%
+% Authors: Shreyas Kousik
+% Created: shrug
+% Updated: 21 Jan 2022
 
     args_list = {} ;
 
@@ -48,13 +55,15 @@ function plot_data = plot_coord_frame_3D(R,varargin)
             end
 
             for idx = arg_in_idxs
-                switch varargin{idx}
-                    case 'Colors'
+                switch lower(varargin{idx})
+                    case 'colors'
                         c = varargin{idx+1} ;
-                    case 'Scale'
+                    case 'scale'
                         s = varargin{idx+1} ;
-                    case 'Data'
+                    case 'data'
                         plot_data = varargin{idx+1} ;
+                    case 'arrows'
+                        use_arrows = varargin{idx+1} ;
                     otherwise
                         args_list = [args_list, varargin(idx:idx+1)] ;
                 end
@@ -68,6 +77,10 @@ function plot_data = plot_coord_frame_3D(R,varargin)
 
     if ~exist('s','var')
         s = 1 ;
+    end
+    
+    if ~exist('use_arrows','var')
+        use_arrows = false ;
     end
 
     % create vectors to plot
@@ -85,9 +98,15 @@ function plot_data = plot_coord_frame_3D(R,varargin)
         end
 
         % plot 'em!
-        e1_data = plot3(e1(1,:),e1(2,:),e1(3,:),'Color',c(1,:),args_list{:}) ;
-        e2_data = plot3(e2(1,:),e2(2,:),e2(3,:),'Color',c(2,:),args_list{:}) ;
-        e3_data = plot3(e3(1,:),e3(2,:),e3(3,:),'Color',c(3,:),args_list{:}) ;
+        if use_arrows
+            e1_data = plot_arrow(e1(:,1), e1(:,2), 'Color', c(1,:),args_list{:}) ;
+            e2_data = plot_arrow(e2(:,1), e2(:,2), 'Color', c(2,:),args_list{:}) ;
+            e3_data = plot_arrow(e3(:,1), e3(:,2), 'Color', c(3,:),args_list{:}) ;
+        else
+            e1_data = plot3(e1(1,:),e1(2,:),e1(3,:),'Color',c(1,:),args_list{:}) ;
+            e2_data = plot3(e2(1,:),e2(2,:),e2(3,:),'Color',c(2,:),args_list{:}) ;
+            e3_data = plot3(e3(1,:),e3(2,:),e3(3,:),'Color',c(3,:),args_list{:}) ;
+        end
 
         if ~hold_check
             hold off
@@ -106,17 +125,21 @@ function plot_data = plot_coord_frame_3D(R,varargin)
         e3_data = plot_data.e3 ;
 
         % update axes
-        e1_data.XData = e1(1,:) ;
-        e1_data.YData = e1(2,:) ;
-        e1_data.ZData = e1(3,:) ;
+        if use_arrows
+            error('Oops I did not yet write this part of the code')
+        else
+            e1_data.XData = e1(1,:) ;
+            e1_data.YData = e1(2,:) ;
+            e1_data.ZData = e1(3,:) ;
 
-        e2_data.XData = e2(1,:) ;
-        e2_data.YData = e2(2,:) ;
-        e2_data.ZData = e2(3,:) ;
+            e2_data.XData = e2(1,:) ;
+            e2_data.YData = e2(2,:) ;
+            e2_data.ZData = e2(3,:) ;
 
-        e3_data.XData = e3(1,:) ;
-        e3_data.YData = e3(2,:) ;
-        e3_data.ZData = e3(3,:) ;
+            e3_data.XData = e3(1,:) ;
+            e3_data.YData = e3(2,:) ;
+            e3_data.ZData = e3(3,:) ;
+        end
 
         % update plot_data
         plot_data.e1 = e1_data ;
