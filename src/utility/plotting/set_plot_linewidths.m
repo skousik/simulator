@@ -7,7 +7,7 @@ function set_plot_linewidths(linewidth,fh)
 %
 % Author: Shreyas Kousik
 % Created: 29 Oct 2019
-% Updated: -
+% Updated: 9 Sep 2023 (added support for polygons lol)
 
     if nargin < 1
         linewidth = 1.5 ;
@@ -25,6 +25,12 @@ function set_plot_linewidths(linewidth,fh)
     
     % get all patches
     h = findall(fh,'Type','Patch') ;
+    for idx = 1:length(h)
+        h(idx).LineWidth = linewidth ;
+    end
+
+    % get all polygons
+    h = findall(fh,'Type','Polygon') ;
     for idx = 1:length(h)
         h(idx).LineWidth = linewidth ;
     end
