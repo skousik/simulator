@@ -406,5 +406,10 @@ classdef agent < handle
 
             filename = filename_new ;
         end
+
+        %% utility
+        function z_t = get_state_at_time(A,t)
+            z_t = match_trajectories(t,A.time,A.state) ;
+        end
     end
 end
