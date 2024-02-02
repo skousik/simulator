@@ -38,7 +38,7 @@ for idx = 1:n_dim
 end
 
 cell_out = cell(1,n_dim) ;
-if nargin <= 3
+if n_dim <= 3
     [cell_out{:}] = meshgrid(x_vec_in{:}) ;
 else
     [cell_out{:}] = ndgrid(x_vec_in{:}) ;
